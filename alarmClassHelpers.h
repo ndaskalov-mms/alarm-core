@@ -1,10 +1,88 @@
 //
-// alarmHelpers.h - init defaults, print and other helper functions 
+// alarmClassHelpers.h - init defaults, print and other helper functions 
 //
-//
+// -------------  timers ------------------------------------
+    //#define ALARM_LOOP_INTERVAL		1000
+    //#define STATUS_REPORT_INTERVAL	30000
+    //#define	ALARM_PUBLISH_INTERVAL	500
+    //
+    //enum timeoutOper {
+    //    SET = 1,
+    //    GET = 2,
+    //    FORCE = 3,
+    //};
+    ////
+    //enum TIMERS {
+    //    ALARM_LOOP_TIMER = 1,
+    //    STATUS_REPORT_TIMER,
+    //};
+    ////
+    //// command records structure for cmdDB
+    //struct TIMER {
+    //    int timerID;
+    //    unsigned long interval;
+    //    unsigned long setAt;
+    //};
+    ////
+    //// timerss database to look-up timer params TODO - move all timers staff to helpers or separate file. 
+    //// 
+    //struct TIMER timerDB[] = {  {ALARM_LOOP_TIMER, ALARM_LOOP_INTERVAL, 0},
+    //                            {STATUS_REPORT_TIMER, STATUS_REPORT_INTERVAL, 0},
+    //};
+    ////
+    //int findTimer(byte timer) {
+    //    //ErrWrite(ERR_DEBUG, "Looking for record for timer ID   %d \n", timer);
+    //    for (int i = 0; i < sizeof(timerDB) / sizeof(struct TIMER); i++) {
+    //        //printf("Looking at index  %d out of  %d:\n", i, sizeof(cmdDB)/sizeof(struct COMMAND)-1);
+    //        if (timerDB[i].timerID == timer) {
+    //            //ErrWrite(ERR_DEBUG,"Found timer at  index %d\n", i);
+    //            return  i;
+    //        }
+    //    }
+    //    ErrWrite(ERR_DEBUG, "Timer not found!!!!!!!\n");
+    //    return ERR_DB_INDEX_NOT_FND;
+    //}
+    //// 
+    //// set timeout / check if timeout expired
+    //// TODO - organize all timeouts as separate database similar to commands
+    //// 
+    //bool timeoutOps(int oper, int whichOne) {
+    //    int index;
+    //    // find timer index first
+    //    if ((index = findTimer(whichOne)) < 0) {        // timer not found
+    //        ErrWrite(ERR_CRITICAL, "Timer %d NOT FOUND\n", whichOne);
+    //        return false;						        // TODO - report error
+    //    }
+    //    if (oper == SET) {                              // record the current time in milliseconds
+    //        timerDB[index].setAt = millis();
+    //        return 0;
+    //    }
+    //    if (oper == FORCE) {                            // force timer to report as expired on next GET op
+    //        timerDB[index].setAt = 0;
+    //        return 0;
+    //    }
+    //    else {
+    //        unsigned long res = (unsigned long)(millis());  // GET
+    //        return ((res - timerDB[index].setAt) > (unsigned long)timerDB[index].interval);
+    //    }
+    //}
+    ////
+    //// set timer interval
+    //// 
+    //bool timerSetInterval(int whichOne, unsigned long Interval) {
+    //    int index;
+    //    // find timer index first
+    //    if ((index = findTimer(whichOne)) < 0)	    // timer not found
+    //        return false;						    // TODO - report error
+    //    timerDB[index].interval = Interval;
+    //    return true;
+    //}
+    ////
+    //// -------------- end timers -----------------------------
+// 
 //extern int      countNotBypassedEntryDelayZones(int partIdx);
-extern int      alrmConfig2Json(struct CONFIG_t* alarmCfg, IOptr stream);
-extern void     synchPGMstates();
+//extern int      alrmConfig2Json(struct CONFIG_t* alarmCfg, IOptr stream);
+//extern void     synchPGMstates();
 //
 // 
 //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action) {
@@ -24,7 +102,7 @@ extern void     synchPGMstates();
 //  parms: (pointer)to ALARM_ZONE  
 //          printClass - 0 prints all, !0 prins only what is selected
 //
-void printConfigData(struct tagAccess targetKeys[], int numEntries, byte *targetPtr, int printClass) {
+void Alarm::printConfigData(struct tagAccess targetKeys[], int numEntries, byte *targetPtr, int printClass) {
     const char * titlePtr = NULL;
     for (int i = 0; i < numEntries; i++) {
         if (printClass && (printClass != targetKeys[i].printClass))           // printClass == 0 (PRTCLS_ALL) means print all
@@ -46,7 +124,7 @@ void printConfigData(struct tagAccess targetKeys[], int numEntries, byte *target
     lprintf("\n");
 }
 //
-void printConfigHeader(struct tagAccess targetKeys[], int numEntries) {
+void Alarm::printConfigHeader(struct tagAccess targetKeys[], int numEntries) {
     for (int i = 0; i < numEntries; i++) {
         lprintf("%s ", targetKeys[i].keyStr);
         for (int j = strlen(targetKeys[i].keyStr); j < (int)targetKeys[i].keyStrLen; j++)
@@ -57,7 +135,7 @@ void printConfigHeader(struct tagAccess targetKeys[], int numEntries) {
 //
 // print config partition data
 //
-void printAlarmPartCfg(void) {
+void Alarm::printAlarmPartCfg(void) {
     lprintf("Partition(s)\n");
     printConfigHeader(partitionTags, PARTITION_TAGS_CNT);
     for (int j = 0; j < MAX_PARTITION; j++) {
@@ -71,7 +149,7 @@ void printAlarmPartCfg(void) {
 //  print alarm zones data
 //  parms: (byte pointer) to array of ALARM_ZONE  containing the zones to be printed
 //
-void printAlarmZones(int startZn, int endZn) {
+void Alarm::printAlarmZones(int startZn, int endZn) {
     lprintf("\nZone(s)\n");
     printConfigHeader(zoneTags, ZONE_TAGS_CNT);
     for (int i = startZn; i < endZn; i++) {             // for each board' zone
@@ -83,7 +161,7 @@ void printAlarmZones(int startZn, int endZn) {
 //
 // print Alarm Global options
 //
-void printAlarmOpts(byte* optsPtr) {
+void Alarm::printAlarmOpts(byte* optsPtr) {
     lprintf("\nGlobal options\n");
     printConfigHeader(gOptsTags, GLOBAL_OPTIONS_TAGS_CNT);
     printConfigData(gOptsTags, GLOBAL_OPTIONS_TAGS_CNT, optsPtr, PRTCLASS_ALL);
@@ -93,7 +171,7 @@ void printAlarmOpts(byte* optsPtr) {
 //
 //
 //void printAlarmPgms(alarmPgmArr_t* pgmArrPtr, int startBoard, int endBoard) {
-void printAlarmPgms(void) {
+void Alarm::printAlarmPgms(void) {
     //alarmPgmArr_t *pgmArr = (alarmPgmArr_t *)pgmArrPtr;
     //lprintf("       boardID pgmID tval cval pulseLen pgmName\n");
     lprintf("\nPGM(s)\n");
@@ -110,7 +188,7 @@ void printAlarmPgms(void) {
 //  print alarm keysw data
 //  parms: (byte pointer) to array of ALARM_KEYSW  containing the keysw to be printed
 //
-void printAlarmKeysw(byte* keyswArrPtr, int maxKeysw) { 
+void Alarm::printAlarmKeysw(byte* keyswArrPtr, int maxKeysw) {
     lprintf("------------------------ Not IMPLEMENTED ---------------------------------\n");
 //    alarmKeyswArr_t *pgmArr = (alarmKeyswArr_t *)keyswArrPtr;
 //	lprintf("      partition; type; action; boardID;	zoneID;  keyswName[16];\n");
@@ -122,7 +200,7 @@ void printAlarmKeysw(byte* keyswArrPtr, int maxKeysw) {
 //
 //
 //
-void printAlarmPartitionRT(int idx) {
+void Alarm::printAlarmPartitionRT(int idx) {
     lprintf("%d\t%d\t%.8ld\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
         partitionRT[idx].armStatus, partitionSTATS[idx].notBypassedEntyDelayZones, partitionRT[idx].armTime , 
         partitionRT[idx].partitionTimers[ENTRY_DELAY1_TIMER].timerFSM, partitionRT[idx].partitionTimers[ENTRY_DELAY2_TIMER].timerFSM,
@@ -132,14 +210,14 @@ void printAlarmPartitionRT(int idx) {
     lprintf("\n");
 }
 //
-void printPartHeaderRT() {
+void Alarm::printPartHeaderRT() {
     lprintf("Partition(s) rut-time data\n");
     lprintf("armStat\tNbEdZnC\tarmTime\t\tentDly1\t\tentDly2\t\tentD1FS\tentD2FS\topnZcnt\toZEDc\toZSDc\tbpsZcnt\ttamZcnt\tignTmZC\tFollows:\n");
 }
 //
 // print run-time partition data
 //
-void printAlarmPartRT(void) {
+void Alarm::printAlarmPartRT(void) {
     printPartHeaderRT();
 	for (int j = 0; j < MAX_PARTITION; j++) {
         printAlarmPartitionRT(j);
@@ -147,55 +225,55 @@ void printAlarmPartRT(void) {
 }
 //
 //
-// 
-void resetAllPartitionTimers(int prt) {
-    int j;
-    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].timerDelay = partitionDB[prt].exitDelay;
-    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassWhat = EXIT_DELAY_ZONES;
-    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassMask = ZONE_EX_D_BYPASSED;
-    //
-    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].timerDelay = partitionDB[prt].entryDelay1Intvl;
-    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassWhat = ENTRY_DELAY1_ZONES;
-    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassMask = ZONE_EDx_BYPASSED;
-    //
-    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].timerDelay = partitionDB[prt].entryDelay2Intvl;
-    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassWhat = ENTRY_DELAY2_ZONES;
-    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassMask = ZONE_EDx_BYPASSED;
-    //
-    for (j = 0; j < MAX_PARTITION_TIMERS; j++)
-        partitionRT[prt].partitionTimers[j].timerFSM = NOT_STARTED;
-    //
-    partitionRT[prt].changed |= (CHG_EXIT_DELAY_TIMER | CHG_ENTRY_DELAY1_TIMER | CHG_ENTRY_DELAY2_TIMER);	// TODO ??? tova trqbwa da e vyv funkciata force MQTT report
-    return;
-}
-//
-// clean-up run time data - staistics and zone statuses TODO - update here when new data added
-//
-void initRTdata(void) {
-    int i;
-    // reset zone's tun-time data
-    for (int j = 0; j < MAX_ALARM_ZONES; j++) {    
-        memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
-        zonesRT[j].zoneStat = ZONE_CLOSE;
-        zonesRT[j].changed = 0;
-    }
-    for (i = 0; i < MAX_PARTITION; i++) {
-        // reset all partition statistics
-        memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
-        // init rut-time partition timers with configured delays in seconds
-        resetAllPartitionTimers(i);
-        // reset ARM state
-        partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
-        partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
-    }
-    // clear all HW errors
-    alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
-}
+    //// 
+    //void resetAllPartitionTimers(int prt) {
+    //    int j;
+    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].timerDelay = partitionDB[prt].exitDelay;
+    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassWhat = EXIT_DELAY_ZONES;
+    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassMask = ZONE_EX_D_BYPASSED;
+    //    //
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].timerDelay = partitionDB[prt].entryDelay1Intvl;
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassWhat = ENTRY_DELAY1_ZONES;
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassMask = ZONE_EDx_BYPASSED;
+    //    //
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].timerDelay = partitionDB[prt].entryDelay2Intvl;
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassWhat = ENTRY_DELAY2_ZONES;
+    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassMask = ZONE_EDx_BYPASSED;
+    //    //
+    //    for (j = 0; j < MAX_PARTITION_TIMERS; j++)
+    //        partitionRT[prt].partitionTimers[j].timerFSM = NOT_STARTED;
+    //    //
+    //    partitionRT[prt].changed |= (CHG_EXIT_DELAY_TIMER | CHG_ENTRY_DELAY1_TIMER | CHG_ENTRY_DELAY2_TIMER);	// TODO ??? tova trqbwa da e vyv funkciata force MQTT report
+    //    return;
+    //}
+    ////
+    //// clean-up run time data - staistics and zone statuses TODO - update here when new data added
+    ////
+    //void initRTdata(void) {
+    //    int i;
+    //    // reset zone's tun-time data
+    //    for (int j = 0; j < MAX_ALARM_ZONES; j++) {    
+    //        memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
+    //        zonesRT[j].zoneStat = ZONE_CLOSE;
+    //        zonesRT[j].changed = 0;
+    //    }
+    //    for (i = 0; i < MAX_PARTITION; i++) {
+    //        // reset all partition statistics
+    //        memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
+    //        // init rut-time partition timers with configured delays in seconds
+    //        resetAllPartitionTimers(i);
+    //        // reset ARM state
+    //        partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
+    //        partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
+    //    }
+    //    // clear all HW errors
+    //    alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
+    //}
 //
 //
 // report (print) zone names with particular status OPEN/CLOSE/TAMPER/AMASK
 //
-void reportZonesNamesBasedOnStatus(int prt, int stat) {
+void Alarm::reportZonesNamesBasedOnStatus(int prt, int stat) {
     int res = 0;
     if (!partitionDB[prt].valid)			                            // zone belongs to valid partiton
         return;													        // yes, try the next one
@@ -217,7 +295,7 @@ void reportZonesNamesBasedOnStatus(int prt, int stat) {
 //
 // report (print) zone names with particular flag set - bypassed, ignorred tamper,ignorredAmask, etc
 //
-void reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask) {
+void Alarm::reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask) {
     int res = 0; byte* basePtr;
     if (!partitionDB[prt].valid)			                            // zone belongs to valid partiton
         return;													        // yes, try the next one
@@ -239,7 +317,7 @@ void reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask) {
 //
 // report (print) zone names with particular flag set - bypassed, ignorred tamper,ignorredAmask, etc
 //
-void reportPartitionNamesBasedOnFlag(int offset) {
+void Alarm::reportPartitionNamesBasedOnFlag(int offset) {
     int prt; int res = 0; byte* basePtr;
     for (prt = 0; prt < MAX_PARTITION; prt++) {
         if (!partitionDB[prt].valid)
@@ -284,7 +362,7 @@ void reportPartitionNamesBasedOnFlag(int offset) {
 // 
 // 
 //
-void printZonesSummary(int prt) {
+void Alarm::printZonesSummary(int prt) {
     if (partitionRT[prt].changed)
         timeoutOps(FORCE, STATUS_REPORT_TIMER);
     if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
@@ -323,7 +401,7 @@ void printZonesSummary(int prt) {
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, in_trouble), 0xFF);
     }
 }
-void printParttionsSummary() {
+void Alarm::printParttionsSummary() {
     if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
         timeoutOps(SET, STATUS_REPORT_TIMER);
         //
@@ -354,22 +432,22 @@ void printParttionsSummary() {
 /**
  * @brief Init board(s) level data 
  */
-void initBoardsData() {
-    maxSlaves = alarmGlobalOpts.maxSlaveBrds;                                       
-    for (int i = 0; i < MAX_SLAVES; i++) {                                 // for each board 
-        brdsDB[i].valid = (i <= maxSlaves) ? 1 : 0;
-        brdsDB[i].brdFail = 0;  brdsDB[i].totalErrors = 0;
-    }
-}
+//void initBoardsData() {
+//    maxSlaves = alarmGlobalOpts.maxSlaveBrds;                                       
+//    for (int i = 0; i < MAX_SLAVES; i++) {                                 // for each board 
+//        brdsDB[i].valid = (i <= maxSlaves) ? 1 : 0;
+//        brdsDB[i].brdFail = 0;  brdsDB[i].totalErrors = 0;
+//    }
+//}
 /**
  * @brief Clear all storage for all alarm domains - zones, partitons, pgms, global options, etc
  */
-void clearAllDBs() {
-    int i;
-    //lprintf("Size of sbPtrArr = %d\n", sizeof(dbPtrArr));
-    for(i=0; i<DB_PTR_ARR_CNT; i++)
-        memset((void*)dbPtrArr[i].dbBaseAddr, 0, dbPtrArr[i].elmCnt * dbPtrArr[i].elmLen);
-}
+    //void clearAllDBs() {
+    //    int i;
+    //    //lprintf("Size of sbPtrArr = %d\n", sizeof(dbPtrArr));
+    //    for(i=0; i<DB_PTR_ARR_CNT; i++)
+    //        memset((void*)dbPtrArr[i].dbBaseAddr, 0, dbPtrArr[i].elmCnt * dbPtrArr[i].elmLen);
+    //}
 /**
  * @brief Tries to load complete alarm configuration data from storage or memory.
  *
@@ -380,56 +458,56 @@ void clearAllDBs() {
  * @return 0 on success, non-zero on errors.
  *
  */
-int initAlarmLoop() {
-    ErrWrite(ERR_WARNING, "Init alarm from file\n");
-    if (!storageSetup()) {					                                    // mount file system
-        ErrWrite(ERR_CRITICAL, "Error initializing storage while processing the new config\n");
-        storageClose();
-        return false;
-    }
-    //  Read config file into tempMQTTpayload buffer
-    int rlen = readCsvConfig(csvConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload)); 
-    if (!rlen) {  
-        ErrWrite(ERR_WARNING, "Wrong or missing CSV config file\n");
-        storageClose();
-        return false;
-    }
-    //
-    // clear all storage arrays (DBs) for all alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
-    clearAllDBs();
-    //
-    // now parse the config data and store it in corresponding arrays (DBs) - zonesDB[], partitonsDB[], pgmsDB[], ... 
-    // config data are loaded in  tempMQTTpayload   from CSV config file                   
-    if (parseConfigFile((char*)&tempMQTTpayload, rlen, true)) {
-        ErrWrite(ERR_CRITICAL, "Config file parse fail\n");
-        return 0;
-    }
-    else
-        ErrWrite(ERR_CRITICAL, "Config file successfully parsed\n");
-    //
-    initBoardsData();
-    initRTdata();
-    synchPGMstates();                                                       // copy mPGM cValue (default init value) to pgmsDB
-    printAlarmOpts((byte*)&alarmGlobalOpts);
-    printAlarmPartCfg();
-    printAlarmZones(0, MAX_ALARM_ZONES);
-    //printAlarmPgms((alarmPgmArr_t*)&alarmConfig.pgmConfig, MASTER_ADDRESS, maxSlaves);
-    printAlarmPgms();
-    //printAlarmKeysw((byte*) &keyswDB, MAX_KEYSW_CNT); 
-    //  write BIN config
-    //if(ENABLE_CONFIG_CREATE) { 					// do not create config, we have to wait for data from MQTT 	
-    //    saveBinConfig(configFileName);          // create the file, maybe this is the first ride TODO - make it to check only once
+    //int initAlarmLoop() {
+    //    ErrWrite(ERR_WARNING, "Init alarm from file\n");
+    //    if (!storageSetup()) {					                                    // mount file system
+    //        ErrWrite(ERR_CRITICAL, "Error initializing storage while processing the new config\n");
+    //        storageClose();
+    //        return false;
+    //    }
+    //    //  Read config file into tempMQTTpayload buffer
+    //    int rlen = readCsvConfig(csvConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload)); 
+    //    if (!rlen) {  
+    //        ErrWrite(ERR_WARNING, "Wrong or missing CSV config file\n");
+    //        storageClose();
+    //        return false;
+    //    }
+    //    //
+    //    // clear all storage arrays (DBs) for all alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
+    //    clearAllDBs();
+    //    //
+    //    // now parse the config data and store it in corresponding arrays (DBs) - zonesDB[], partitonsDB[], pgmsDB[], ... 
+    //    // config data are loaded in  tempMQTTpayload   from CSV config file                   
+    //    if (parseConfigFile((char*)&tempMQTTpayload, rlen, true)) {
+    //        ErrWrite(ERR_CRITICAL, "Config file parse fail\n");
+    //        return 0;
+    //    }
+    //    else
+    //        ErrWrite(ERR_CRITICAL, "Config file successfully parsed\n");
+    //    //
+    //    initBoardsData();
+    //    initRTdata();
+    //    synchPGMstates();                                                       // copy mPGM cValue (default init value) to pgmsDB
+    //    printAlarmOpts((byte*)&alarmGlobalOpts);
+    //    printAlarmPartCfg();
+    //    printAlarmZones(0, MAX_ALARM_ZONES);
+    //    //printAlarmPgms((alarmPgmArr_t*)&alarmConfig.pgmConfig, MASTER_ADDRESS, maxSlaves);
+    //    printAlarmPgms();
+    //    //printAlarmKeysw((byte*) &keyswDB, MAX_KEYSW_CNT); 
+    //    //  write BIN config
+    //    //if(ENABLE_CONFIG_CREATE) { 					// do not create config, we have to wait for data from MQTT 	
+    //    //    saveBinConfig(configFileName);          // create the file, maybe this is the first ride TODO - make it to check only once
+    //    //}
+    //#ifndef ARDUINO
+    //    lprintf("Saving JSON config file\n");
+    //    saveJsonConfig(jsonConfigFname);
+    //#endif
+    //    storageClose();
+    //    //
+    //    return true;
     //}
-#ifndef ARDUINO
-    lprintf("Saving JSON config file\n");
-    saveJsonConfig(jsonConfigFname);
-#endif
-    storageClose();
-    //
-    return true;
-}
 //
-const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode) {
+const char* Alarm::titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode) {
     int i;
     for (i = 0; i < CmdsCnt; i++) {
         if (Cmds[i].state == stateCode) {
@@ -439,6 +517,5 @@ const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode
     lprintf("Cannot find zone state by stateCode %d\n", stateCode);
     return &UNKNOWN_TTL[0];
 }
-
 
 

@@ -1,4 +1,55 @@
-extern void processMasterPGMs(void);
+#pragma once
+//#include "alarmClass-defs.h"
+//#include "parserClassHelpers.h"
+//#include "alarmClassHelpers.h"
+
+
+//extern void processMasterPGMs(void);
+
+void resetAllPartitionTimers(int prt) {
+	int j;
+	partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].timerDelay = partitionDB[prt].exitDelay;
+	partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassWhat = EXIT_DELAY_ZONES;
+	partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassMask = ZONE_EX_D_BYPASSED;
+	//
+	partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].timerDelay = partitionDB[prt].entryDelay1Intvl;
+	partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassWhat = ENTRY_DELAY1_ZONES;
+	partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassMask = ZONE_EDx_BYPASSED;
+	//
+	partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].timerDelay = partitionDB[prt].entryDelay2Intvl;
+	partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassWhat = ENTRY_DELAY2_ZONES;
+	partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassMask = ZONE_EDx_BYPASSED;
+	//
+	for (j = 0; j < MAX_PARTITION_TIMERS; j++)
+		partitionRT[prt].partitionTimers[j].timerFSM = NOT_STARTED;
+	//
+	partitionRT[prt].changed |= (CHG_EXIT_DELAY_TIMER | CHG_ENTRY_DELAY1_TIMER | CHG_ENTRY_DELAY2_TIMER);	// TODO ??? tova trqbwa da e vyv funkciata force MQTT report
+	return;
+}
+//-----------------------------------------------------------------------------------
+// Implementation of selected methods
+//-----------------------------------------------------------------------------------
+void initRTdata(void) {
+	int i;
+	// reset zone's tun-time data
+	for (int j = 0; j < MAX_ALARM_ZONES; j++) {
+		memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
+		zonesRT[j].zoneStat = ZONE_CLOSE;
+		zonesRT[j].changed = 0;
+	}
+	for (i = 0; i < MAX_PARTITION; i++) {
+		// reset all partition statistics
+		memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
+		// init rut-time partition timers with configured delays in seconds
+		resetAllPartitionTimers(i);
+		// reset ARM state
+		partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
+		partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
+	}
+	// clear all HW errors
+	alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
+}
+
 //
 // clearBypass- un- baypasses zone
 // params:  int zn			- zone index 0 .. MAX_ALARM_ZONES
@@ -84,7 +135,7 @@ void bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 //
 // set or get partition EXIT DELAY, ENTRY_DELAY1 or ENTRY_DELAY2 timer
 // params: timer - int ENTRY_DELAY1 or ENTRY_DELAY2 or EXIT_DELAY_TIMER
-//		   oper  - int SET or GET
+//		   oper  - int SET, GET or FORCE
 //		   partition - int index in partitionDB
 // returns: ERR_OK for SET
 //			> 0 if timeout set by corresponding delay in partition definition expired, 0 if not
@@ -119,72 +170,7 @@ void processPartitionTimers(int prt) {
 		}
 	}
 }
-// 
-// TODO - try to combine all look-up functions
 //
-// look-up outp by name 
-// params:	char* name - name to look-up
-//			int* board, int* outp - pointers (placeholders) where to store the results
-// returns: ERR_WARNING if name is not found
-//			ERR_OK if found
-//
-//int outpLookup(char* name, int* outp) {
-//	//lprintf("outpLookup: looking for output (PGM) %s\n", name);
-//	for (int out = 0; out < MAX_ALARM_PGM; out++) {             // for each pgm
-//		if (!strcmp(name, pgmsDB[out].pgmName)) {
-//			//lprintf("outpLookup: output (PGM) %s found index %d\n", pgmsDB[out].pgmName out);
-//			*outp = out;
-//			return ERR_OK;
-//		}
-//	}
-//	ErrWrite(ERR_WARNING, "outpLookup: output (PGM) %s not found\n", name);
-//	return ERR_WARNING;										// zone is not found
-//
-//
-// look-up partiton by name
-// params:	char* name - name to look-up
-//			int* part - pointer (placeholder) where to store the result
-// returns: ERR_WARNING if name is not found
-//			ERR_OK if found
-//
-//int partLookup(char* name, int* part) {
-//	//lprintf("partLookup: looking for partition %s\n", name);
-//	for (int prt = 0; prt < MAX_PARTITION; prt++) {
-//        // for each partition
-//		if (!strcmp(name, partitionDB[prt].partitionName)) {
-//			//lprintf("partLookup: partition %s found\n", name);
-//			*part = prt;
-//			return ERR_OK;
-//		}
-//	}
-//	//ErrWrite(ERR_WARNING, "partLookup: partiton %s  not found\n", name);
-//	return ERR_WARNING;										
-//}
-////
-//
-// look-up zone by name 
-// params:	char* name - name to look-up
-//			int* board, int* zone - pointers (placeholders) where to store the results
-// returns: ERR_WARNING if name is not found
-//			ERR_OK if found
-//
-//int zoneLookup(char * name, int* zone) {
-//	//lprintf ("zoneLookup: looking for zone %s\n", name);
-//	for(int zn=0; zn < MAX_ALARM_ZONES; zn++) {             // for each board' zone
-//		if(!strcmp(name, zonesDB[zn].zoneName)) {
-//			//lprintf ("zoneLookup: zone found board %d index %d\n", brd, zn);
-//			*zone = zn;
-//			return ERR_OK;
-//		}
-//	}
-//	ErrWrite(ERR_WARNING, "zoneLookup: zone %s not found\n", name);
-//		return ERR_WARNING;										// zone is not found
-//}
-//
-// count not bypassed entry delay zones for given partition . Needed because in case of all entry delay zones are bypassed,
-// follow zones has to start by themself ENTRY_DELAY2 if followZone2entryDelay2 is true 
-// params: int partIdx - index in partitionDB
-// returns: count of NOT bypassed entry delay zones count
 int countNotBypassedEntryDelayZones(int prt) {
 int res=0;
 	for(int zn=0; zn < MAX_ALARM_ZONES; zn++) {  
@@ -214,6 +200,140 @@ int check4openUnbypassedZones(int prt) {
 	}
 	return res;
 }
+
+//
+// alarm-cmds.h
+
+//extern void bypassZone(byte zoneIdx, int requestor);
+//extern void clearBypass(byte zoneIdx, int bypassType);
+
+//
+// actions DISARM, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM
+//
+void trigerArm(void* param1, void* param2, void* param3) {
+	const int partID = *(int*)param1;
+	const int action = *(int*)param2;
+	// param3 is not used
+
+	if (!partitionDB[partID].valid)
+		return;
+	if (partID < 0 || partID >= MAX_PARTITION) {
+		ErrWrite(ERR_WARNING, "CMD parse: Invalid PARTITION ID %d", partID);
+		return;
+	}
+	// check first for valid params ranges and call
+	if (!((action == DISARM) || (action == REGULAR_ARM) || (action == STAY_ARM) || (action == FORCE_ARM) || (action == INSTANT_ARM))) {
+		ErrWrite(ERR_WARNING, "CMD parse: Invalid ARM action %d", action);
+		return;
+	}
+	//partitionRT[partID].newCmd = true;
+	partitionRT[partID].changed |= CHG_NEW_CMD;				// mark that action is needed
+	partitionRT[partID].targetArmStatus = action;			// set new target arm state
+	//if(action != DISARM_ALL)								// set new target arm state
+	//	partitionRT[partID].targetArmStatus = action;		// armed successfully
+	//else {													// DISARM ALL command
+	//	for (int i = 0; i < MAX_PARTITION; i++) {
+	//		partitionRT[partID].targetArmStatus = action;	
+	//	}
+	//}
+}
+//
+// action = ZONE_OPEN_CMD, ZONE_AMASK_CMD, ZONE_CLOSE_CMD, ZONE_TAMPER_CMD, ZONE_BYPASS_CMD
+//
+void modifyZn(void* param1, void* param2, void* param3) {
+	//byte newStat;
+	const int zn = *(int*)param1;								// index in zonesD
+	const int action = *(int*)param2;								// command - defined in enum ZONE_CMDS_t
+	const char* payldPtr = (const char*)param3;
+	if (payldPtr)
+		lprintf("modifyZn: WARNING - garbage found after modify zone command %s", payldPtr);
+	//lprintf("modifyZn: ZONE action %d\n", action);
+	//
+	if (!zonesDB[zn].zoneType)												// zoneType == 0 means disabled
+		return;
+	if (zn >= MAX_ALARM_ZONES) {
+		ErrWrite(ERR_WARNING, "modifyZn: Zone No %d out of range!\n", zn);
+		return;
+	}
+	// handle zone status change commands
+	if (action == ZONE_OPEN_CMD || action == ZONE_CLOSE_CMD || action == ZONE_TAMPER_CMD || action == ZONE_AMASK_CMD) {
+		// set result according to action selected 
+		switch (action) {
+		case ZONE_OPEN_CMD:
+			zonesRT[zn].zoneStat = ZONE_OPEN;
+			break;
+		case ZONE_CLOSE_CMD:
+			clearBypass(zn, ZONE_FORCED);										// if closed now it shall start acting as if it was not forced
+			zonesRT[zn].in_alarm = NO_ALARM;									// when zone close, alarm/trouble goes off clear zone alarm flag
+			zonesRT[zn].in_trouble = NO_TROUBLE;								// clear zone alarm/trouble flag
+			zonesRT[zn].ignorredTamper = false;									// clear zone ignorred tamper flag
+			zonesRT[zn].ignorredAmask = false;									// clear zone ignorred anti mask flag
+			zonesRT[zn].openEDSD1zone = zonesRT[zn].openEDSD2zone = false;		// clear open EDx/SDx zone in EDx interval
+			zonesRT[zn].zoneStat = ZONE_CLOSE;
+			break;
+		case ZONE_TAMPER_CMD:
+			zonesRT[zn].zoneStat = ZONE_TAMPER;
+			break;
+		case ZONE_AMASK_CMD:
+			zonesRT[zn].zoneStat = ZONE_AMASK;
+			break;
+		}
+		zonesRT[zn].changed |= ZONE_STATE_CHANGED;								// mark zone as changed
+		partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;		// and partition too
+	}
+	else if (action == ZONE_BYPASS_CMD || action == ZONE_UNBYPASS_CMD) {
+		switch (action) {
+		case ZONE_BYPASS_CMD:
+			// Do some checks if zone bypass is allowed and return if not
+			if (zonesDB[zn].zoneType & SPECIAL_ZONES) {
+				ErrWrite(ERR_WARNING, "Attempt to bypass special zone  (like 24H FIRE)  %s\n", zonesDB[zn].zoneName);
+				break;															// fire zones cannot be bypassed, forced, ...
+			}
+			if (!(zonesDB[zn].zoneBypassEn)) {									// allowed to bypass on user request?
+				ErrWrite(ERR_DEBUG, "Zone %s,  bypass disabled\n", zonesDB[zn].zoneName);
+				break;															// no, return. (publishZoneStatusChanges will deect that command is not executed)
+			}
+			bypassZone(zn, ZONE_BYPASSED);
+			//newZonesDataAvailable |= NEW_DATA_BIT;							// force alarm loop to execute		
+			break;
+		case ZONE_UNBYPASS_CMD:
+			clearBypass(zn, ZONE_BYPASSED);
+			break;
+		}
+		zonesRT[zn].changed |= ZONE_USR_BYPASS_CHANGED;							// mark that zone changed on user request
+		partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;		// and partition too
+	}
+	else {
+		ErrWrite(ERR_WARNING, "modifyZn: Invalid ZONE action %d\n", action);
+		return;
+	}
+}
+//
+//
+//
+void modifyPgm(void* param1, void* param2, void* param3) {
+	const int pgmIdx = *(int*)param1;
+	const int action = *(int*)param2;
+	lprintf("modifyPGM: PGM action %d\n", action);
+	if (!pgmsDB[pgmIdx].valid)
+		return;
+	if (!(action == PGM_ON || action == PGM_OFF || action == PGM_PULSE)) {
+		ErrWrite(ERR_WARNING, "modifyPGM: Invalid PGM action %d", action);
+		return;
+	}
+	// set result according to action selected 
+	//if (pgmsDB[brd][pgm].cValue == action)
+	//	return;														// nothing to do
+	ErrWrite(ERR_DEBUG, "modifyPGM: Setting PGM %s to %d\n", pgmsDB[pgmIdx].pgmName, action);
+	pgmsDB[pgmIdx].tValue = action;									// reflect the change
+	pgmsDB[pgmIdx].pgmFSM = TO_IMPLEMENT;							// mark there is new value to set
+	//pgmsDB[pgmIdx].sValue = PGM_UNDEFINED;						// mark that transaction is on-going
+	//pgmsDB[pgmIdx].cValue = PGM_UNDEFINED;						// mark that transaction is on-going
+	//newPGMsDataAvailable |= NEW_DATA_BIT << brd;					// note it for later	
+}
+//
+
+
 //
 // check arm restrictions
 // params: byte partIxd - partition number (ID) to be used as index in partitionDB
@@ -607,8 +727,8 @@ void alarmLoop() {
 		}
 		//
 		// publish and print results
-		printZonesSummary(prt);
-		doPublishing(prt);
+		//printZonesSummary(prt);
+		//doPublishing(prt);
 		// mark done with this partition
 		partitionRT[prt].changed = 0;													// mark as processed
 	}

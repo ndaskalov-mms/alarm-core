@@ -1,5 +1,39 @@
-#define MAX_FOLLOW_PART	8
-#define	SUBTOPIC_WILDCARD			"all"
+#pragma once
+//
+//
+#define	MAX_ALARM_ZONES			256
+#define MAX_ALARM_PGM			32				// 
+#define NAME_LEN				32
+#define MAX_KEYSW_CNT			32
+
+//#define PGM_STATES_LEN			1							// contains bitmap of PGM states (PGM1->bit 0, PGM2->bit1) 
+//#define SZONERES_LEN			(SLAVE_ZONES_CNT/2 + SLAVE_ZONES_CNT%2) // 
+//#define POLL_RES_PAYLD_LEN		SZONERES_LEN+PGM_STATES_LEN	// poll payload is 4bits per zone  + one byte for PGMs states
+//#define PGM_STATES_OFFSET		SZONERES_LEN				// PGMs states are stord in the last byte of the POLL payload                                          
+
+//#define MAX_MQTT_TOPIC			256
+//#define MAX_MQTT_PAYLOAD		32700
+
+#define SW_VERSION			100				// UPDATE ON EVERY CHANGE OF ZONEs, PGMs, etc
+//
+// !!! DON"T FORGET to #undef TEST in zonen.h
+//
+enum errorID {
+	ERR_INFO = 2,                             // just print if INFO is set
+	ERR_OK = 0,                           	// no error
+	ERR_CRITICAL = -1,                        // critical error occured, 
+	ERR_DEBUG = -2, 							// debug print, can be enabled/disable by #define DEBUG
+	ERR_WARNING = -3, 						// warning print  can be enabled/disable by #define WARNING
+	ERR_DB_INDEX_NOT_FND = -10,				// cannot find error in the database
+};
+//
+//
+#define UNKNOWN_TTL "unknown"
+//
+// ----------- alarm-defs.h -------------------
+//
+#define MAX_PARTITION			8
+#define MAX_FOLLOW_PART			8
 //
 // keys allowed in zone header in CSV config file
 //
@@ -148,6 +182,25 @@ enum CMD_EXEC_t {
 	TO_REPORT					= 3,
 };
 //
+enum PGM_CMDS_t {
+	PGM_OFF = 1,
+	PGM_ON = 2,
+	PGM_PULSE = 3,
+};
+//
+// zone commands definitions
+//
+enum ZONE_CMDS_t {
+	ZONE_BYPASS_CMD = 1,          // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
+	ZONE_UNBYPASS_CMD = 2,          // in zoneNewCmd
+	ZONE_CLOSE_CMD = 3,
+	ZONE_OPEN_CMD = 4,
+	ZONE_AMASK_CMD = 5,
+	ZONE_TAMPER_CMD = 6,
+	ZONE_ANAL_SET_CMD = 7,
+	ZONE_DIGITAL_SET_CMD = 8,
+};
+//
 // zone definitions
 //
 enum ZONE_DEFS_t {
@@ -177,10 +230,10 @@ enum ZONE_DEFS_t {
 #define ENTRY_DELAY2_ZONES		(FOLLOW | ENTRY_DELAY2 | STAY_DELAY2_ANTI_MASK)
 //
 // bit masks for zone states, self explanatory 
-#define ZONE_CLOSE				0                               // 0 
-#define ZONE_OPEN				0x1								// 0x1
-#define ZONE_AMASK				ZONE_ERROR_SHORT                // 0x4
-#define ZONE_TAMPER				ZONE_ERROR_OPEN                 // 0x8
+#define ZONE_CLOSE				0 
+#define ZONE_OPEN				0x1
+#define ZONE_AMASK				0x4
+#define ZONE_TAMPER				0x8
 #define ZONE_ERROR				(ZONE_AMASK|ZONE_TAMPER)        // 0xC
 //
 // BYPASS DEFINITIONS !!! MAKE SURE FITS WITH BYPASS DEFS TO 8 BITS
@@ -430,88 +483,107 @@ struct ALARM_PARTITION_STATS_t {
 	byte ignorredAmaskZonesCnt;		// count of ignorred zones  and anti-mask  
 	byte alarmZonesCnt;				// count of zones causing alarms
 };
+
+// -------------- copied from various files -------------
+
+#define ALARM_LOOP_INTERVAL		1000
+#define STATUS_REPORT_INTERVAL	30000
+#define	ALARM_PUBLISH_INTERVAL	500
+
+
+// ------------------------ this code is copied to alarmClass.h ------------------------
+	//// 
+	//// top level desctribing boards 
+	//struct ALARM_BRD_t {
+	//	byte valid;						// board is present if true
+	//	byte brdFail;					// true if last comm with board failed
+	//	unsigned long totalErrors;		// total errors in comm
+	//};
+	////
+	//// flags used in csv parsing. used to mark that global options and header lines are imported in order to import data lines properly
+	//unsigned long	csvParserFlags = 0;
+
+	//
+	// zoneDB - database with all zones (master&slaves) CONFIG info. 
+	// zonesRT = all run time zones data. Info from slaves are fetched via pul command over RS485
+	//struct ALARM_ZONE zonesDB[MAX_ALARM_ZONES];
+	//struct ALARM_ZONE_RT zonesRT[MAX_ALARM_ZONES];
+	////
+	//// MASTER PGMs organized as 1D array - MASTER_PGM_CNT followed by MAX_SLAVES * SLAVE_PGM_CNT
+	//struct ALARM_PGM pgmsDB[MAX_ALARM_PGM];
+	////
+	//// alarm keysw records structure to hold all alarm pgms related info     
+	//struct ALARM_KEYSW keyswDB[MAX_KEYSW_CNT];
+	////
+	//// alarm global options storage
+	//struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
+	//
+	//// alarm partition options storage
+	//struct ALARM_PARTITION_t					partitionDB[MAX_PARTITION];		// Partitions CONFIG data
+	//struct ALARM_PARTITION_RUN_TIME_t			partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
+	//struct ALARM_PARTITION_STATS_t				partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
+	//
+	// TODO - use it
+	//struct ALARM_BRD_t brdsDB[MAX_SLAVES + 1]; // for each board, includding master
+	// 
+	// 
+// ------------------------ end this code is copied to alarmClass.h ------------------------
 // 
-// top level desctribing boards 
-struct ALARM_BRD_t {
-	byte valid;						// board is present if true
-	byte brdFail;					// true if last comm with board failed
-	unsigned long totalErrors;		// total errors in comm
-};
+// ------------------------ shall not be used  --------------------------
+//// struct describing parameters for array representing specific alarm domain like zones, partitions, pgms, etc
+//struct dbProps_t {
+//	const char  title[NAME_LEN];			// string to identify for what are the data of CSV line (needed by CSV parser), not used
+//	const char*	dbBaseAddr;					// base address of the DB (zonesDB, pgmsDB, keyswDB,..)
+//	int			elmCnt;						// number of entries (elements) in DB
+//	int			elmLen;						// length of one element in bytes (stride)
+//	int			nameOffs;					// offstet of the name of entry (zone name, part name, ...)
+//	int			validOffs;					// offstet of the valid flag of entry. !0 means valid
+//};
+////
+//// indexes in dbPtrArr[] to find key parameters for the different alarm entities (zones, part, pgms,.. )
+//enum ALARM_DOMAINS_t {
+//	RESERVED	= -1,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
+//	ZONES		= 0,
+//	PARTITIONS	= 1,
+//	PGMS		= 2,
+//	KEYSW		= 3,
+//	GLOBAL_OPT	= 4,
+//};
+////
+//// array containing parameters for data(bases) for all alarm domains. used to get runtime parameters of the domains
+////
+//struct dbProps_t dbPtrArr[] = {  //{NULL,				NULL,						0,				0,						0													,0										 	},
+//								{CSV_ZONE_TTL,		(const char*)&zonesDB,			MAX_ALARM_ZONES,sizeof(zonesDB[0]),		offsetof(struct ALARM_ZONE, zoneName)				,offsetof(struct ALARM_ZONE, zoneType)	 	},
+//								{CSV_PRT_TTL,		(const char*)&partitionDB,		MAX_PARTITION,	sizeof(partitionDB[0]),	offsetof(struct ALARM_PARTITION_t, partitionName)	,offsetof(struct ALARM_PARTITION_t, valid)  },
+//								{CSV_PGM_TTL,		(const char*)&pgmsDB,			MAX_ALARM_PGM,	sizeof(pgmsDB[0]),		offsetof(struct ALARM_PGM, pgmName)					,offsetof(struct ALARM_PGM, valid)		 	},
+//								{CSV_KEYSW_TTL,		(const char*)&keyswDB,			MAX_KEYSW_CNT,	sizeof(keyswDB[0]),		offsetof(struct ALARM_KEYSW,keyswName)				,offsetof(struct ALARM_KEYSW, valid)		},
+//								{CSV_GOPT_TTL,		(const char*)&alarmGlobalOpts,	1,				sizeof(alarmGlobalOpts),0													,0										 	},
+//};
+//#define DB_PTR_ARR_CNT (sizeof(dbPtrArr)/sizeof(struct dbProps_t))
 //
-// flags used in csv parsing. used to mark that global options and header lines are imported in order to import data lines properly
-unsigned long	csvParserFlags = 0;
-//
-// zoneDB - database with all zones (master&slaves) CONFIG info. 
-// zonesDB is organized as all master bord zones followed by MAX_SLAVES*SLAVE_ALARM_ZONES_CNT zones descriptions
-// zonesRT = all run time zones data. Info from slaves are fetched via pul command over RS485
-struct ALARM_ZONE zonesDB[MAX_ALARM_ZONES];
-struct ALARM_ZONE_RT zonesRT[MAX_ALARM_ZONES];
-//
-// MASTER PGMs organized as 1D array - MASTER_PGM_CNT followed by MAX_SLAVES * SLAVE_PGM_CNT
-struct ALARM_PGM pgmsDB[MAX_ALARM_PGM];
-//
-// alarm keysw records structure to hold all alarm pgms related info     
-struct ALARM_KEYSW keyswDB[MAX_KEYSW_CNT];
-//
-// alarm global options storage
-struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
-//
-// alarm partition options storage
-struct ALARM_PARTITION_t					partitionDB[MAX_PARTITION];		// Partitions CONFIG data
-struct ALARM_PARTITION_RUN_TIME_t			partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
-struct ALARM_PARTITION_STATS_t				partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
-//
-// TODO - use it
-struct ALARM_BRD_t brdsDB[MAX_SLAVES + 1]; // for each board, includding master
-//
-// struct describing parameters for array representing specific alarm domain like zones, partitions, pgms, etc
-struct dbProps_t {
-	const char  title[NAME_LEN];			// string to identify for what are the data of CSV line (needed by CSV parser), not used
-	const char*	dbBaseAddr;					// base address of the DB (zonesDB, pgmsDB, keyswDB,..)
-	int			elmCnt;						// number of entries (elements) in DB
-	int			elmLen;						// length of one element in bytes (stride)
-	int			nameOffs;					// offstet of the name of entry (zone name, part name, ...)
-	int			validOffs;					// offstet of the valid flag of entry. !0 means valid
-};
-//
-// indexes in dbPtrArr[] to find key parameters for the different alarm entities (zones, part, pgms,.. )
-enum ALARM_DOMAINS_t {
-	RESERVED	= -1,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
-	ZONES		= 0,
-	PARTITIONS	= 1,
-	PGMS		= 2,
-	KEYSW		= 3,
-	GLOBAL_OPT	= 4,
-};
-//
-// array containing parameters for data(bases) for all alarm domains. used to get runtime parameters of the domains
-//
-struct dbProps_t dbPtrArr[] = {  //{NULL,				NULL,						0,				0,						0													,0										 	},
-								{CSV_ZONE_TTL,		(const char*)&zonesDB,			MAX_ALARM_ZONES,sizeof(zonesDB[0]),		offsetof(struct ALARM_ZONE, zoneName)				,offsetof(struct ALARM_ZONE, zoneType)	 	},
-								{CSV_PRT_TTL,		(const char*)&partitionDB,		MAX_PARTITION,	sizeof(partitionDB[0]),	offsetof(struct ALARM_PARTITION_t, partitionName)	,offsetof(struct ALARM_PARTITION_t, valid)  },
-								{CSV_PGM_TTL,		(const char*)&pgmsDB,			MAX_ALARM_PGM,	sizeof(pgmsDB[0]),		offsetof(struct ALARM_PGM, pgmName)					,offsetof(struct ALARM_PGM, valid)		 	},
-								{CSV_KEYSW_TTL,		(const char*)&keyswDB,			MAX_KEYSW_CNT,	sizeof(keyswDB[0]),		offsetof(struct ALARM_KEYSW,keyswName)				,offsetof(struct ALARM_KEYSW, valid)		},
-								{CSV_GOPT_TTL,		(const char*)&alarmGlobalOpts,	1,				sizeof(alarmGlobalOpts),0													,0										 	},
-};
-#define DB_PTR_ARR_CNT (sizeof(dbPtrArr)/sizeof(struct dbProps_t))
-//
-// SW version
-uint16_t	swVersion = SW_VERSION;							// software version
-//
-// tmp storage 
-union maxTmp_t {
-	struct ALARM_ZONE           tmpZn;
-	struct ALARM_PGM            tmpPgm;
-	struct ALARM_GLOBAL_OPTS_t  tmpGopts;
-	struct ALARM_PARTITION_t    tmpPart;
-} maxTmp;
-//
-// array of zone states as integer:string couples. used mainly for printing 
-struct  zoneStates_t zoneStatesTitles[] = {
-	{ZONE_BYPASSED,  ZN_BYPASSED_TTL},		{ZONE_FORCED,  ZN_FORCED_TTL},
-	{ZONE_TAMPER,    ZN_TAMPER_TTL	},		{ZONE_CLOSE,   ZN_CLOSE_TTL	},
-	{ZONE_OPEN,      ZN_OPEN_TTL	},		{ZONE_AMASK,   ZN_AMASK_TTL	},
-	{ZONE_ERROR,	 ZN_ERROR_TTL	},
-};
-#define ZONE_STATES_TITLE_CNT (sizeof(zoneStatesTitles)/sizeof(struct zoneStates_t))
+// // tmp storage used in parserHelpers
+//union maxTmp_t {
+//	struct ALARM_ZONE           tmpZn;
+//	struct ALARM_PGM            tmpPgm;
+//	struct ALARM_GLOBAL_OPTS_t  tmpGopts;
+//	struct ALARM_PARTITION_t    tmpPart;
+//} maxTmp;
+////
+//// array of zone states as integer:string couples. used mainly for printing 
+//struct  zoneStates_t zoneStatesTitles[] = {
+//	{ZONE_BYPASSED,  ZN_BYPASSED_TTL},		{ZONE_FORCED,  ZN_FORCED_TTL},
+//	{ZONE_TAMPER,    ZN_TAMPER_TTL	},		{ZONE_CLOSE,   ZN_CLOSE_TTL	},
+//	{ZONE_OPEN,      ZN_OPEN_TTL	},		{ZONE_AMASK,   ZN_AMASK_TTL	},
+//	{ZONE_ERROR,	 ZN_ERROR_TTL	},
+//};
+//#define ZONE_STATES_TITLE_CNT (sizeof(zoneStatesTitles)/sizeof(struct zoneStates_t))
+// 
+// char 		token[256];		//used in parser to store tokenized string
+// ------------------------ end shall not be used  --------------------------
+
+
+
+
+
+
 
