@@ -67,18 +67,37 @@ Alarm myAlarm;
 
 int main(int argc, char* argv[])
 {
-	
-	printf("Alarm test program\n");
-	printf("Press any key to exit\n");
+    printf("Alarm test program\n");
+    printf("Press any key to exit\n");
 
+    // Create test data for a new zone
+    ALARM_ZONE newZone = {};
+    strncpy(newZone.zoneName, "Test Zone 1", NAME_LEN - 1); // Set zone name
+    newZone.boardID = 1;                                   // Example board ID
+    newZone.zoneID = 1;                                    // Example zone ID
+    newZone.zoneType = INSTANT;                            // Set zone type
+    newZone.zonePartition = PARTITION1;                   // Assign to partition 1
+    newZone.zoneAlarmType = STEADY_ALARM;                  // Set alarm type
+    newZone.valid = 1;                                     // Mark as unused initially
 
-	while (true) {
-		if (_kbhit()) {
-			break;
-		}
+    // Add the zone to the alarm system
+    int index = myAlarm.addZone(newZone);
+    if (index != -1) {
+        printf("Zone added at index %d\n", index);
+    }
+    else {
+        printf("Failed to add zone. No unused entries available.\n");
+    }
 
-	}
-	return 0;
+    myAlarm.getZoneCount();
+    myAlarm.alarm_loop();
+
+    while (true) {
+        if (_kbhit()) {
+            break;
+        }
+    }
+    return 0;
 }
 
 

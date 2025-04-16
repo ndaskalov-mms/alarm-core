@@ -20,8 +20,9 @@ public:
 
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
-    
+    //void alarm_loop(void);
     // Zone-related methods
+    int addZone(const ALARM_ZONE& newZone);
     int getZoneCount() const;
     bool isZoneOpen(int zoneIndex) const;
     bool isZoneBypassed(int zoneIndex) const;
@@ -89,6 +90,7 @@ public:
     bool clearBypassZone(int zoneIndex);
     bool setPgm(int pgmIndex, int value);
 
+
 private:
     // Private static arrays for alarm data
     // zoneDB - database with all zones CONFIG info. 
@@ -102,9 +104,9 @@ private:
     // alarm global options storage
     struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
     // alarm partition options storage
-    struct ALARM_PARTITION_t					partitionDB[MAX_PARTITION];		// Partitions CONFIG data
-    struct ALARM_PARTITION_RUN_TIME_t			partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
-    struct ALARM_PARTITION_STATS_t				partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
+    struct ALARM_PARTITION_t			partitionDB[MAX_PARTITION];		// Partitions CONFIG data
+    struct ALARM_PARTITION_RUN_TIME_t	partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
+    struct ALARM_PARTITION_STATS_t		partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
     // SW version
     uint16_t	swVersion = SW_VERSION;							// software version
    
@@ -182,6 +184,18 @@ void Alarm::initializePartitions() {
         partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
     }
 }
+//
+int Alarm::addZone(const ALARM_ZONE& newZone) {
+    for (int i = 0; i < MAX_ALARM_ZONES; ++i) {
+        if (zonesDB[i].valid == 0) { // Check if the entry is unused
+            zonesDB[i] = newZone;   // Copy the content of the parameter
+            zonesDB[i].valid = 1;   // Mark the entry as used
+            return i;               // Return the index of the entry
+        }
+    }
+    return -1; // Return -1 if no unused entry is found
+}
+//
  void Alarm::synchPGMstates() {
      ErrWrite(ERR_WARNING, "synchPGMstates() - NOT IMPLEMENTED\n");
 }

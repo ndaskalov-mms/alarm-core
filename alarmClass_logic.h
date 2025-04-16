@@ -638,11 +638,11 @@ int processOpenZone(int zn) {
 	}
 	return alarm;
 }
-
+public:
 //
 // alarmLoop() - implement all alarm business
 //
-void alarmLoop() {
+void alarm_loop() {
 	//
 	int prt; int alarm = NO_ALARM; int trouble = NO_TROUBLE;
 	// 
@@ -736,3 +736,4 @@ void alarmLoop() {
 	processAlarm(alarm);
 	printParttionsSummary();
 }
+private:

@@ -397,7 +397,7 @@ struct tagAccess zoneTags[] = {
 {ZN_TMPR_GLB_TTL,       -1, offsetof(struct ALARM_ZONE, zoneTamperFpanel), sizeof(((struct ALARM_ZONE*)0)->zoneTamperFpanel),&pokeBool     , &peekBool      , strlen(ZN_TMPR_GLB_TTL)  , PRTCLASS_LINE_ERR},
 {ZN_TMPR_OPT_TTL,       -1, offsetof(struct ALARM_ZONE, zoneTamperOpts),   sizeof(((struct ALARM_ZONE*)0)->zoneTamperOpts),  &pokeLineErr  , &peekLineErr   , strlen(ZN_TMPR_OPT_TTL)  , PRTCLASS_LINE_ERR},
 {ZN_AMSK_GLB_TTL,       -1, offsetof(struct ALARM_ZONE, zoneAmaskFpanel),  sizeof(((struct ALARM_ZONE*)0)->zoneAmaskFpanel), &pokeBool     , &peekBool      , strlen(ZN_AMSK_GLB_TTL)  , PRTCLASS_LINE_ERR},
-{ZN_AMSK_OPT_TTL,       -1, offsetof(struct ALARM_ZONE, zoneAmaskOpts),    sizeof(((struct ALARM_ZONE*)0)->zoneAmaskOpts),   &pokeLineErr   , &peekLineErr  , strlen(ZN_AMSK_OPT_TTL)   , PRTCLASS_LINE_ERR},
+{ZN_AMSK_OPT_TTL,       -1, offsetof(struct ALARM_ZONE, zoneAmaskOpts),    sizeof(((struct ALARM_ZONE*)0)->zoneAmaskOpts),   &pokeLineErr  , &peekLineErr  , strlen(ZN_AMSK_OPT_TTL)   , PRTCLASS_LINE_ERR},
 }; 
 #define ZONE_TAGS_CNT (sizeof(zoneTags)/sizeof(struct tagAccess))
 
@@ -462,17 +462,17 @@ struct tagAccess pgmTags[] = {
 #define PGM_TAGS_CNT (sizeof(pgmTags)/sizeof(struct tagAccess))
 
 
-/**
- * @brief Flags used to mark what was imported so far from CSV file. Must be power of 2.
-*/
-enum parseFlags_t {
-    CLEAR_FLAGS     = 0,
-    HAVE_GOPT_HDR   = 1,
-    HAVE_ZN_HDR     = 2,
-    HAVE_PGM_HDR    = 4,
-    HAVE_PRT_HDR    = 8,
-    HAVE_G_OPT      = 16,
-};
+///**
+// * @brief Flags used to mark what was imported so far from CSV file. Must be power of 2.
+//*/
+//enum parseFlags_t {
+//    CLEAR_FLAGS     = 0,
+//    HAVE_GOPT_HDR   = 1,
+//    HAVE_ZN_HDR     = 2,
+//    HAVE_PGM_HDR    = 4,
+//    HAVE_PRT_HDR    = 8,
+//    HAVE_G_OPT      = 16,
+//};
 
 ///**
 // * @brief Contains all data needed to process line header

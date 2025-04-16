@@ -183,22 +183,22 @@ enum CMD_EXEC_t {
 };
 //
 enum PGM_CMDS_t {
-	PGM_OFF = 1,
-	PGM_ON = 2,
-	PGM_PULSE = 3,
+	PGM_OFF						= 1,
+	PGM_ON						= 2,
+	PGM_PULSE					= 3,
 };
 //
 // zone commands definitions
 //
 enum ZONE_CMDS_t {
-	ZONE_BYPASS_CMD = 1,          // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
-	ZONE_UNBYPASS_CMD = 2,          // in zoneNewCmd
-	ZONE_CLOSE_CMD = 3,
-	ZONE_OPEN_CMD = 4,
-	ZONE_AMASK_CMD = 5,
-	ZONE_TAMPER_CMD = 6,
-	ZONE_ANAL_SET_CMD = 7,
-	ZONE_DIGITAL_SET_CMD = 8,
+	ZONE_BYPASS_CMD				= 1,    // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
+	ZONE_UNBYPASS_CMD			= 2,    // in zoneNewCmd TODO - check if this is correct
+	ZONE_CLOSE_CMD				= 3,
+	ZONE_OPEN_CMD				= 4,
+	ZONE_AMASK_CMD				= 5,
+	ZONE_TAMPER_CMD				= 6,
+	ZONE_ANAL_SET_CMD			= 7,
+	ZONE_DIGITAL_SET_CMD		= 8,
 };
 //
 // zone definitions
@@ -351,6 +351,7 @@ enum entryDelay_t {
 // alarm zones structure to hold all alarm zones related info
 //
 struct ALARM_ZONE {
+	uint16_t  valid;				// TODO - why uint16_t?
 	char	zoneName[NAME_LEN];		// user friendly name
 	byte	boardID;
 	byte	zoneID;
@@ -383,7 +384,7 @@ struct ALARM_ZONE_RT {				// zone's run time staff
 //
 // alarm pgms records structure to hold all alarm pgms related info
 struct ALARM_PGM {
-	uint16_t  valid;
+	uint16_t  valid;				// TODO - why uint16_t?
 	byte	boardID;
 	byte	pgmID;					// 0 based index, for MASTER is 0-7, for SLAVE is 0 or 1
 	byte    pgmFSM;					// holds state number of command implementation state machine see enum CMD_EXEC_t
@@ -396,7 +397,7 @@ struct ALARM_PGM {
 //
 // keyswitch related staff
 struct ALARM_KEYSW {
-	uint16_t valid;
+	uint16_t valid;					// TODO - why uint16_t?	
 	byte  partition;				// Keyswitch can be assigned to one partition only. If == NO_PARTITION (0) the keyswitch is not defined/valid
 	byte  type;						// disabled, momentary, maintained,  generate utility key on open/close, .... see enum  KEYSW_OPTS_t 
 	byte  action;					// keyswitch action definition - see enum  KEYSW_ACTS_t 
@@ -431,7 +432,7 @@ struct ALARM_GLOBAL_OPTS_t {		// TODO - add SW version
 // alarm partition 
 struct ALARM_PARTITION_t {
 	// configuration data
-	uint16_t valid;
+	uint16_t valid;					// partition is valid if true
 	byte partIdx;					// partition index (barely used)
 	byte forceOnRegularArm;			// allways use force arm (bypass open zones) when regular arming
 	byte forceOnStayArm;			// allways use force arm (bypass open zones) when stay arming
