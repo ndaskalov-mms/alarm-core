@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 extern unsigned long millis(void);
+
 //
 enum timeoutOper {
 	SET = 1,
@@ -27,7 +28,7 @@ struct TIMER timerDB[] = { {ALARM_LOOP_TIMER, ALARM_LOOP_INTERVAL, 0},
 };
 
 int findTimer(byte timer) {
-	//ErrWrite(ERR_DEBUG, "Looking for record for timer ID   %d \n", timer);
+	//Alarm::ErrWrite(ERR_DEBUG, "Looking for record for timer ID   %d \n", timer);
 	for (int i = 0; i < sizeof(timerDB) / sizeof(struct TIMER); i++) {
 		//printf("Looking at index  %d out of  %d:\n", i, sizeof(cmdDB)/sizeof(struct COMMAND)-1);
 		if (timerDB[i].timerID == timer) {
@@ -35,7 +36,7 @@ int findTimer(byte timer) {
 			return  i;
 		}
 	}
-	ErrWrite(ERR_DEBUG, "Timer not found!!!!!!!\n");
+	//ErrWrite(ERR_DEBUG, "Timer not found!!!!!!!\n");
 	return ERR_DB_INDEX_NOT_FND;
 }
 // 
@@ -46,7 +47,7 @@ bool timeoutOps(int oper, int whichOne) {
 	int index;
 	// find timer index first
 	if ((index = findTimer(whichOne)) < 0) {        // timer not found
-		ErrWrite(ERR_CRITICAL, "Timer %d NOT FOUND\n", whichOne);
+		//Alarm::ErrWrite(ERR_CRITICAL, "Timer %d NOT FOUND\n", whichOne);
 		return false;						        // TODO - report error
 	}
 	if (oper == SET) {                              // record the current time in milliseconds

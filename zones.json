@@ -1,0 +1,21 @@
+{
+    "valid": 1,
+    "zoneName": "Front Door",
+    "boardID": 1,
+    "zoneID": 2,
+    "zoneType": 3,
+    "zonePartition": 1,
+    "zoneAlarmType": 2,
+    "zoneShdwnEn": 1,
+    "zoneBypassEn": 1,
+    "zoneStayZone": 0,
+    "zoneForceEn": 1,
+    "zoneIntelizone": 0,
+    "delayTrm": 0,
+    "zoneTamperFpanel": 1,
+    "zoneTamperOpts": 2,
+    "zoneAmaskFpanel": 0,
+    "zoneAmaskOpts": 1
+}
+
+

@@ -137,7 +137,11 @@
     <ClInclude Include="AlarmClassTemplate.h" />
     <ClInclude Include="alarmClassHelpers.h" />
     <ClInclude Include="alarmClass_logic.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="timers.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="alarm-config.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

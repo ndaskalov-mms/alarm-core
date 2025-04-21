@@ -16,8 +16,7 @@
 
 #define SW_VERSION			100				// UPDATE ON EVERY CHANGE OF ZONEs, PGMs, etc
 //
-// !!! DON"T FORGET to #undef TEST in zonen.h
-//
+// --------------- error codes -----------------//
 enum errorID {
 	ERR_INFO = 2,                             // just print if INFO is set
 	ERR_OK = 0,                           	// no error

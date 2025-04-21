@@ -181,7 +181,7 @@ byte* peekBool(byte* basePtr, int offset, int len) {
 int pokeByte(byte* basePtr, int offset, int len, const char* token) {
     unsigned res  = (unsigned int)atoi(token);
     if (res > 255) {
-        ErrWrite(ERR_WARNING, "Byte value larger than 255. Trunkated");
+        // TODO (ERR_WARNING, "Byte value larger than 255. Truncated");
         res = 255;
     }
     basePtr[offset] = res;

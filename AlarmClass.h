@@ -2,7 +2,7 @@
 #define ALARM_H
 
 #include <functional>
-extern int ErrWrite(int err_code, const char* what, ...);
+//extern int ErrWrite(int err_code, const char* what, ...);
 
 typedef unsigned char byte;
 #define lprintf			printf
@@ -10,14 +10,14 @@ typedef unsigned char byte;
 #include "alarmClass-defs.h"
 #include "timers.h"
 
-
+typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 
 class Alarm {
 public:
     // Constructor and destructor
     Alarm();
     ~Alarm();
-
+    void setDebugCallback(DebugCallbackFunc callback);
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
     //void alarm_loop(void);
@@ -40,33 +40,21 @@ public:
     int getPgmCount() const;
     int getPgmValue(int pgmIndex) const;
     const char* getPgmName(int pgmIndex) const;
-    
+
+
     // Global options methods
     bool isRestrictionActive(int restrictionType) const;
     
     // System methods
     void updateAlarmState();
     void processTimers();
-
- //   // defined in parserClassHelpers.h
- //   int     pokeString(byte* basePtr, int offset, int len, const char* token);
- //   byte*   peekString(byte* basePtr, int offset, int len);
- //   int     pokeBool(byte* basePtr, int offset, int len, const char* token);
- //   byte*   peekBool(byte* basePtr, int offset, int len);
- //   int     pokeByte(byte* basePtr, int offset, int len, const char* token);
- //   byte*   peekByte(byte* basePtr, int offset, int len);
- //   byte*   peekPrtnNo(byte* basePtr, int offset, int len);
- //   int     pokePrtNo(byte* basePtr, int offset, int len, const char* token);
- //   byte*   peekLineErr(byte* basePtr, int offset, int len);
- //   int     pokeLineErr(byte* basePtr, int offset, int len, const char* token);
- //   byte*   peekZoneType(byte* basePtr, int offset, int len);
- //   int     pokeZoneType(byte* basePtr, int offset, int len, const char* token);
- //   int     pokeAlarmType(byte* basePtr, int offset, int len, const char* token);
-	//byte*   peekAlarmType(byte* basePtr, int offset, int len);
-    
+    // 
+    // printing methods
     // defined in alarmClassHelpers.h
+    //void setDebugCallback(DebugCallbackFunc callback);
+    int ErrWrite(int err_code, const char* what, ...);
+    static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action);
-    void    printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     void    printConfigHeader(struct tagAccess targetKeys[], int numEntries);
     void    printAlarmPartCfg(void);
     void    printAlarmZones(int startZn, int endZn);
@@ -109,7 +97,9 @@ private:
     struct ALARM_PARTITION_STATS_t		partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
     // SW version
     uint16_t	swVersion = SW_VERSION;							// software version
-   
+    // Global callback pointer (initialized to NULL)
+    DebugCallbackFunc debugCallback = NULL;
+
     // Private helper methods
 #include "alarmClass_logic.h"
 
@@ -135,9 +125,20 @@ private:
     void checkExitDelayTimer(int partitionIndex);
     void resetPartitionTimers(int partitionIndex);
 };  // end of class Alarm
+
 //
-#include "parserClassHelpers.h"
+//#include "parserClassHelpers.h"
 #include "alarmClassHelpers.h"
+
+// Define a type for our debug callback function
+
+
+
+
+// Function to set the debug callback
+void Alarm::setDebugCallback(DebugCallbackFunc callback) {
+    debugCallback = callback;
+}
 // 
 // Constructor
 Alarm::Alarm() {
