@@ -22,6 +22,10 @@
 //char cmdDelim[]     = " ";          // used for console commands, to be removed
 //char skipField[]    = KEY_NOT_APPLICABLE;
 //
+
+extern char token[256];
+extern char prnBuf[1024];
+
 #define CSV_COMMENT_CHAR '#'
 //
 struct str2val{
