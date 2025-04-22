@@ -137,6 +137,7 @@
     <ClInclude Include="AlarmClassTemplate.h" />
     <ClInclude Include="alarmClassHelpers.h" />
     <ClInclude Include="alarmClass_logic.h" />
+    <ClInclude Include="debug.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="parseJSON.h" />
     <ClInclude Include="timers.h" />

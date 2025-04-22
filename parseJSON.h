@@ -6,12 +6,17 @@
 #include "json.hpp"
 #include "AlarmClass.h"
 #include "parserClassHelpers.h"
+#include "debug.h"
 
 // Function to extract zone fields from JSON using the zoneTags structure
 int extractZoneFields(const nlohmann::json& zoneJson, ALARM_ZONE& zone) {
     // Initialize zone with zeros
     std::memset(&zone, 0, sizeof(ALARM_ZONE));
     zone.valid = true; // Set valid to true by default
+
+    // Use a byte array to track which tags were found in the JSON
+    byte tagFound[ZONE_TAGS_CNT] = { 0 };
+    int missingTagCount = 0;
 
     // Go through each tag in zoneTags array
     for (size_t i = 0; i < ZONE_TAGS_CNT; i++) {
@@ -21,6 +26,8 @@ int extractZoneFields(const nlohmann::json& zoneJson, ALARM_ZONE& zone) {
 
         // Check if the tag exists in JSON
         if (zoneJson.contains(tagName)) {
+            tagFound[i] = 1;  // Mark this tag as found
+
             // Get the patch callback function for this tag
             auto patchCallback = zoneTags[i].patchCallBack;
 
@@ -45,26 +52,52 @@ int extractZoneFields(const nlohmann::json& zoneJson, ALARM_ZONE& zone) {
 
                 // Invoke the patchCallback and check its return value
                 if (!patchCallback(targetAddress, 0, length, valueStr.c_str())) {
-                    std::cerr << "Error: Failed to patch field " << tagName << " with value " << valueStr << std::endl;
+                    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to patch field %s with value %s\n",
+                        tagName, valueStr.c_str());
                     zone.valid = false; // Mark zone as invalid
                     return 0; // Indicate failure
                 }
             }
             catch (const std::exception& e) {
-                std::cerr << "Error extracting field " << tagName << ": " << e.what() << std::endl;
+                GlobalDebugLogger(LOG_ERR_CRITICAL, "Error extracting field %s: %s\n",
+                    tagName, e.what());
                 zone.valid = false; // Mark zone as invalid
                 return 0; // Indicate failure
             }
         }
+        else {
+            // Tag not found in JSON
+            missingTagCount++;
+        }
     }
+
+    // Print the zone configuration regardless of warnings
     Alarm::printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zone, PRTCLASS_ALL);
+
+    // Issue warnings for missing tags
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "Zone '%s' (ID: %d) is missing %d tag(s):\n",
+            zone.zoneName, static_cast<int>(zone.zoneID), missingTagCount);
+
+        for (size_t i = 0; i < ZONE_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", zoneTags[i].keyStr);
+            }
+        }
+    }
+
     return 1; // Indicate success
 }
+
 
 // Function to extract global options fields from JSON
 int extractGlobalOptionsFields(const nlohmann::json& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions) {
     // Initialize global options with zeros
     std::memset(&globalOptions, 0, sizeof(ALARM_GLOBAL_OPTS_t));
+
+    // Use a byte array to track which tags were found in the JSON
+    byte tagFound[GLOBAL_OPTIONS_TAGS_CNT] = { 0 };
+    int missingTagCount = 0;
 
     // Go through each tag in globalOptionsTags array
     for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; i++) {
@@ -74,6 +107,8 @@ int extractGlobalOptionsFields(const nlohmann::json& optionsJson, ALARM_GLOBAL_O
 
         // Check if the tag exists in JSON
         if (optionsJson.contains(tagName)) {
+            tagFound[i] = 1;  // Mark this tag as found
+
             // Get the patch callback function for this tag
             auto patchCallback = gOptsTags[i].patchCallBack;
 
@@ -98,13 +133,30 @@ int extractGlobalOptionsFields(const nlohmann::json& optionsJson, ALARM_GLOBAL_O
 
                 // Invoke the patchCallback and check its return value
                 if (!patchCallback(targetAddress, 0, length, valueStr.c_str())) {
-                    std::cerr << "Error: Failed to patch field " << tagName << " with value " << valueStr << std::endl;
+                    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to patch field %s with value %s\n",
+                        tagName, valueStr.c_str());
                     return 0; // Indicate failure
                 }
             }
             catch (const std::exception& e) {
-                std::cerr << "Error extracting field " << tagName << ": " << e.what() << std::endl;
+                GlobalDebugLogger(LOG_ERR_CRITICAL, "Error extracting field %s: %s\n",
+                    tagName, e.what());
                 return 0; // Indicate failure
+            }
+        }
+        else {
+            // Tag not found in JSON
+            missingTagCount++;
+        }
+    }
+
+    // Issue warnings for missing tags
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "Global options is missing %d tag(s):\n", missingTagCount);
+
+        for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", gOptsTags[i].keyStr);
             }
         }
     }
@@ -112,11 +164,16 @@ int extractGlobalOptionsFields(const nlohmann::json& optionsJson, ALARM_GLOBAL_O
     return 1; // Indicate success
 }
 
+
 // Function to extract partition fields from JSON
 int extractPartitionFields(const nlohmann::json& partitionJson, ALARM_PARTITION_t& partition) {
     // Initialize partition with zeros
     std::memset(&partition, 0, sizeof(ALARM_PARTITION_t));
     partition.valid = true; // Set valid to true by default
+
+    // Use a byte array to track which tags were found in the JSON
+    byte tagFound[PARTITION_TAGS_CNT] = { 0 };
+    int missingTagCount = 0;
 
     // Go through each tag in partitionTags array
     for (size_t i = 0; i < PARTITION_TAGS_CNT; i++) {
@@ -126,6 +183,8 @@ int extractPartitionFields(const nlohmann::json& partitionJson, ALARM_PARTITION_
 
         // Check if the tag exists in JSON
         if (partitionJson.contains(tagName)) {
+            tagFound[i] = 1;  // Mark this tag as found
+
             // Get the patch callback function for this tag
             auto patchCallback = partitionTags[i].patchCallBack;
 
@@ -150,15 +209,36 @@ int extractPartitionFields(const nlohmann::json& partitionJson, ALARM_PARTITION_
 
                 // Invoke the patchCallback and check its return value
                 if (!patchCallback(targetAddress, 0, length, valueStr.c_str())) {
-                    std::cerr << "Error: Failed to patch field " << tagName << " with value " << valueStr << std::endl;
+                    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to patch field %s with value %s\n",
+                        tagName, valueStr.c_str());
                     partition.valid = false; // Mark partition as invalid
                     return 0; // Indicate failure
                 }
             }
             catch (const std::exception& e) {
-                std::cerr << "Error extracting field " << tagName << ": " << e.what() << std::endl;
+                GlobalDebugLogger(LOG_ERR_CRITICAL, "Error extracting field %s: %s\n",
+                    tagName, e.what());
                 partition.valid = false; // Mark partition as invalid
                 return 0; // Indicate failure
+            }
+        }
+        else {
+            // Tag not found in JSON
+            missingTagCount++;
+        }
+    }
+
+    // Print the partition configuration
+    Alarm::printConfigData(partitionTags, PARTITION_TAGS_CNT, (byte*)&partition, PRTCLASS_ALL);
+
+    // Issue warnings for missing tags
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "Partition '%s' (ID: %d) is missing %d tag(s):\n",
+            partition.partitionName, static_cast<int>(partition.partIdx), missingTagCount);
+
+        for (size_t i = 0; i < PARTITION_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", partitionTags[i].keyStr);
             }
         }
     }
@@ -166,12 +246,13 @@ int extractPartitionFields(const nlohmann::json& partitionJson, ALARM_PARTITION_
     return 1; // Indicate success
 }
 
+
 // Function to parse JSON file and extract data into alarm system structures
 bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     // Open the JSON file
     std::ifstream inputFile(filename);
     if (!inputFile.is_open()) {
-        std::cerr << "Error: Failed to open " << filename << std::endl;
+        GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", filename.c_str());
         return false;
     }
 
@@ -181,7 +262,7 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
         inputFile >> jsonData;
     }
     catch (const nlohmann::json::exception& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        GlobalDebugLogger(LOG_ERR_CRITICAL, "Error parsing JSON: %s\n", e.what());
         return false;
     }
 
