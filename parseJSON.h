@@ -71,9 +71,6 @@ int extractZoneFields(const nlohmann::json& zoneJson, ALARM_ZONE& zone) {
         }
     }
 
-    // Print the zone configuration regardless of warnings
-    Alarm::printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zone, PRTCLASS_ALL);
-
     // Issue warnings for missing tags
     if (missingTagCount > 0) {
         GlobalDebugLogger(LOG_ERR_WARNING, "Zone '%s' (ID: %d) is missing %d tag(s):\n",
@@ -228,7 +225,7 @@ int extractPartitionFields(const nlohmann::json& partitionJson, ALARM_PARTITION_
     }
 
     // Print the partition configuration
-    Alarm::printConfigData(partitionTags, PARTITION_TAGS_CNT, (byte*)&partition, PRTCLASS_ALL);
+    //Alarm::printConfigData(partitionTags, PARTITION_TAGS_CNT, (byte*)&partition, PRTCLASS_ALL);
 
     // Issue warnings for missing tags
     if (missingTagCount > 0) {

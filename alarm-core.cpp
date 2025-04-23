@@ -48,5 +48,11 @@ int main() {
         return 1;
     }
 
+    // Print the zone configuration regardless of warnings
+    //alarm.printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zone, PRTCLASS_ALL);
+    //alarm.printAlarmOpts((byte*)&alarmGlobalOpts);
+    alarm.printAlarmPartCfg();
+    alarm.printAlarmZones(0, MAX_ALARM_ZONES);
+    alarm.printAlarmPgms();
     return 0;
 }

@@ -19,10 +19,11 @@ public:
     // Constructor and destructor
     Alarm();
     ~Alarm();
-    void setDebugCallback(DebugCallbackFunc callback);
+
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
     //void alarm_loop(void);
+    void setDebugCallback(DebugCallbackFunc callback);
     // Zone-related methods
     int addZone(const ALARM_ZONE& newZone);
     int getZoneCount() const;
@@ -55,7 +56,7 @@ public:
     // 
     // printing methods
     // defined in alarmClassHelpers.h
-    //void setDebugCallback(DebugCallbackFunc callback);
+
     static int defaultDebugOut(int err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action);
