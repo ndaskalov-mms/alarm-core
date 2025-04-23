@@ -6,11 +6,13 @@
 
 typedef unsigned char byte;
 #define lprintf			printf
+#define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
 
 #include "alarmClass-defs.h"
 #include "timers.h"
 
-typedef void (*DebugCallbackFunc)(const char* message, size_t length);
+//typedef void (*DebugCallbackFunc)(const char* message, size_t length);
+typedef int (*DebugCallbackFunc)(int level, const char* format, ...);
 
 class Alarm {
 public:
@@ -30,6 +32,7 @@ public:
     const char* getZoneName(int zoneIndex) const;
     
     // Partition-related methods
+    int addPartition(const ALARM_PARTITION_t& newPartition);
     int getPartitionCount() const;
     bool isPartitionArmed(int partitionIndex) const;
     int getArmStatus(int partitionIndex) const;
@@ -43,6 +46,7 @@ public:
 
 
     // Global options methods
+    void setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
     bool isRestrictionActive(int restrictionType) const;
     
     // System methods
@@ -52,7 +56,7 @@ public:
     // printing methods
     // defined in alarmClassHelpers.h
     //void setDebugCallback(DebugCallbackFunc callback);
-    int ErrWrite(int err_code, const char* what, ...);
+    static int defaultDebugOut(int err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action);
     void    printConfigHeader(struct tagAccess targetKeys[], int numEntries);
@@ -78,7 +82,7 @@ public:
     bool clearBypassZone(int zoneIndex);
     bool setPgm(int pgmIndex, int value);
 
-
+    DebugCallbackFunc debugCallback;
 private:
     // Private static arrays for alarm data
     // zoneDB - database with all zones CONFIG info. 
@@ -98,7 +102,7 @@ private:
     // SW version
     uint16_t	swVersion = SW_VERSION;							// software version
     // Global callback pointer (initialized to NULL)
-    DebugCallbackFunc debugCallback = NULL;
+
 
     // Private helper methods
 #include "alarmClass_logic.h"
@@ -130,19 +134,50 @@ private:
 //#include "parserClassHelpers.h"
 #include "alarmClassHelpers.h"
 
-// Define a type for our debug callback function
 
-
+int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
+{
+    va_list args;
+    va_start(args, what);
+    int index = 0;
+    vsnprintf(prnBuf, sizeof(prnBuf) - 1, what, args);
+    switch (err_code)
+    {
+    case ERR_OK:
+        printf(prnBuf);
+        break;
+    case ERR_DEBUG:
+        printf(prnBuf);
+        break;
+    case ERR_INFO:
+        printf(prnBuf);
+        break;
+    case ERR_WARNING:
+        printf(prnBuf);
+        break;
+    case ERR_CRITICAL:
+        printf(prnBuf);
+        break;
+    default:
+        if (what)
+            printf(prnBuf);
+        break;
+    }
+    va_end(args);
+    return err_code;
+}
 
 
 // Function to set the debug callback
 void Alarm::setDebugCallback(DebugCallbackFunc callback) {
     debugCallback = callback;
+	//(*debugCallback)(ERR_WARNING, "Debug callback set\n");
+    ErrWrite(ERR_WARNING, "Debug callback set\n");
 }
 // 
 // Constructor
 Alarm::Alarm() {
-    ErrWrite(ERR_WARNING, "Init alarm from file\n");
+    //ErrWrite(ERR_WARNING, "Init alarm from file\n");
     initializeZones();
     initializePgms();
     initializePartitions();
@@ -197,8 +232,43 @@ int Alarm::addZone(const ALARM_ZONE& newZone) {
     return -1; // Return -1 if no unused entry is found
 }
 //
+int Alarm::addPartition(const ALARM_PARTITION_t& newPartition) {
+    for (int i = 0; i < MAX_PARTITION; ++i) {
+        if (partitionDB[i].valid == 0) { // Check if the entry is unused
+            partitionDB[i] = newPartition; // Copy the content of the parameter
+            partitionDB[i].valid = 1; // Mark the entry as used
+            resetPartitionTimers(i); // Reset timers for the new partition
+            partitionRT[i] = {}; // Initialize runtime data
+            partitionSTATS[i] = {}; // Initialize statistics
+            return i; // Return the index of the entry
+        }
+    }
+    return -1; // Return -1 if no unused entry is found
+}
+//
+void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
+
+    // Update the global options
+    alarmGlobalOpts = globalOptions;
+
+   // Example: Reset system components based on new options
+    if (alarmGlobalOpts.restrOnSprvsLoss) {
+        ErrWrite(ERR_INFO, "Supervision loss restriction enabled.\n");
+    }
+    if (alarmGlobalOpts.restrOnTamper) {
+        ErrWrite(ERR_INFO, "Tamper restriction enabled.\n");
+    }
+    if (alarmGlobalOpts.restrOnACfail) {
+        ErrWrite(ERR_INFO, "AC failure restriction enabled.\n");
+    }
+
+    // Log the updated global options
+    ErrWrite(ERR_INFO, "Global options updated successfully.\n");
+    printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
+}
+
  void Alarm::synchPGMstates() {
-     ErrWrite(ERR_WARNING, "synchPGMstates() - NOT IMPLEMENTED\n");
+     printf("synchPGMstates() - NOT IMPLEMENTED\n"); //(ErrWrite(ERR_WARNING, "synchPGMstates() - NOT IMPLEMENTED\n");
 }
 // Validation methods
 bool Alarm::validateZoneIndex(int zoneIndex) const {

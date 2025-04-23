@@ -1,6 +1,8 @@
 //
 // alarmClassHelpers.h - init defaults, print and other helper functions 
 //
+
+
 #include "parserClassHelpers.h"
 
 // -------------  timers ------------------------------------
@@ -99,51 +101,6 @@
 //    return NULL;
 //}
 
-int Alarm::ErrWrite(int err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
-{
-    va_list args;
-    va_start(args, what);
-    // vprintf(what, args);
-    // va_end(args);
-    // int vprintf(const char* format, va_list arg);
-
-    int index = 0;
-    //lprintf ("error code %d received in errors handling callback\n------------------------", err_code);
-    // update errors struct here
-    vsnprintf(prnBuf, sizeof(prnBuf) - 1, what, args);
-    if (debugCallback != NULL) {
-        debugCallback(prnBuf, strlen(prnBuf));
-    }
-    else {
-        // Default behavior when no callback is set
-        printf("DEFAULT DEBUG: %.*s\n", (int)strlen(prnBuf), prnBuf);
-    }
-    switch (err_code)
-    {
-    case ERR_OK:
-        printf(prnBuf);
-        break;
-    case ERR_DEBUG:
-        printf(prnBuf);
-        break;
-    case ERR_INFO:
-        printf(prnBuf);
-        break;
-    case ERR_WARNING:
-        printf(prnBuf);
-        break;
-    case ERR_CRITICAL:
-        printf(prnBuf);
-        break;
-    default:
-        if (what)
-            printf(prnBuf);
-        break;
-    }
-    va_end(args);
-    return err_code;
-}
-//
 // 
 //  print config data  data
 //  parms: (pointer)to ALARM_ZONE  

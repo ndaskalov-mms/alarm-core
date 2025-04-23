@@ -160,7 +160,6 @@ int extractGlobalOptionsFields(const nlohmann::json& optionsJson, ALARM_GLOBAL_O
             }
         }
     }
-
     return 1; // Indicate success
 }
 
@@ -273,9 +272,7 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
 
             // Extract all zone fields using the zoneTags array
             if (extractZoneFields(zoneJson, zone) && zone.valid) {
-                std::cout << "Extracted zone: " << zone.zoneName
-                    << " (ID: " << static_cast<int>(zone.zoneID) << ")" << std::endl;
-                
+                GlobalDebugLogger(LOG_ERR_DEBUG, "Extracted zone: %s (ID: %d)\n", zone.zoneName, static_cast<int>(zone.zoneID));
                 // Add zone to alarm system
                 alarm.addZone(zone);
             }
@@ -289,11 +286,9 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
 
             // Extract all partition fields using the partitionTags array
             if (extractPartitionFields(partitionJson, partition) && partition.valid) {
-                std::cout << "Extracted partition: " << partition.partitionName
-                    << " (Index: " << static_cast<int>(partition.partIdx) << ")" << std::endl;
-
+                GlobalDebugLogger(LOG_ERR_DEBUG, "Extracted partition: %s (Index: %d)\n", partition.partitionName, static_cast<int>(partition.partIdx));
                 // Add partition to alarm system if needed
-                // alarm.addPartition(partition);
+                alarm.addPartition(partition);
             }
         }
     }
@@ -304,10 +299,9 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
 
         // Extract all global options fields using the globalOptionsTags array
         if (extractGlobalOptionsFields(jsonData["globalOptions"], globalOptions)) {
-            std::cout << "Extracted global options successfully." << std::endl;
-
+            GlobalDebugLogger(LOG_ERR_DEBUG, "Extracted global options: \n");
             // Apply global options to alarm system if needed
-            // alarm.setGlobalOptions(globalOptions);
+            alarm.setGlobalOptions(globalOptions);
         }
     }
 
