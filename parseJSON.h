@@ -8,14 +8,17 @@
 #include "parserClassHelpers.h"
 #include "debug.h"
 
+using ArduinoJson::JsonObject;
+using ArduinoJson::deserializeJson;
+
 // Function to extract zone fields from JSON using the zoneTags structure
-int extractZoneFields(const ArduinoJson::JsonObject& zoneJson, ALARM_ZONE& zone);
+int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone);
 
 // Function to extract global options fields from JSON
-int extractGlobalOptionsFields(const ArduinoJson::JsonObject& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions);
+int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions);
 
 // Function to extract partition fields from JSON
-//int extractPartitionFields(const ArduinoJson::JsonObject& partitionJson, ALARM_PARTITION_t& partition);
+int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& partition);
 
 // Function to parse JSON file and extract data into alarm system structures
 bool parseJsonConfig(const std::string& filename, Alarm& alarm);
@@ -36,17 +39,17 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     inputFile.close();
 
     // Create a JSON document with calculated capacity
-    ArduinoJson::JsonDocument jsonDoc;
+    JsonDocument jsonDoc;
 
     // Parse the JSON file
-    ArduinoJson::DeserializationError error = ArduinoJson::deserializeJson(jsonDoc, jsonString);
+    DeserializationError error = deserializeJson(jsonDoc, jsonString);
     if (error) {
         GlobalDebugLogger(LOG_ERR_CRITICAL, "Error parsing JSON: %s\n", error.c_str());
         return false;
     }
 
     // Process zones
-    ArduinoJson::JsonArray zonesArray = jsonDoc["zones"];
+    JsonArray zonesArray = jsonDoc["zones"];
     if (!zonesArray.isNull()) {
         for (JsonObject zoneJson : zonesArray) {
             ALARM_ZONE zone = {};
@@ -61,13 +64,13 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     }
 
     // Process partitions
-    ArduinoJson::JsonArray partitionsArray = jsonDoc["partitions"];
+    JsonArray partitionsArray = jsonDoc["partitions"];
     if (!partitionsArray.isNull()) {
         for (JsonObject partitionJson : partitionsArray) {
             ALARM_PARTITION_t partition = {};
-
+            //
             // Extract all partition fields using the partitionTags array
-            if (0) {//extractPartitionFields(partitionJson, partition) && partition.valid) {
+            if (extractPartitionFields(partitionJson, partition) && partition.valid) {
                 GlobalDebugLogger(LOG_ERR_DEBUG, "Extracted partition: %s (Index: %d)\n",
                     partition.partitionName, static_cast<int>(partition.partIdx));
                 // Add partition to alarm system
@@ -77,7 +80,7 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     }
 
     // Process global options
-    ArduinoJson::JsonObject globalOptionsJson = jsonDoc["globalOptions"];
+    JsonObject globalOptionsJson = jsonDoc["globalOptions"];
     if (!globalOptionsJson.isNull()) {
         ALARM_GLOBAL_OPTS_t globalOptions = {};
 
@@ -92,7 +95,7 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     return true;
 }
 
-int extractZoneFields(const ArduinoJson::JsonObject& zoneJson, ALARM_ZONE& zone) {
+int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone) {
     // Initialize zone with zeros
     std::memset(&zone, 0, sizeof(ALARM_ZONE));
     zone.valid = true; // Set valid to true by default
@@ -168,6 +171,82 @@ int extractZoneFields(const ArduinoJson::JsonObject& zoneJson, ALARM_ZONE& zone)
 
     return 1; // Indicate success
 }
+int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& partition) {
+    // Initialize partition with zeros
+    std::memset(&partition, 0, sizeof(ALARM_PARTITION_t));
+    partition.valid = true; // Set valid to true by default
+
+    // Use a byte array to track which tags were found in the JSON
+    byte tagFound[PARTITION_TAGS_CNT] = { 0 };
+    int missingTagCount = 0;
+
+    // Go through each tag in partitionTags array
+    for (size_t i = 0; i < PARTITION_TAGS_CNT; i++) {
+        const char* tagName = partitionTags[i].keyStr;
+        byte* targetAddress = reinterpret_cast<byte*>(&partition) + partitionTags[i].patchOffset;
+        int length = partitionTags[i].patchLen;
+
+        // Check if the tag exists in JSON
+        if (!partitionJson[tagName].isNull()) {
+            tagFound[i] = 1;  // Mark this tag as found
+
+            // Get the patch callback function for this tag
+            auto patchCallback = partitionTags[i].patchCallBack;
+
+            try {
+                // Define valueStr outside the if/else chain
+                std::string valueStr;
+
+                // Handle different types of JSON values
+                if (partitionJson[tagName].is<const char*>()) {
+                    valueStr = partitionJson[tagName].as<const char*>();
+                }
+                else if (partitionJson[tagName].is<int>()) {
+                    valueStr = std::to_string(partitionJson[tagName].as<int>());
+                }
+                else if (partitionJson[tagName].is<bool>()) {
+                    valueStr = partitionJson[tagName].as<bool>() ? "true" : "false";
+                }
+                else {
+                    // Unsupported type, skip this field
+                    continue;
+                }
+
+                // Invoke the patchCallback and check its return value
+                if (!patchCallback(targetAddress, 0, length, valueStr.c_str())) {
+                    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to patch field %s with value %s\n",
+                        tagName, valueStr.c_str());
+                    partition.valid = false; // Mark partition as invalid
+                    return 0; // Indicate failure
+                }
+            }
+            catch (const std::exception& e) {
+                GlobalDebugLogger(LOG_ERR_CRITICAL, "Error extracting field %s: %s\n",
+                    tagName, e.what());
+                partition.valid = false; // Mark partition as invalid
+                return 0; // Indicate failure
+            }
+        }
+        else {
+            // Tag not found in JSON
+            missingTagCount++;
+        }
+    }
+
+    // Issue warnings for missing tags
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "Partition '%s' is missing %d tag(s):\n",
+            partition.partitionName, missingTagCount);
+
+        for (size_t i = 0; i < PARTITION_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", partitionTags[i].keyStr);
+            }
+        }
+    }
+
+    return 1; // Indicate success
+}
 
 //
 int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions) {
@@ -231,7 +310,15 @@ int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_
     }
 
     // Issue warnings for missing tags
-    // [Rest of the function remains similar]
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "Global options is missing %d tag(s):\n", missingTagCount);
+    
+        for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", gOptsTags[i].keyStr);
+            }
+        }
+    }
 
     return 1; // Indicate success
 }
