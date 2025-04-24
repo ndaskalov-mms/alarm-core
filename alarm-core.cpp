@@ -1,9 +1,10 @@
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "json.hpp"
-#include <windows.h>
+// this is heeded for windows JSON library
+//#include "json.hpp"
 
 #include <cstdarg>
 #include <cstdio>
@@ -14,13 +15,15 @@
 #include "AlarmClass.h" 
 #include "parseJSON.h" // Include the new header
 
+//#include <windows.h>
 unsigned long millis() {
-    SYSTEMTIME st;
-    GetSystemTime(&st);
+    //SYSTEMTIME st;
+    //GetSystemTime(&st);
     //printf("The system time is: %02d:%02d:%02d\n", st.wHour, st.wMinute,st.wSecond);
-    unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
+    //unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
     //printf("Time in mS: %lu\n", res);
-    return res;
+    //return res;
+	return 0; // Placeholder for actual implementation
 }
 
 char prnBuf[1024];
@@ -28,9 +31,10 @@ char token[256];
 
 Alarm alarm;
 
-//void debugPrinter(const char* message, size_t length) {
-//    printf("[DEBUG] %.*s\n", (int)length, message);
-//}
+void debugPrinter(const char* message, size_t length) {
+    printf("[DEBUG] %.*s\n", (int)length, message);
+}
+
 
 int main() {
     // Print a welcome message
