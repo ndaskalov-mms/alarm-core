@@ -20,37 +20,37 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="alarmClass_logic.h">
+    <None Include="alarm-config.json">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\AlarmClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alarmClass-defs.h">
+    <ClInclude Include="src\alarmClass_logic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alarmClassHelpers.h">
+    <ClInclude Include="src\alarmClass-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\parserClassHelpers.h">
+    <ClInclude Include="src\alarmClassHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AlarmClass.h">
+    <ClInclude Include="src\debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AlarmClassTemplate.h">
+    <ClInclude Include="src\parserClassHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="timers.h">
+    <ClInclude Include="src\timers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="alarm-core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parseJSON.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="alarm-config.json">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

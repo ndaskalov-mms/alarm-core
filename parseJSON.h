@@ -1,29 +1,20 @@
 // parseJSON.h
 #pragma once
-
-//#include <string>
 #include <iostream>
-#include <ArduinoJson.h>
-#include "AlarmClass.h"
-#include "parserClassHelpers.h"
-#include "debug.h"
-
-using ArduinoJson::JsonObject;
-using ArduinoJson::deserializeJson;
+// for ArduinoJson staff
+#include <ArduinoJson.h>                    // added to compiler include path
+using ArduinoJson::JsonObject;              // needed to avoid using namespace
+using ArduinoJson::deserializeJson;         // needed to avoid using namespace
 
 // Function to extract zone fields from JSON using the zoneTags structure
 int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone);
-
 // Function to extract global options fields from JSON
 int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions);
-
 // Function to extract partition fields from JSON
 int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& partition);
-
 // Function to parse JSON file and extract data into alarm system structures
 bool parseJsonConfig(const std::string& filename, Alarm& alarm);
-
-
+//
 // 
 bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     // Open the JSON file
@@ -94,6 +85,10 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
 
     return true;
 }
+
+#include <ArduinoJson.h>
+#include <cstring> // For memset
+
 
 int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone) {
     // Initialize zone with zeros

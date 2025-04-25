@@ -1,18 +1,9 @@
 
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include <fstream>
-#include <string>
+
 // this is heeded for windows JSON library
 //#include "json.hpp"
 
-#include <cstdarg>
-#include <cstdio>
-
-#include "debug.h"
-
-
-#include "AlarmClass.h" 
+#include "alarm-core.h"
 #include "parseJSON.h" // Include the new header
 
 //#include <windows.h>

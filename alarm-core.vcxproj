@@ -132,18 +132,18 @@
     <ClCompile Include="alarm-core.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\parserClassHelpers.h" />
-    <ClInclude Include="alarmClass-defs.h" />
-    <ClInclude Include="AlarmClass.h" />
-    <ClInclude Include="AlarmClassTemplate.h" />
-    <ClInclude Include="alarmClassHelpers.h" />
-    <ClInclude Include="alarmClass_logic.h" />
-    <ClInclude Include="debug.h" />
-    <ClInclude Include="parseJSON.h" />
-    <ClInclude Include="timers.h" />
+    <None Include="alarm-config.json" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="alarm-config.json" />
+    <ClInclude Include="alarm-core.h" />
+    <ClInclude Include="parseJSON.h" />
+    <ClInclude Include="src\alarmClass-defs.h" />
+    <ClInclude Include="src\AlarmClass.h" />
+    <ClInclude Include="src\alarmClassHelpers.h" />
+    <ClInclude Include="src\alarmClass_logic.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\parserClassHelpers.h" />
+    <ClInclude Include="src\timers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
