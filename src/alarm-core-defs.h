@@ -1,5 +1,8 @@
 #pragma once
 //
+// //
+const char TRUE_t[] = "true";
+const char FALSE_t[] = "false";
 //
 #define	MAX_ALARM_ZONES			256
 #define MAX_ALARM_PGM			32				// 
@@ -31,6 +34,7 @@ enum errorID {
 //
 // ----------- alarm-defs.h -------------------
 //
+#define	SUBTOPIC_WILDCARD			"all"
 #define MAX_PARTITION			8
 #define MAX_FOLLOW_PART			8
 //
@@ -540,15 +544,7 @@ struct ALARM_PARTITION_STATS_t {
 //	int			validOffs;					// offstet of the valid flag of entry. !0 means valid
 //};
 ////
-//// indexes in dbPtrArr[] to find key parameters for the different alarm entities (zones, part, pgms,.. )
-//enum ALARM_DOMAINS_t {
-//	RESERVED	= -1,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
-//	ZONES		= 0,
-//	PARTITIONS	= 1,
-//	PGMS		= 2,
-//	KEYSW		= 3,
-//	GLOBAL_OPT	= 4,
-//};
+
 ////
 //// array containing parameters for data(bases) for all alarm domains. used to get runtime parameters of the domains
 ////

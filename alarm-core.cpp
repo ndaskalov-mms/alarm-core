@@ -4,19 +4,10 @@
 //#include "json.hpp"
 
 #include "alarm-core.h"
-#include "parseJSON.h" // Include the new header
+#include "alarm-core-parseJSON.h" // Include the new header
+//#include "alarm-core-mqtt.h" // Include the new header
 
 //#include <windows.h>
-unsigned long millis() {
-    //SYSTEMTIME st;
-    //GetSystemTime(&st);
-    //printf("The system time is: %02d:%02d:%02d\n", st.wHour, st.wMinute,st.wSecond);
-    //unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
-    //printf("Time in mS: %lu\n", res);
-    //return res;
-	return 0; // Placeholder for actual implementation
-}
-
 char prnBuf[1024];
 char token[256];
 
@@ -26,6 +17,7 @@ void debugPrinter(const char* message, size_t length) {
     printf("[DEBUG] %.*s\n", (int)length, message);
 }
 
+#define inFilename "alarm-config.json"
 
 int main() {
     // Print a welcome message
@@ -34,8 +26,23 @@ int main() {
     alarm.setDebugCallback(GlobalDebugLogger);
     alarm.debugCallback(LOG_ERR_OK, "test\n");
 
+#ifndef ARDUINO
+    std::ifstream inputFile(inFilename);
+    if (!inputFile.is_open()) {
+        GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", inFilename);
+        return false;
+    }
+
+    // Read the file into a string
+    std::string jsonString((std::istreambuf_iterator<char>(inputFile)),
+        std::istreambuf_iterator<char>());
+    inputFile.close();
+#else
+    //readFile(LittleFS, "/foo.txt");
+#endif
+
     // Parse JSON configuration and populate the alarm system
-    if (parseJsonConfig("alarm-config.json", alarm)) {
+    if (parseJsonConfig(jsonString, alarm)) {
         std::cout << "Alarm Data Loaded from JSON successfully\n";
     }
     else {
@@ -46,8 +53,15 @@ int main() {
     // Print the zone configuration regardless of warnings
     //alarm.printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zone, PRTCLASS_ALL);
     //alarm.printAlarmOpts((byte*)&alarmGlobalOpts);
-    alarm.printAlarmPartCfg();
-    alarm.printAlarmZones(0, MAX_ALARM_ZONES);
-    alarm.printAlarmPgms();
+
+    for (auto it = alarm.beginValidZones(); it != alarm.endValidZones(); ++it) {
+        std::cout << it->zoneName << std::endl; // Access zoneName of valid zones
+    }
+    for (const auto& partition : alarm) {
+        std::cout << partition.partitionName << std::endl;
+    }
+    //alarm.printAlarmPartCfg();
+    //alarm.printAlarmZones(0, MAX_ALARM_ZONES);
+    //alarm.printAlarmPgms();
     return 0;
 }

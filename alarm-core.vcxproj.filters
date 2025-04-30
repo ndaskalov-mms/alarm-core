@@ -25,31 +25,43 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\AlarmClass.h">
+    <ClInclude Include="src\alarm-core-class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\alarmClass_logic.h">
+    <ClInclude Include="src\alarm-core-logic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\alarmClass-defs.h">
+    <ClInclude Include="src\alarm-core-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\alarmClassHelpers.h">
+    <ClInclude Include="src\alarm-core-helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\debug.h">
+    <ClInclude Include="src\alarm-core-debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parserClassHelpers.h">
+    <ClInclude Include="src\alarm-core-parser-helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\timers.h">
+    <ClInclude Include="src\alarm-core-timers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="alarm-core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="parseJSON.h">
+    <ClInclude Include="alarm-core-parseJSON.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="old-mqtt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="old-mqtt_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="alarm-core-mqtt-defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="alarm-core-mqtt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

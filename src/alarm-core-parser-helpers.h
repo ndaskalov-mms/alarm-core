@@ -1,66 +1,15 @@
+// file: parserClassHelpers.h
 #pragma once
-//extern struct ALARM_ZONE zonesDB[MAX_ALARM_ZONES];
-//extern struct ALARM_ZONE_RT zonesRT[MAX_ALARM_ZONES];
-//// PGMs DB
-//extern struct ALARM_PGM pgmsDB[MAX_ALARM_PGM];
-//// alarm keysw records structure to hold all alarm pgms related info     
-//extern struct ALARM_KEYSW keyswDB[MAX_KEYSW_CNT];
-//// alarm global options storage
-//extern struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
-//// alarm partition options storage
-//extern struct ALARM_PARTITION_t					partitionDB[MAX_PARTITION];		// Partitions CONFIG data
-//extern struct ALARM_PARTITION_RUN_TIME_t			partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
-//extern struct ALARM_PARTITION_STATS_t				partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
-
-
-//
-//extern int getHeaderLine(int hdrTyp, char* strbuf);
-//extern int getDataLine(int hdrTyp, char* strbuf);
-//extern int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag);
-//
-//char csvDel[]		= ";";          // white space is not valid delimiter
-//char cmdDelim[]     = " ";          // used for console commands, to be removed
-//char skipField[]    = KEY_NOT_APPLICABLE;
-//
 
 extern char token[256];
-extern char prnBuf[1024];
 
-#define CSV_COMMENT_CHAR '#'
-//
-struct str2val{
-    char    keyStr[NAME_LEN];
-    int     val;
-};
-////
-//enum PGM_CMDS_t {
-//    PGM_OFF = 1,
-//    PGM_ON = 2,
-//    PGM_PULSE = 3,
-//};
+//#define CSV_COMMENT_CHAR '#'
 
-//
-const char TRUE_t[]         = "true";
-const char FALSE_t[]        = "false";
 //
 #ifdef ARDUINO
 #define _itoa itoa
+#define _stricmp strcmp  // TODO - not case sensitive
 #endif
-
-////
-//// zone commands definitions
-////
-//enum ZONE_CMDS_t {
-//    ZONE_BYPASS_CMD         = 1,          // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
-//    ZONE_UNBYPASS_CMD       = 2,          // in zoneNewCmd
-//    ZONE_CLOSE_CMD          = 3,                                 
-//    ZONE_OPEN_CMD           = 4,
-//    ZONE_AMASK_CMD          = 5,
-//    ZONE_TAMPER_CMD         = 6,
-//    ZONE_ANAL_SET_CMD       = 7,
-//    ZONE_DIGITAL_SET_CMD    = 8,
-//};
-//#include "alarm-cmds.h"
 
 /**
  * @brief   Describes how to access specific parameter for zone, partition, pgm, etc
@@ -79,12 +28,14 @@ struct tagAccess {
 // ??????Str2val arrays contain list of all possible values which can be present in the config file cells different digit or true/false bool
 //  the token read from parser when parsing the config file is string compared to match and corresponding integer value is retrieved
 //
-
-
+struct str2val {
+    char    keyStr[NAME_LEN];
+    int     val;
+};
 /**
  * @brief   Arrays containing key:value list of all possible content of the zone DATA lines which can be present in the config file cells different digit or true/false bool
 */
-struct str2val zoneTypeStr2val[] = {
+static struct str2val zoneTypeStr2val[] = {
 {ZONE_DISABLED_TTL			, ZONE_DISABLED},
 {INSTANT_TTL				, INSTANT},
 {ENTRY_DELAY1_TTL			, ENTRY_DELAY1},
@@ -104,7 +55,7 @@ struct str2val zoneTypeStr2val[] = {
 //
 #define ZONE_TYPES_CNT (sizeof(zoneTypeStr2val)/sizeof(struct str2val))
 //
-struct str2val alarmTypeStr2Val[] = { 
+static struct str2val alarmTypeStr2Val[] = { 
 {STEADY_ALARM_TTL	        , STEADY_ALARM},
 {SILENT_ALARM_TTL	        , SILENT_ALARM},
 {PULSED_ALARM_TTL	        , PULSED_ALARM},
@@ -112,7 +63,7 @@ struct str2val alarmTypeStr2Val[] = {
 //
 #define ALARMS_TITLE_CNT (sizeof(alarmTypeStr2Val)/sizeof(struct str2val))
 //
-struct str2val lineErrStr2Val[] = { 
+static struct str2val lineErrStr2Val[] = { 
 {LINE_ERR_OPT_DISABLED_TTL			   , LINE_ERR_OPT_DISABLED },
 {LINE_ERR_OPT_TROUBLE_ONLY_TTL		   , LINE_ERR_OPT_TROUBLE_ONLY},
 {LINE_ERR_OPT_ALARM_WHEN_ARMED_TTL	   , LINE_ERR_OPT_ALARM_WHEN_ARMED},
@@ -132,7 +83,7 @@ struct str2val lineErrStr2Val[] = {
  * @param token     String to be written
  * @return          Always true
 */
-int pokeString(byte* basePtr, int offset, int len, const char* token) {
+static int pokeString(byte* basePtr, int offset, int len, const char* token) {
     strncpy((&((char*)basePtr)[offset]), token, len);
     return true;
 }
@@ -144,7 +95,7 @@ int pokeString(byte* basePtr, int offset, int len, const char* token) {
  * @param len       Not used
  * @return          pointer to string
 */
-byte* peekString(byte* basePtr, int offset, int len) {
+static byte* peekString(byte* basePtr, int offset, int len) {
     byte* ret;
     ret = &basePtr[offset];
     return ret;
@@ -158,7 +109,7 @@ byte* peekString(byte* basePtr, int offset, int len) {
  * @param token     shall be "true" or "false"
  * @return          Always true
 */
-int pokeBool(byte* basePtr, int offset, int len, const char* token) {
+static int pokeBool(byte* basePtr, int offset, int len, const char* token) {
     (basePtr[offset] = !_stricmp(token, "true"));
     return true;
 }
@@ -170,7 +121,7 @@ int pokeBool(byte* basePtr, int offset, int len, const char* token) {
  * @param len       Not used
  * @return          pointer to "true" or "false" string
 */
-byte* peekBool(byte* basePtr, int offset, int len) {
+static byte* peekBool(byte* basePtr, int offset, int len) {
     return (byte *)(basePtr[offset]? TRUE_t : FALSE_t);
 }
 
@@ -182,7 +133,7 @@ byte* peekBool(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to unsigned byte before write
  * @return          Always true
 */
-int pokeByte(byte* basePtr, int offset, int len, const char* token) {
+static int pokeByte(byte* basePtr, int offset, int len, const char* token) {
     unsigned res  = (unsigned int)atoi(token);
     if (res > 255) {
         // TODO (ERR_WARNING, "Byte value larger than 255. Truncated");
@@ -199,7 +150,7 @@ int pokeByte(byte* basePtr, int offset, int len, const char* token) {
  * @param len       Not used
  * @return          Pointer to byte value converted to ASCII string in global var token[512]
 */
-byte* peekByte(byte* basePtr, int offset, int len) {
+static byte* peekByte(byte* basePtr, int offset, int len) {
     _itoa(basePtr[offset], token, 10);
     return ((byte*)&token);
 }
@@ -214,7 +165,7 @@ byte* peekByte(byte* basePtr, int offset, int len) {
  * @param len       Not used
  * @return          Pointer to partition number converted to ASCII string in global var token[512]
 */
-byte* peekPrtnNo(byte* basePtr, int offset, int len) {
+static byte* peekPrtnNo(byte* basePtr, int offset, int len) {
     _itoa(basePtr[offset]+1, token, 10);                            // input partitions range starts at 1, but internally starts from 0
     return ((byte*)&token);
 }
@@ -227,7 +178,7 @@ byte* peekPrtnNo(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-int pokePrtNo(byte* basePtr, int offset, int len, const char* token) {
+static int pokePrtNo(byte* basePtr, int offset, int len, const char* token) {
     int tmp;
     tmp = (unsigned int)atoi(token);
     tmp--;                                                          // input partitions range starts at 1, but internally starts from 0
@@ -246,7 +197,7 @@ int pokePrtNo(byte* basePtr, int offset, int len, const char* token) {
  * @param len       Not used
  * @return          Pointer to LINE ERROR converted to ASCII string in global var token[512]
 */
-byte* peekLineErr(byte* basePtr, int offset, int len) {
+static byte* peekLineErr(byte* basePtr, int offset, int len) {
     int i; char* ret = NULL;
     for (i = 0; i < ERRORS_TITLE_CNT; i++) {
         if (basePtr[offset] == lineErrStr2Val[i].val) {
@@ -269,7 +220,7 @@ byte* peekLineErr(byte* basePtr, int offset, int len) {
  * @param len       Not used
  * @return          Pointer to ZONE TYPE converted to ASCII string in global var token[512]
 */
-byte* peekZoneType(byte* basePtr, int offset, int len) {
+static byte* peekZoneType(byte* basePtr, int offset, int len) {
     int i; char* ret = NULL;
     for (i = 0; i < ZONE_TYPES_CNT; i++) {
         if (basePtr[offset] == zoneTypeStr2val[i].val) {
@@ -296,7 +247,7 @@ byte* peekZoneType(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
+static int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
     int i;
     for (i = 0; i < ERRORS_TITLE_CNT; i++) {
         if (!_stricmp(token, lineErrStr2Val[i].keyStr)) {
@@ -320,7 +271,7 @@ int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-int pokeZoneType(byte* basePtr, int offset, int len, const char* token) {
+static int pokeZoneType(byte* basePtr, int offset, int len, const char* token) {
     int i;
     for (i = 0; i < ZONE_TYPES_CNT; i++) {
         if (!_stricmp(token, zoneTypeStr2val[i].keyStr)) {
@@ -344,7 +295,7 @@ int pokeZoneType(byte* basePtr, int offset, int len, const char* token) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-int pokeAlarmType(byte* basePtr, int offset, int len, const char* token) {
+static int pokeAlarmType(byte* basePtr, int offset, int len, const char* token) {
     int i;
     for (i = 0; i < ALARMS_TITLE_CNT; i++) {
         if (!_stricmp(token, alarmTypeStr2Val[i].keyStr)) {
@@ -366,7 +317,7 @@ int pokeAlarmType(byte* basePtr, int offset, int len, const char* token) {
  * @param len       Not used
  * @return          Pointer to ALARM TYPE converted to ASCII string in global var token[512]
 */
-byte* peekAlarmType(byte* basePtr, int offset, int len) {
+static byte* peekAlarmType(byte* basePtr, int offset, int len) {
     int i; char* ret = NULL;
     for (i = 0; i < ALARMS_TITLE_CNT; i++) {
         if (basePtr[offset] == alarmTypeStr2Val[i].val) {

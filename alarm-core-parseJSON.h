@@ -1,11 +1,47 @@
 // parseJSON.h
+// External declarations for parseJSON.h
 #pragma once
 #include <iostream>
-// for ArduinoJson staff
-#include <ArduinoJson.h>                    // added to compiler include path
-using ArduinoJson::JsonObject;              // needed to avoid using namespace
-using ArduinoJson::deserializeJson;         // needed to avoid using namespace
+#include <fstream>       // For std::ifstream
+#include <string>        // For std::string
+#include <cstring>       // For memset
 
+// For ArduinoJson
+#include <ArduinoJson.h>
+using ArduinoJson::JsonObject;
+using ArduinoJson::deserializeJson;
+using ArduinoJson::JsonDocument;
+using ArduinoJson::JsonArray;
+using ArduinoJson::DeserializationError;
+
+// Forward declarations of required types
+class Alarm;
+struct ALARM_ZONE;
+struct ALARM_PARTITION_t;
+struct ALARM_GLOBAL_OPTS_t;
+
+// External tag arrays from parserClassHelpers.h
+extern struct tagAccess zoneTags[];
+extern struct tagAccess partitionTags[];
+extern struct tagAccess gOptsTags[];
+//extern size_t ZONE_TAGS_CNT;
+//extern size_t PARTITION_TAGS_CNT;
+//extern size_t GLOBAL_OPTIONS_TAGS_CNT;
+
+// Define logger if not already defined
+#ifndef GlobalDebugLogger
+extern int GlobalDebugLogger(int level, const char* format, ...);
+#endif
+
+// Log level definitions if not already defined
+#ifndef LOG_ERR_CRITICAL
+enum LogLevels {
+    LOG_ERR_DEBUG = 0,
+    LOG_ERR_INFO,
+    LOG_ERR_WARNING,
+    LOG_ERR_CRITICAL
+};
+#endif
 // Function to extract zone fields from JSON using the zoneTags structure
 int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone);
 // Function to extract global options fields from JSON
@@ -13,21 +49,10 @@ int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_
 // Function to extract partition fields from JSON
 int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& partition);
 // Function to parse JSON file and extract data into alarm system structures
-bool parseJsonConfig(const std::string& filename, Alarm& alarm);
+bool parseJsonConfig(const std::string& filenamejsonString, Alarm& alarm);
 //
 // 
-bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
-    // Open the JSON file
-    std::ifstream inputFile(filename);
-    if (!inputFile.is_open()) {
-        GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", filename.c_str());
-        return false;
-    }
-
-    // Read the file into a string
-    std::string jsonString((std::istreambuf_iterator<char>(inputFile)),
-        std::istreambuf_iterator<char>());
-    inputFile.close();
+bool parseJsonConfig(const std::string& jsonString, Alarm& alarm) {
 
     // Create a JSON document with calculated capacity
     JsonDocument jsonDoc;
@@ -86,10 +111,7 @@ bool parseJsonConfig(const std::string& filename, Alarm& alarm) {
     return true;
 }
 
-#include <ArduinoJson.h>
-#include <cstring> // For memset
-
-
+// TODO - combine with extractZoneFields and extractPartitionFields
 int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone) {
     // Initialize zone with zeros
     std::memset(&zone, 0, sizeof(ALARM_ZONE));

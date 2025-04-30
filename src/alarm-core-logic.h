@@ -1,12 +1,13 @@
 #pragma once
-//#include "alarmClass-defs.h"
-//#include "parserClassHelpers.h"
-//#include "alarmClassHelpers.h"
 
+#ifndef ALARM_H
+#error "This file should only be included inside the Alarm class definition"
+#endif
 
-//extern void processMasterPGMs(void);
+#include "alarm-core-timers.h"
+using namespace WinTimers;  // neede to avoid conflict between ArduinoJSON.h and windows.h
 
-void resetAllPartitionTimers(int prt) {
+void Alarm::resetAllPartitionTimers(int prt) {
 	int j;
 	partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].timerDelay = partitionDB[prt].exitDelay;
 	partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassWhat = EXIT_DELAY_ZONES;
@@ -29,7 +30,7 @@ void resetAllPartitionTimers(int prt) {
 //-----------------------------------------------------------------------------------
 // Implementation of selected methods
 //-----------------------------------------------------------------------------------
-void initRTdata(void) {
+void Alarm::initRTdata(void) {
 	int i;
 	// reset zone's tun-time data
 	for (int j = 0; j < MAX_ALARM_ZONES; j++) {
@@ -56,7 +57,7 @@ void initRTdata(void) {
 //			int	bypassType	- which bit to unset
 // returns: none
 //
-void clearBypass(byte zn, int bypassType) {
+void Alarm::clearBypass(byte zn, int bypassType) {
 	if (!(zonesRT[zn].bypassed & bypassType))										// check if cleared already
 		return;																		// zone is already bypassed/unbypassed
 	zonesRT[zn].bypassed &= ~bypassType;											// bypass
@@ -66,7 +67,7 @@ void clearBypass(byte zn, int bypassType) {
 //
 // clearBypasssAllZones- un- baypasses all alarm zones assigned to partition
 //
-void clearBypassAllZones(int partIxd) {
+void Alarm::clearBypassAllZones(int partIxd) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == partIxd) {
 			if (zonesRT[zn].bypassed == ZONE_NO_BYPASS)								// check if cleared already
@@ -84,7 +85,7 @@ void clearBypassAllZones(int partIxd) {
 //			int bypassType	- (USER) BYAPASS, ZONE_FORCED, ZONE_STAY_BYPASSED..., .....
 // returns: none
 //
-inline void bypassZone(byte zn, int bypassType) {
+inline void Alarm::bypassZone(byte zn, int bypassType) {
 	if (!((zonesRT[zn].bypassed & bypassType ) ^ bypassType))						// check if the same bypasses are already in place
 		return;																		// zone is already bypassed/unbypassed
 	zonesRT[zn].bypassed |= bypassType;												// reflect the change
@@ -95,7 +96,7 @@ inline void bypassZone(byte zn, int bypassType) {
 //
 // bypassAllForceZones - bypasses all alarm forceable  zones assigned to partition
 //
-void bypassAllForceZones(int prtId) {
+void Alarm::bypassAllForceZones(int prtId) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == prtId) {
 			if (!zonesRT[zn].bypassed) {											// if zone is not bypassed already
@@ -111,7 +112,7 @@ void bypassAllForceZones(int prtId) {
 //
 // bypassAllStayZones - baypasses all stay  zones assigned to partition
 //
-void bypassAllStayZones(int prtId) {
+void Alarm::bypassAllStayZones(int prtId) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == prtId) {
 			if (zonesDB[zn].zoneStayZone) {
@@ -120,7 +121,7 @@ void bypassAllStayZones(int prtId) {
 		}
 	}
 }
-void bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
+void Alarm::bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == prtId)										// skip zones belonging to other partitions
 			if (zonesDB[zn].zoneType & znType) {									// if zoneType is what is wanted (zone types are bitmask) 
@@ -140,7 +141,7 @@ void bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 // returns: ERR_OK for SET
 //			> 0 if timeout set by corresponding delay in partition definition expired, 0 if not
 // 
-int partitionTimer(int tmr, int oper, int prt) {
+int Alarm::partitionTimer(int tmr, int oper, int prt) {
 //
 	if(tmr >= MAX_PARTITION_TIMERS)
 		ErrWrite(ERR_CRITICAL, "partitionTimer: Invalid timer for partition %d\n", prt);
@@ -154,7 +155,7 @@ int partitionTimer(int tmr, int oper, int prt) {
 	return ERR_OK;
 }
 //
-void processPartitionTimers(int prt) {
+void Alarm::processPartitionTimers(int prt) {
 	int tmr;
 	if (!partitionDB[prt].valid)																// not a valid partition
 		return;
@@ -171,7 +172,7 @@ void processPartitionTimers(int prt) {
 	}
 }
 //
-int countNotBypassedEntryDelayZones(int prt) {
+int Alarm::countNotBypassedEntryDelayZones(int prt) {
 int res=0;
 	for(int zn=0; zn < MAX_ALARM_ZONES; zn++) {  
 		if(zonesDB[zn].zonePartition == prt) {
@@ -188,7 +189,7 @@ int res=0;
 //
 // return all zones which will prevent arm - open zone which ae not bypassed
 //
-int check4openUnbypassedZones(int prt) {
+int Alarm::check4openUnbypassedZones(int prt) {
 	int res = 0;
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == prt) {
@@ -210,7 +211,7 @@ int check4openUnbypassedZones(int prt) {
 //
 // actions DISARM, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM
 //
-void trigerArm(void* param1, void* param2, void* param3) {
+void Alarm::trigerArm(void* param1, void* param2, void* param3) {
 	const int partID = *(int*)param1;
 	const int action = *(int*)param2;
 	// param3 is not used
@@ -240,7 +241,7 @@ void trigerArm(void* param1, void* param2, void* param3) {
 //
 // action = ZONE_OPEN_CMD, ZONE_AMASK_CMD, ZONE_CLOSE_CMD, ZONE_TAMPER_CMD, ZONE_BYPASS_CMD
 //
-void modifyZn(void* param1, void* param2, void* param3) {
+void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 	//byte newStat;
 	const int zn = *(int*)param1;								// index in zonesD
 	const int action = *(int*)param2;								// command - defined in enum ZONE_CMDS_t
@@ -311,7 +312,7 @@ void modifyZn(void* param1, void* param2, void* param3) {
 //
 //
 //
-void modifyPgm(void* param1, void* param2, void* param3) {
+void Alarm::modifyPgm(void* param1, void* param2, void* param3) {
 	const int pgmIdx = *(int*)param1;
 	const int action = *(int*)param2;
 	lprintf("modifyPGM: PGM action %d\n", action);
@@ -340,7 +341,7 @@ void modifyPgm(void* param1, void* param2, void* param3) {
 //			   int 	action	- bitmask, DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM, see enum  ARM_METHODS_t
 //	returns: true if no restrictions found, otherwise false
 //
-int checkArmRestrctions(byte partIdx, int action) {
+int Alarm::checkArmRestrctions(byte partIdx, int action) {
 	ErrWrite(ERR_DEBUG, "Checking arm restictions for part %d - ", partIdx);
 	// TODO - add read from ADC for voltages and support for board, bell and RF link 
 	if (alarmGlobalOpts.restrOnSprvsLoss & alarmGlobalOpts.SprvsLoss) {
@@ -383,7 +384,7 @@ int checkArmRestrctions(byte partIdx, int action) {
 //		   int follows	- 
 // returns: 0 if successfull, !0 if restriction or error
 //
-int armPartition(byte prt, byte action) {
+int Alarm::armPartition(byte prt, byte action) {
 	int followID; int i;
 	if (!partitionDB[prt].valid) {
 		ErrWrite(ERR_WARNING, "Request to arm/disarm invalid partition %d\n", prt);
@@ -467,11 +468,11 @@ int armPartition(byte prt, byte action) {
 //		MQTT:			alarm, audible_alarm, silent_alarm, strobe_alarm,
 // TODO - implement me
 //
-void processAlarm(int alarm) {
+void Alarm::processAlarm(int alarm) {
 	//printf("Implemen siren control here\n");
 }
 //
-void processLineErrors(int zn, int opts) {
+void Alarm::processLineErrors(int zn, int opts) {
 	switch (opts) {
 	case LINE_ERR_OPT_DISABLED:									// do nothing
 		return;
@@ -507,7 +508,7 @@ void processLineErrors(int zn, int opts) {
 // My understanding is: if tamper occurs in bypassed zone and tamper recognition is OFF, we have to ignore if the zone is bypassed.
 // The reaction if tamper recognition is ON is specified by local or global tamper options, selection is done by followPanel option
 //
-void processTampers(int zn) {
+void Alarm::processTampers(int zn) {
 	int opt;
 	if (zonesRT[zn].bypassed & ZONE_BYPASSED) {					// can we ignore tamper on USER bypassed zone
 		if (alarmGlobalOpts.tamperBpsOpt) {						// allowed to ignore tamper in USER bypassed zone ONLY!
@@ -531,7 +532,7 @@ void processTampers(int zn) {
 // process anti-mask error (line short), generates trouble or alarm
 // global a-mask options:	alarmGlobalOpts.antiMaskOpts, bitmask, same as local - see #define LINE_ERR_OPT_XXXXXX
 //
-void processAmasks(int zn) {
+void Alarm::processAmasks(int zn) {
 	int opt;
 	if (zonesDB[zn].zoneAmaskFpanel)							// find out global or local options to follow
 		opt = alarmGlobalOpts.antiMaskOpt;						// follow the global tamper settings
@@ -544,7 +545,7 @@ void processAmasks(int zn) {
 //	processEntryDelayZones(struct ALARM_ZONE zone)
 //	return:	TRUE if alarm shall be issued, otherwise FALSE
 //
-int processEntryDelayZones(int zn) {
+int Alarm::processEntryDelayZones(int zn) {
 	byte  prt = zonesDB[zn].zonePartition;
 	byte  timer;
 	// select correct timer & collaterals based on zone's ENTRY DELAY type 
@@ -591,7 +592,7 @@ int processEntryDelayZones(int zn) {
 //
 // process open zones , generates trouble or alarm
 //
-int processOpenZone(int zn) {
+int Alarm::processOpenZone(int zn) {
 	int alarm = NO_ALARM;									// raise alarm?
 	byte prt = zonesDB[zn].zonePartition;
 	//
@@ -638,11 +639,10 @@ int processOpenZone(int zn) {
 	}
 	return alarm;
 }
-public:
 //
 // alarmLoop() - implement all alarm business
 //
-void alarm_loop() {
+void Alarm::alarm_loop() {
 	//
 	int prt; int alarm = NO_ALARM; int trouble = NO_TROUBLE;
 	// 
@@ -736,4 +736,3 @@ void alarm_loop() {
 	processAlarm(alarm);
 	printParttionsSummary();
 }
-private:

@@ -2,17 +2,79 @@
 #define ALARM_H
 
 #include <functional>
-//extern int ErrWrite(int err_code, const char* what, ...);
 
 typedef unsigned char byte;
 #define lprintf			printf
 #define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
 
-#include "alarmClass-defs.h"
-#include "timers.h"
+#include "alarm-core-defs.h"
+#include "alarm-core-timers.h"
 
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 typedef int (*DebugCallbackFunc)(int level, const char* format, ...);
+
+template <typename T>
+class FilteredArrayIterator {
+public:
+    // Constructor
+    FilteredArrayIterator(T* ptr, T* end)
+        : current(ptr), end(end) {
+        // Skip invalid elements at the start
+        advanceToValid();
+    }
+
+    // Dereference operator
+    T& operator*() const {
+        return *current;
+    }
+
+    // Arrow operator
+    T* operator->() const {
+        return current;
+    }
+
+    // Prefix increment
+    FilteredArrayIterator& operator++() {
+        ++current;
+        advanceToValid();
+        return *this;
+    }
+
+    // Postfix increment
+    FilteredArrayIterator operator++(int) {
+        FilteredArrayIterator temp = *this;
+        ++(*this);
+        return temp;
+    }
+
+    // Equality comparison
+    bool operator==(const FilteredArrayIterator& other) const {
+        return current == other.current;
+    }
+
+    // Inequality comparison
+    bool operator!=(const FilteredArrayIterator& other) const {
+        return current != other.current;
+    }
+
+private:
+    T* current; // Pointer to the current element
+    T* end;     // Pointer to one past the last element
+
+    // Advance to the next valid element
+    void advanceToValid() {
+        while (current != end && !isValid(*current)) {
+            ++current;
+        }
+    }
+
+    // Internal validity check
+    static bool isValid(const T& element) {
+        return element.valid != 0; // Example: Check if the 'valid' field is non-zero
+    }
+};
+
+
 
 class Alarm {
 public:
@@ -31,6 +93,7 @@ public:
     bool isZoneBypassed(int zoneIndex) const;
     bool isZoneInAlarm(int zoneIndex) const;
     const char* getZoneName(int zoneIndex) const;
+    void modifyZn(void* param1, void* param2, void* param3);
     
     // Partition-related methods
     int addPartition(const ALARM_PARTITION_t& newPartition);
@@ -39,11 +102,13 @@ public:
     int getArmStatus(int partitionIndex) const;
     bool hasPartitionChanged(int partitionIndex) const;
     const char* getPartitionName(int partitionIndex) const;
+	void trigerArm(void* param1, void* param2, void* param3);
     
     // PGM-related methods
     int getPgmCount() const;
     int getPgmValue(int pgmIndex) const;
     const char* getPgmName(int pgmIndex) const;
+	void modifyPgm(void* param1, void* param2, void* param3);
 
 
     // Global options methods
@@ -54,9 +119,8 @@ public:
     void updateAlarmState();
     void processTimers();
     // 
-    // printing methods
-    // defined in alarmClassHelpers.h
-
+    // printing methods - defined in alarmClassHelpers.h
+	//
     static int defaultDebugOut(int err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action);
@@ -82,12 +146,38 @@ public:
     bool bypassZone(int zoneIndex);
     bool clearBypassZone(int zoneIndex);
     bool setPgm(int pgmIndex, int value);
-
+	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut
     DebugCallbackFunc debugCallback;
+
+    // Iterators
+public:
+    auto beginValidZones() {
+        return FilteredArrayIterator<ALARM_ZONE>(zonesDB, zonesDB + MAX_ALARM_ZONES);
+    }
+    auto endValidZones() {
+        return FilteredArrayIterator<ALARM_ZONE>(zonesDB + MAX_ALARM_ZONES, zonesDB + MAX_ALARM_ZONES);
+    }
+
+    // Iterators for valid partitions
+    auto beginValidPartitions() {
+        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB, partitionDB + MAX_PARTITION);
+    }
+    auto endValidPartitions() {
+        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB + MAX_PARTITION, partitionDB + MAX_PARTITION);
+    }
+
+    // Iterators for valid PGMs
+    auto beginValidPgms() {
+        return FilteredArrayIterator<ALARM_PGM>(pgmsDB, pgmsDB + MAX_ALARM_PGM);
+    }
+    auto endValidPgms() {
+        return FilteredArrayIterator<ALARM_PGM>(pgmsDB + MAX_ALARM_PGM, pgmsDB + MAX_ALARM_PGM);
+    }
+
 private:
     // Private static arrays for alarm data
     // zoneDB - database with all zones CONFIG info. 
-    // zonesRT = all run time zones data. Info from slaves are fetched via pul command over RS485
+    // zonesRT = all run time zone related data. 
     struct ALARM_ZONE zonesDB[MAX_ALARM_ZONES];
     struct ALARM_ZONE_RT zonesRT[MAX_ALARM_ZONES];
     // PGMs DB
@@ -103,11 +193,41 @@ private:
     // SW version
     uint16_t	swVersion = SW_VERSION;							// software version
     // Global callback pointer (initialized to NULL)
+    // Timer management
+    void resetAllPartitionTimers(int partitionIndex);
+    void initRTdata(void);
+    int partitionTimer(int tmr, int oper, int prt);
+    void processPartitionTimers(int prt);
+
+    // Zone management
+    void clearBypass(byte zn, int bypassType);
+    void clearBypassAllZones(int partIxd);
+    void bypassZone(byte zn, int bypassType);
+    void bypassAllForceZones(int prtId);
+    void bypassAllStayZones(int prtId);
+    void bulkBypassZones(int prtId, int znType, int bypassBits, int invert);
+
+    // Counting and checking functions
+    int countNotBypassedEntryDelayZones(int prt);
+    int check4openUnbypassedZones(int prt);
+
+    // Command handling
+
+    // Arm management
+    int checkArmRestrctions(byte partIdx, int action);
+    int armPartition(byte prt, byte action);
+
+    // Alarm processing
+    void processAlarm(int alarm);
+    void processLineErrors(int zn, int opts);
+    void processTampers(int zn);
+    void processAmasks(int zn);
+    int processEntryDelayZones(int zn);
+    int processOpenZone(int zn);
+    void alarm_loop();
 
 
     // Private helper methods
-#include "alarmClass_logic.h"
-
     void initializeZones();
     void initializePgms();
     void initializePartitions();
@@ -132,12 +252,14 @@ private:
 };  // end of class Alarm
 
 //
-//#include "parserClassHelpers.h"
-#include "alarmClassHelpers.h"
+#include "alarm-core-logic.h"
+#include "alarm-core-parser-helpers.h"
+#include "alarm-core-helpers.h"
 
 
 int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
 {
+    char prnBuf[512];
     va_list args;
     va_start(args, what);
     int index = 0;

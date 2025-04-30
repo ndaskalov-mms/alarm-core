@@ -135,15 +135,19 @@
     <None Include="alarm-config.json" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alarm-core-mqtt-defs.h" />
+    <ClInclude Include="alarm-core-mqtt.h" />
+    <ClInclude Include="old-mqtt.h" />
+    <ClInclude Include="old-mqtt_defs.h" />
     <ClInclude Include="alarm-core.h" />
-    <ClInclude Include="parseJSON.h" />
-    <ClInclude Include="src\alarmClass-defs.h" />
-    <ClInclude Include="src\AlarmClass.h" />
-    <ClInclude Include="src\alarmClassHelpers.h" />
-    <ClInclude Include="src\alarmClass_logic.h" />
-    <ClInclude Include="src\debug.h" />
-    <ClInclude Include="src\parserClassHelpers.h" />
-    <ClInclude Include="src\timers.h" />
+    <ClInclude Include="alarm-core-parseJSON.h" />
+    <ClInclude Include="src\alarm-core-defs.h" />
+    <ClInclude Include="src\alarm-core-class.h" />
+    <ClInclude Include="src\alarm-core-helpers.h" />
+    <ClInclude Include="src\alarm-core-logic.h" />
+    <ClInclude Include="src\alarm-core-debug.h" />
+    <ClInclude Include="src\alarm-core-parser-helpers.h" />
+    <ClInclude Include="src\alarm-core-timers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
