@@ -1,11 +1,21 @@
 #pragma once
 #include "alarm-core-mqtt-defs.h"
-extern void trigerArm(void* param1, void* param2, void* param3);
-extern void modifyZn(void* param1, void* param2, void* param3); 
-extern void modifyPgm(void* param1, void* param2, void* param3);
-void OTAconfigHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
-void globalOptionsHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
+#include <string.h>
+#include <stdio.h>
+
+#ifdef ARDUINO
+#define _stricmp strcasecmp
+#define _strnicmp strncasecmp
+#endif
+
+void trigerArm(void* param1, void* param2, void* param3);
+void zoneCmd(void* param1, void* param2, void* param3); 
+void pgmCmd(void* param1, void* param2, void* param3);
+//void OTAconfigHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
+//void globalOptionsHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
 void zonesPartEtcControlHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
+
+extern Alarm alarm; // Global instance of the Alarm class
 
 int zonePartPgmSubscribe(int what, int idx);
 int subscribeOTAconfig(int what, int idx);
@@ -24,33 +34,33 @@ struct inpPlds_t {
 // Partition control supported payloads (commands)
 struct  inpPlds_t partPlds[] = {
     // TODO: some PAI command are not implemented - arm_sleep, arm_stay_stayd, arm_sleep_stay 
-    {"disarm",          DISARM,         trigerArm},
-    {"arm",             REGULAR_ARM,    trigerArm},
-    {"arm_force",       FORCE_ARM,      trigerArm},
-    {"arm_stay",        STAY_ARM,       trigerArm},
-	{"arm_instant",     INSTANT_ARM,    trigerArm},
-  //{"arm_sleep",       ARM_SLEEP,      trigerArm},
-  //{"arm_stay_stayd",  ARM_STAY_STAYD, trigerArm},
-  //{"arm_sleep_stay",  ARM_SLEEP_STAY, trigerArm},
+    {"disarm",          DISARM,        &trigerArm},
+    {"arm",             REGULAR_ARM,   &trigerArm},
+    {"arm_force",       FORCE_ARM,     &trigerArm},
+    {"arm_stay",        STAY_ARM,      &trigerArm},
+	{"arm_instant",     INSTANT_ARM,   &trigerArm},
+  //{"arm_sleep",       ARM_SLEEP,     &trigerArm},
+  //{"arm_stay_stayd",  ARM_STAY_STAYD,&trigerArm},
+  //{"arm_sleep_stay",  ARM_SLEEP_STAY,&trigerArm},
 };
 //
 // Zone control supported payloads (commands)
 struct  inpPlds_t zonePlds[] = {
-    {"bypass",        ZONE_BYPASS_CMD,    &modifyZn},
-    {"clear_bypass",  ZONE_UNBYPASS_CMD,  &modifyZn},
-    {"tamper",        ZONE_TAMPER_CMD,    &modifyZn},
-    {"close",         ZONE_CLOSE_CMD,     &modifyZn},
-    {"open",          ZONE_OPEN_CMD,      &modifyZn},
-    {"anti-mask",     ZONE_AMASK_CMD,     &modifyZn},
+    {"bypass",        ZONE_BYPASS_CMD,    &zoneCmd},
+    {"clear_bypass",  ZONE_UNBYPASS_CMD,  &zoneCmd},
+    {"tamper",        ZONE_TAMPER_CMD,    &zoneCmd},
+    {"close",         ZONE_CLOSE_CMD,     &zoneCmd},
+    {"open",          ZONE_OPEN_CMD,      &zoneCmd},
+    {"anti-mask",     ZONE_AMASK_CMD,     &zoneCmd},
   //{"analogSet",     ZONE_ANAL_SET_CMD,  &fakeAnalogSetZn},
   //{"digitalSet",  ZONE_DIGITAL_SET_CMD, &digitalSetZn},
 };
 //
 // pgm (output) control supported payloads (commands). TODO - implement pulse command
 struct  inpPlds_t pgmPlds[] = {
-    {"on",      PGM_ON,     &modifyPgm},
-    {"off",     PGM_OFF,    &modifyPgm},
-    {"pulse",   PGM_PULSE,  &modifyPgm},
+    {"on",      PGM_ON,     &pgmCmd},
+    {"off",     PGM_OFF,    &pgmCmd},
+    {"pulse",   PGM_PULSE,  &pgmCmd},
 };
 //
 // format of the entries of the array handling MQTT topics
@@ -71,8 +81,8 @@ struct MQTT_cmd_t MQTT_subscriptions[] = {
 	{MQTT_ZONES_CONTROL,         ZONES,         &zonesPartEtcControlHandler, zonePlds, (sizeof(zonePlds) / sizeof(zonePlds[0])),	&zonePartPgmSubscribe},
 	{MQTT_PARTITIONS_CONTROL,    PARTITIONS,    &zonesPartEtcControlHandler, partPlds, (sizeof(partPlds) / sizeof(partPlds[0])),	&zonePartPgmSubscribe},
 	{MQTT_OUTPUTS_CONTROL,       PGMS,          &zonesPartEtcControlHandler, pgmPlds,  (sizeof(pgmPlds) / sizeof(pgmPlds[0])),		&zonePartPgmSubscribe},
-	{MQTT_METRICS_EXCHANGE,      -1,            &OTAconfigHandler,           NULL,                   0,								&subscribeOTAconfig},
-	{MQTT_GLOBAL_OPT_CONTROL,    GLOBAL_OPT,    &globalOptionsHandler,       NULL,                   0,								&subscribeGlobalOptions },
+	//{MQTT_METRICS_EXCHANGE,      -1,            &OTAconfigHandler,           NULL,                   0,								&subscribeOTAconfig},
+	//{MQTT_GLOBAL_OPT_CONTROL,    GLOBAL_OPT,    &globalOptionsHandler,       NULL,                   0,								&subscribeGlobalOptions },
 };
 #define MQTT_SUBS_CNT   (sizeof(MQTT_subscriptions)/sizeof(MQTT_subscriptions[0]))
 
@@ -142,7 +152,7 @@ int subscribeMQTTtopics(void) {
         if (!MQTT_subscriptions[i].subcBack(MQTT_subscriptions[i].what, i))
             return FALSE;
     }
-    lprintf("Subscribing finished\n");
+    printf("Subscribing finished\n");
 	return TRUE;
 }
 //
@@ -219,18 +229,18 @@ void MQTTcallback(char* rcvTopic, byte* payload, unsigned int pldLen) {
 // tries to match the string in payload[] to command (bypass, clear bypass, arm, siarm...) in Cmds[] and if yes, calls the corresponding callback
 // params:  struct  inpPlds_t Cmds[]    - array of supported payloads (commands) for zones, partitions, etc
 //          int CmdsCnt                 - number of entries in the array of supported payloads
-//          int idx                     - index in zones/partitions/pgms/etc database matching the name 
-//                                        extracted from received MQTT topic. -1 MEANS SET ALL
+//          int itemIdx                 - pointer to name of zone/partition/pgm/etc 
+//                                        TODO  - extracted from received MQTT topic. -1 MEANS SET ALL
 //          const byte payld[]          - payload
 //          int len                     - payload len
 // returns: none
 //
-void processMQTTpayload(struct  inpPlds_t Cmds[], int CmdsCnt, int idx, const byte payld[], int len) {
+void processMQTTpayload(struct  inpPlds_t Cmds[], int CmdsCnt, int itemIdx, const byte payld[], int len) {
     int i; const byte* secStr = NULL;
     for (i = 0; i < CmdsCnt; i++) {
         // match payload to what allowed by command
         if (!_strnicmp((const char*)payld, Cmds[i].MQTTpld, strlen(Cmds[i].MQTTpld))) { // note: payld is not NULL terminated
-            lprintf("Found CMD: MQTT cmd %s, action = %d at index %d\n", Cmds[i].MQTTpld, Cmds[i].action, i);
+            printf("Found CMD: MQTT cmd %s, action = %d at index %d\n", Cmds[i].MQTTpld, Cmds[i].action, i);
             secStr = &payld[strlen(Cmds[i].MQTTpld)];             // secStr is pointer to rest (if any) of the payload after the command, to be parsed by the callback;
             break;
         }
@@ -238,10 +248,10 @@ void processMQTTpayload(struct  inpPlds_t Cmds[], int CmdsCnt, int idx, const by
             continue;                                             // no match, continue the search
     }
     if (i < CmdsCnt) {
-        Cmds[i].cBack(&idx, &(Cmds[i].action), (void*)secStr);    // process the payload, idx contain index in particular database (zonesDB, partitonsDB,...)
+        Cmds[i].cBack(&itemIdx, &(Cmds[i].action), (void*)secStr);    // process the payload, idx contain index in particular database (zonesDB, partitonsDB,...)
     }                                                             // for exaple with zonesPartEtcControlHandler(...)
     else {                                                        // payload doesn't match any of the entries in allowed payloads array
-        lprintf("Unrecognized MQTT command payload:  %.*s\n", len, payld);
+        printf("Unrecognized MQTT command payload:  %.*s\n", len, payld);
         return;
     }
 }
@@ -267,21 +277,82 @@ void processMQTTpayload(struct  inpPlds_t Cmds[], int CmdsCnt, int idx, const by
 //              int pldLen              - length of received on this topic payload
 //
 void zonesPartEtcControlHandler(ALARM_DOMAINS_t topicIdx, int argCnt, const char* parList, byte* pldPtr, int pldLen) {
-    //lprintf("MQTT callback - control/zones/partitions/pgms cmd received, subtopic: %s payload: %s\n", parList, pldPtr);
-    int idx; int minIdx = 0, maxIdx = 0;                    // to store the index of the zone with zone name in parList in zonesDB
-    int dbPropsIdx;
-    dbPropsIdx = MQTT_subscriptions[topicIdx].what;         // use as index in dbPtrArr[].From dbPtrArr fetch the db geometry
+	int itemIdx = 0;                                // temporary buffer to hold the name of the zone/partition/pgm/...
+    int minIdx = 0, maxIdx = 0;                 // to store the index of the zone with zone name in parList in zonesDB
+    //
+    printf("MQTT callback - control/zones/partitions/pgms cmd received, subtopic: %s payload: %s\n", parList, pldPtr);
     //
     if (!_stricmp(parList, SUBTOPIC_WILDCARD)) {            // check for 'all' first, means it is requested to set all entries in the database to same payload
-        maxIdx = dbPtrArr[dbPropsIdx].elmCnt;                // set all, loop will run from 0 to elements count 
+        //maxIdx = dbPtrArr[dbPropsIdx].elmCnt;             // set all, loop will run from 0 to elements count 
+		printf("SUBTOPIC_WILDCARD not supported yet :-(\n");
+        return;
     }
     else {
-        if (!str2idx(dbPtrArr[dbPropsIdx].dbBaseAddr, dbPtrArr[dbPropsIdx].elmCnt, dbPtrArr[dbPropsIdx].elmLen, dbPtrArr[dbPropsIdx].nameOffs, (const char*)parList, &idx))
-            return;                                         // subtopic not found
+        //if (!str2idx(dbPtrArr[dbPropsIdx].dbBaseAddr, dbPtrArr[dbPropsIdx].elmCnt, dbPtrArr[dbPropsIdx].elmLen, dbPtrArr[dbPropsIdx].nameOffs, (const char*)parList, &idx))
+        //    return;   
+		// tries to find name (%s) from subtopic. Returns 0 if subtopic not found, else index in corresponding database
+        switch (topicIdx) {
+        case ZONES: {
+            itemIdx = alarm.zoneIndex(parList);
+            break;
+        }
+        case PARTITIONS: {
+			itemIdx = alarm.partitionIndex(parList);
+            break;
+        }
+		case PGMS: {
+			itemIdx = alarm.pgmIndex(parList);
+			break;
+		}
+        default:
+			printf("Unknown topic %d\n", topicIdx);
+            break;
+        }   
+		// TODO - handle SUBTOPIC_WILDCARD
         // got it, idx will hold the zone/partition/pgm/... index in zonesDB/partitionDB/pgmsDB/....
-        minIdx = idx; maxIdx = minIdx + 1;                    // minIdx is entry index, set maxIdx to minIdx+1  to run the loop only once                                
+        //minIdx = idx; maxIdx = minIdx + 1;                    // minIdx is entry index, set maxIdx to minIdx+1  to run the loop only once                                
     }
     // we have zone/part/pgm/... index now and can process the payload
-    for (int i = minIdx; i < maxIdx; i++)
-        processMQTTpayload(MQTT_subscriptions[topicIdx].pldsArrPtr, MQTT_subscriptions[topicIdx].maxPlds, i, pldPtr, pldLen);
+	//for (int i = minIdx; i < maxIdx; i++)                     // TODO - handle SUBTOPIC_WILDCARD
+	if (itemIdx < 0) {
+		printf("MQTT topic: %s not found\n", parList);
+		return;
+	}
+    processMQTTpayload(MQTT_subscriptions[topicIdx].pldsArrPtr, MQTT_subscriptions[topicIdx].maxPlds, itemIdx, pldPtr, pldLen);
 }
+
+
+void trigerArm(void* param1, void* param2, void* param3) {
+    int partIdx = *(int*)param1;
+    const ARM_METHODS_t action = *(ARM_METHODS_t *)param2;
+    // param3 is not used
+
+	if (!alarm.isPartitionValid(partIdx))                   // check if partition is valid, not really needed
+        return;
+
+    // check first for valid params ranges and call
+    if (!((action == DISARM) || (action == REGULAR_ARM) || (action == STAY_ARM) || (action == FORCE_ARM) || (action == INSTANT_ARM))) {
+        printf("CMD parse: Invalid ARM action %d", action);
+        return;
+    }
+    alarm.setPartitionTarget(partIdx, action);			    // set new target arm state
+    //if(action != DISARM_ALL)								// set new target arm state
+    //	partitionRT[partID].targetArmStatus = action;		// armed successfully
+    //else {												// TODO DISARM ALL command
+    //	for (int i = 0; i < MAX_PARTITION; i++) {
+    //		partitionRT[partID].targetArmStatus = action;	
+    //	}
+    //}
+}
+
+//
+// wrapers for the Alarm class methods
+//
+void zoneCmd(void* param1, void* param2, void* param3) {
+	alarm.modifyZn(param1, param2, param3);
+}
+void pgmCmd(void* param1, void* param2, void* param3) {
+    alarm.modifyPgm(param1, param2, param3);
+}
+
+//

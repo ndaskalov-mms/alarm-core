@@ -211,33 +211,33 @@ int Alarm::check4openUnbypassedZones(int prt) {
 //
 // actions DISARM, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM
 //
-void Alarm::trigerArm(void* param1, void* param2, void* param3) {
-	const int partID = *(int*)param1;
-	const int action = *(int*)param2;
-	// param3 is not used
-
-	if (!partitionDB[partID].valid)
-		return;
-	if (partID < 0 || partID >= MAX_PARTITION) {
-		ErrWrite(ERR_WARNING, "CMD parse: Invalid PARTITION ID %d", partID);
-		return;
-	}
-	// check first for valid params ranges and call
-	if (!((action == DISARM) || (action == REGULAR_ARM) || (action == STAY_ARM) || (action == FORCE_ARM) || (action == INSTANT_ARM))) {
-		ErrWrite(ERR_WARNING, "CMD parse: Invalid ARM action %d", action);
-		return;
-	}
-	//partitionRT[partID].newCmd = true;
-	partitionRT[partID].changed |= CHG_NEW_CMD;				// mark that action is needed
-	partitionRT[partID].targetArmStatus = action;			// set new target arm state
-	//if(action != DISARM_ALL)								// set new target arm state
-	//	partitionRT[partID].targetArmStatus = action;		// armed successfully
-	//else {													// DISARM ALL command
-	//	for (int i = 0; i < MAX_PARTITION; i++) {
-	//		partitionRT[partID].targetArmStatus = action;	
-	//	}
-	//}
-}
+//void Alarm::trigerArm(void* param1, void* param2, void* param3) {
+//	const int partID = *(int*)param1;
+//	const int action = *(int*)param2;
+//	// param3 is not used
+//
+//	if (!partitionDB[partID].valid)
+//		return;
+//	if (partID < 0 || partID >= MAX_PARTITION) {
+//		ErrWrite(ERR_WARNING, "CMD parse: Invalid PARTITION ID %d", partID);
+//		return;
+//	}
+//	// check first for valid params ranges and call
+//	if (!((action == DISARM) || (action == REGULAR_ARM) || (action == STAY_ARM) || (action == FORCE_ARM) || (action == INSTANT_ARM))) {
+//		ErrWrite(ERR_WARNING, "CMD parse: Invalid ARM action %d", action);
+//		return;
+//	}
+//	//partitionRT[partID].newCmd = true;
+//	partitionRT[partID].changed |= CHG_NEW_CMD;				// mark that action is needed
+//	partitionRT[partID].targetArmStatus = action;			// set new target arm state
+//	//if(action != DISARM_ALL)								// set new target arm state
+//	//	partitionRT[partID].targetArmStatus = action;		// armed successfully
+//	//else {													// DISARM ALL command
+//	//	for (int i = 0; i < MAX_PARTITION; i++) {
+//	//		partitionRT[partID].targetArmStatus = action;	
+//	//	}
+//	//}
+//}
 //
 // action = ZONE_OPEN_CMD, ZONE_AMASK_CMD, ZONE_CLOSE_CMD, ZONE_TAMPER_CMD, ZONE_BYPASS_CMD
 //
@@ -384,7 +384,7 @@ int Alarm::checkArmRestrctions(byte partIdx, int action) {
 //		   int follows	- 
 // returns: 0 if successfull, !0 if restriction or error
 //
-int Alarm::armPartition(byte prt, byte action) {
+int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	int followID; int i;
 	if (!partitionDB[prt].valid) {
 		ErrWrite(ERR_WARNING, "Request to arm/disarm invalid partition %d\n", prt);
@@ -404,7 +404,8 @@ int Alarm::armPartition(byte prt, byte action) {
 		if (!partitionDB[followID].valid)											// skip invalid partitions
 			continue;
 		else
-			trigerArm(&followID, &action, NULL);									// set the same action for follow partitions 
+			//trigerArm(&followID, &action, NULL);									// set the same action for follow partitions 
+			setPartitionTarget(followID, action);
 	}
 	// now proceed to action on current partition
 	if (action == DISARM) {

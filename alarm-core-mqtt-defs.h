@@ -20,6 +20,7 @@
 // topics
 #define MQTT_PARTITIONS_CONTROL			"/pdox/control/partitions/%s"
 #define PARTITIONS_STATES_TOPIC			"/pdox/states/partitions/%s/%s"
+#define	SUBTOPIC_WILDCARD				"all"
 // payloads
 #define ARM_PAYLOAD		                "true"
 #define DISARM_PAYLOAD	                "false"

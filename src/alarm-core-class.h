@@ -102,7 +102,9 @@ public:
     int getArmStatus(int partitionIndex) const;
     bool hasPartitionChanged(int partitionIndex) const;
     const char* getPartitionName(int partitionIndex) const;
-	void trigerArm(void* param1, void* param2, void* param3);
+	int isPartitionValid(const int idx) const;
+	bool setPartitionTarget(int partitionIndex, ARM_METHODS_t targetArmStatus);
+    int armPartition(byte prt, ARM_METHODS_t action);
     
     // PGM-related methods
     int getPgmCount() const;
@@ -110,6 +112,10 @@ public:
     const char* getPgmName(int pgmIndex) const;
 	void modifyPgm(void* param1, void* param2, void* param3);
 
+
+    int zoneIndex(const char* name) const;
+    int partitionIndex(const char* name) const;
+    int pgmIndex(const char* name) const;
 
     // Global options methods
     void setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
@@ -215,7 +221,7 @@ private:
 
     // Arm management
     int checkArmRestrctions(byte partIdx, int action);
-    int armPartition(byte prt, byte action);
+
 
     // Alarm processing
     void processAlarm(int alarm);
@@ -369,6 +375,10 @@ int Alarm::addPartition(const ALARM_PARTITION_t& newPartition) {
     return -1; // Return -1 if no unused entry is found
 }
 //
+int Alarm::isPartitionValid(int idx) const {
+    return (validatePartitionIndex(idx));
+}
+//
 void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 
     // Update the global options
@@ -407,6 +417,45 @@ bool Alarm::validatePgmIndex(int pgmIndex) const {
 }
 
 // Public accessor methods with bounds checking
+
+//#include <cstring> // For strncmp
+
+int Alarm::zoneIndex(const char* name) const {
+    for (int i = 0; i < MAX_ALARM_ZONES; ++i) {
+        if (zonesDB[i].valid == 0) { // Skip invalid entries
+            continue;
+        }
+        if (strncmp(name, zonesDB[i].zoneName, NAME_LEN) == 0) { // Compare names
+            return i; // Found the zone, return its index
+        }
+    }
+    return -1; // Zone not found
+}
+
+int Alarm::partitionIndex(const char* name) const {
+    for (int i = 0; i < MAX_PARTITION; ++i) {
+        if (partitionDB[i].valid == 0) { // Skip invalid entries
+            continue;
+        }
+        if (strncmp(name, partitionDB[i].partitionName, NAME_LEN) == 0) { // Compare names
+            return i; // Found the partition, return its index
+        }
+    }
+    return -1; // Partition not found
+}
+
+int Alarm::pgmIndex(const char* name) const {
+    for (int i = 0; i < MAX_ALARM_PGM; ++i) {
+        if (pgmsDB[i].valid == 0) { // Skip invalid entries
+            continue;
+        }
+        if (strncmp(name, pgmsDB[i].pgmName, NAME_LEN) == 0) { // Compare names
+            return i; // Found the PGM, return its index
+        }
+    }
+    return -1; // PGM not found
+}
+
 int Alarm::getZoneCount() const {
     return MAX_ALARM_ZONES;
 }
@@ -454,6 +503,12 @@ const char* Alarm::getPartitionName(int partitionIndex) const {
     if (!validatePartitionIndex(partitionIndex)) return "";
     return partitionDB[partitionIndex].partitionName;
 }
+bool Alarm::setPartitionTarget(int partitionIndex, ARM_METHODS_t targetArmStatus) {
+	if (!validatePartitionIndex(partitionIndex)) return false;
+	partitionRT[partitionIndex].targetArmStatus = targetArmStatus;
+	partitionRT[partitionIndex].changed |= CHG_NEW_CMD; return true;
+}
+
 
 int Alarm::getPgmCount() const {
     return MAX_ALARM_PGM;
@@ -536,6 +591,9 @@ void Alarm::resetPartitionTimers(int partitionIndex) {
     // Reset all timers for a partition
     // Implementation would depend on how timers are managed
 }
+
+
+//
 
 #endif // ALARM_H
 

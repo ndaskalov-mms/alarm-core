@@ -465,8 +465,8 @@ struct partitionTimer_t {
 //
 struct ALARM_PARTITION_RUN_TIME_t {
 	byte newCmd;					// new partition cmd received
-	byte armStatus;					// current arm status: DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
-	byte targetArmStatus;			// set when arm command received:DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
+	ARM_METHODS_t armStatus;					// current arm status: DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
+	ARM_METHODS_t targetArmStatus;	// set when arm command received:DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
 	unsigned long armTime;			// arm time
 	byte changed;					// contains bitmap of the reaso for partition change see enum PART_STAT_CHANGES_t 
 	struct partitionTimer_t partitionTimers[MAX_PARTITION_TIMERS] = {{NOT_STARTED,0,CHG_EXIT_DELAY_TIMER,	EXIT_DELAY_ZONES,	ZONE_EX_D_BYPASSED, 0},

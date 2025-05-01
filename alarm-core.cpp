@@ -5,7 +5,7 @@
 
 #include "alarm-core.h"
 #include "alarm-core-parseJSON.h" // Include the new header
-//#include "alarm-core-mqtt.h" // Include the new header
+#include "alarm-core-mqtt.h" // Include the new header
 
 //#include <windows.h>
 char prnBuf[1024];
@@ -57,9 +57,9 @@ int main() {
     for (auto it = alarm.beginValidZones(); it != alarm.endValidZones(); ++it) {
         std::cout << it->zoneName << std::endl; // Access zoneName of valid zones
     }
-    for (const auto& partition : alarm) {
-        std::cout << partition.partitionName << std::endl;
-    }
+    //for (const auto& partition : alarm) {
+    //    std::cout << partition.partitionName << std::endl;
+    //}
     //alarm.printAlarmPartCfg();
     //alarm.printAlarmZones(0, MAX_ALARM_ZONES);
     //alarm.printAlarmPgms();
