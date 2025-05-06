@@ -247,7 +247,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 	const int action = *(int*)param2;								// command - defined in enum ZONE_CMDS_t
 	const char* payldPtr = (const char*)param3;
 	if (payldPtr)
-		lprintf("modifyZn: WARNING - garbage found after modify zone command %s", payldPtr);
+		ErrWrite(ERR_WARNING, "modifyZn: WARNING - garbage found after modify zone command %s\n", payldPtr);
 	//lprintf("modifyZn: ZONE action %d\n", action);
 	//
 	if (!zonesDB[zn].zoneType)												// zoneType == 0 means disabled

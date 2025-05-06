@@ -48,6 +48,8 @@ int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone);
 int extractGlobalOptionsFields(const JsonObject& optionsJson, ALARM_GLOBAL_OPTS_t& globalOptions);
 // Function to extract partition fields from JSON
 int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& partition);
+// Function to extract PGM fields from JSON
+int extractPgmFields(const JsonObject& pgmJson, ALARM_PGM& pgm);
 // Function to parse JSON file and extract data into alarm system structures
 bool parseJsonConfig(const std::string& filenamejsonString, Alarm& alarm);
 //
@@ -94,7 +96,21 @@ bool parseJsonConfig(const std::string& jsonString, Alarm& alarm) {
             }
         }
     }
-
+    // Process PGMs
+    JsonArray pgmsArray = jsonDoc["pgms"];
+    if (!pgmsArray.isNull()) {
+        for (JsonObject pgmJson : pgmsArray) {
+            ALARM_PGM pgm = {};
+            //
+            // Extract all partition fields using the partitionTags array
+            if (extractPgmFields(pgmJson, pgm) && pgm.valid) {
+                GlobalDebugLogger(LOG_ERR_DEBUG, "Extracted PGM: %s (Index: %d)\n",
+                    pgm.pgmName, static_cast<int>(pgm.pgmID));
+                // Add partition to alarm system
+                alarm.addPgm(pgm);
+            }
+        }
+    }
     // Process global options
     JsonObject globalOptionsJson = jsonDoc["globalOptions"];
     if (!globalOptionsJson.isNull()) {
@@ -142,12 +158,12 @@ int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone) {
                 if (zoneJson[tagName].is<const char*>()) {
                     valueStr = zoneJson[tagName].as<const char*>();
                 }
-                else if (zoneJson[tagName].is<int>()) {
-                    valueStr = std::to_string(zoneJson[tagName].as<int>());
-                }
-                else if (zoneJson[tagName].is<bool>()) {
-                    valueStr = zoneJson[tagName].as<bool>() ? "true" : "false";
-                }
+                //else if (zoneJson[tagName].is<int>()) {
+                //    valueStr = std::to_string(zoneJson[tagName].as<int>());
+                //}
+                //else if (zoneJson[tagName].is<bool>()) {
+                //    valueStr = zoneJson[tagName].as<bool>() ? "true" : "false";
+                //}
                 else {
                     // Unsupported type, skip this field
                     continue;
@@ -218,12 +234,12 @@ int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& p
                 if (partitionJson[tagName].is<const char*>()) {
                     valueStr = partitionJson[tagName].as<const char*>();
                 }
-                else if (partitionJson[tagName].is<int>()) {
-                    valueStr = std::to_string(partitionJson[tagName].as<int>());
-                }
-                else if (partitionJson[tagName].is<bool>()) {
-                    valueStr = partitionJson[tagName].as<bool>() ? "true" : "false";
-                }
+                //else if (partitionJson[tagName].is<int>()) {
+                //    valueStr = std::to_string(partitionJson[tagName].as<int>());
+                //}
+                //else if (partitionJson[tagName].is<bool>()) {
+                //    valueStr = partitionJson[tagName].as<bool>() ? "true" : "false";
+                //}
                 else {
                     // Unsupported type, skip this field
                     continue;
@@ -258,6 +274,82 @@ int extractPartitionFields(const JsonObject& partitionJson, ALARM_PARTITION_t& p
         for (size_t i = 0; i < PARTITION_TAGS_CNT; i++) {
             if (tagFound[i] == 0) {
                 GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", partitionTags[i].keyStr);
+            }
+        }
+    }
+
+    return 1; // Indicate success
+}
+int extractPgmFields(const JsonObject& pgmJson, ALARM_PGM& pgm) {
+    // Initialize PGM with zeros
+    std::memset(&pgm, 0, sizeof(ALARM_PGM));
+    pgm.valid = true; // Set valid to true by default
+
+    // Use a byte array to track which tags were found in the JSON
+    byte tagFound[PGM_TAGS_CNT] = { 0 };
+    int missingTagCount = 0;
+
+    // Go through each tag in pgmTags array
+    for (size_t i = 0; i < PGM_TAGS_CNT; i++) {
+        const char* tagName = pgmTags[i].keyStr;
+        byte* targetAddress = reinterpret_cast<byte*>(&pgm) + pgmTags[i].patchOffset;
+        int length = pgmTags[i].patchLen;
+
+        // Check if the tag exists in JSON
+        if (!pgmJson[tagName].isNull()) {
+            tagFound[i] = 1;  // Mark this tag as found
+
+            // Get the patch callback function for this tag
+            auto patchCallback = pgmTags[i].patchCallBack;
+
+            try {
+                // Define valueStr outside the if/else chain
+                std::string valueStr;
+
+                // Handle different types of JSON values
+                if (pgmJson[tagName].is<const char*>()) {
+                    valueStr = pgmJson[tagName].as<const char*>();
+                }
+                //else if (pgmJson[tagName].is<int>()) {
+                //    valueStr = std::to_string(pgmJson[tagName].as<int>());
+                //}
+                //else if (pgmJson[tagName].is<bool>()) {
+                //    valueStr = pgmJson[tagName].as<bool>() ? "true" : "false";
+                //}
+                else {
+                    // Unsupported type, skip this field
+                    continue;
+                }
+
+                // Invoke the patchCallback and check its return value
+                if (!patchCallback(targetAddress, 0, length, valueStr.c_str())) {
+                    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to patch field %s with value %s\n",
+                        tagName, valueStr.c_str());
+                    pgm.valid = false; // Mark PGM as invalid
+                    return 0; // Indicate failure
+                }
+            }
+            catch (const std::exception& e) {
+                GlobalDebugLogger(LOG_ERR_CRITICAL, "Error extracting field %s: %s\n",
+                    tagName, e.what());
+                pgm.valid = false; // Mark PGM as invalid
+                return 0; // Indicate failure
+            }
+        }
+        else {
+            // Tag not found in JSON
+            missingTagCount++;
+        }
+    }
+
+    // Issue warnings for missing tags
+    if (missingTagCount > 0) {
+        GlobalDebugLogger(LOG_ERR_WARNING, "PGM '%s' (ID: %d) is missing %d tag(s):\n",
+            pgm.pgmName, static_cast<int>(pgm.pgmID), missingTagCount);
+
+        for (size_t i = 0; i < PGM_TAGS_CNT; i++) {
+            if (tagFound[i] == 0) {
+                GlobalDebugLogger(LOG_ERR_WARNING, "   - Missing tag: '%s'\n", pgmTags[i].keyStr);
             }
         }
     }

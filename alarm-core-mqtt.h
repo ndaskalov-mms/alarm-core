@@ -11,6 +11,9 @@
 void trigerArm(void* param1, void* param2, void* param3);
 void zoneCmd(void* param1, void* param2, void* param3); 
 void pgmCmd(void* param1, void* param2, void* param3);
+bool subscribeZonesToMQTT(const ALARM_DOMAINS_t what);
+bool subscribePartitionsToMQTT(const ALARM_DOMAINS_t what);
+bool subscribePgmsToMQTT(const ALARM_DOMAINS_t what);
 //void OTAconfigHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
 //void globalOptionsHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
 void zonesPartEtcControlHandler(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);
@@ -66,11 +69,11 @@ struct  inpPlds_t pgmPlds[] = {
 // format of the entries of the array handling MQTT topics
 struct MQTT_cmd_t {
 	const char	topic[MAX_MQTT_TOPIC];                                  // MQTT control topic, consist of topic/name, wher name is zone/partition/pgm name
-	int         what;                                                   // what domein of alarm element (zones/partitions/pgms/...) is concerned
+	ALARM_DOMAINS_t what;                                               // what domein of alarm element (zones/partitions/pgms/...) is concerned
 	void        (*cBack)(ALARM_DOMAINS_t what, int argCnt, const char* parList, byte* pldPtr, int pldLen);  // topic handler
 	struct inpPlds_t* pldsArrPtr;                                       // pointer to valid payloads array
 	int         maxPlds;                                                // num of elements in payloads array
-	int        (*subcBack)(int what, int idx);                          // subscribe handler
+	bool         (*subcBack)(ALARM_DOMAINS_t what);                         // subscribe handler
 };
 //
 //
@@ -78,15 +81,15 @@ struct MQTT_cmd_t {
 // ADD HERE NEW TOPICS AND CORRESPONDING HANDLERS
 //
 struct MQTT_cmd_t MQTT_subscriptions[] = {
-	{MQTT_ZONES_CONTROL,         ZONES,         &zonesPartEtcControlHandler, zonePlds, (sizeof(zonePlds) / sizeof(zonePlds[0])),	&zonePartPgmSubscribe},
-	{MQTT_PARTITIONS_CONTROL,    PARTITIONS,    &zonesPartEtcControlHandler, partPlds, (sizeof(partPlds) / sizeof(partPlds[0])),	&zonePartPgmSubscribe},
-	{MQTT_OUTPUTS_CONTROL,       PGMS,          &zonesPartEtcControlHandler, pgmPlds,  (sizeof(pgmPlds) / sizeof(pgmPlds[0])),		&zonePartPgmSubscribe},
+	{MQTT_ZONES_CONTROL,         ZONES,         &zonesPartEtcControlHandler, zonePlds, (sizeof(zonePlds) / sizeof(zonePlds[0])),	&subscribeZonesToMQTT},
+	{MQTT_PARTITIONS_CONTROL,    PARTITIONS,    &zonesPartEtcControlHandler, partPlds, (sizeof(partPlds) / sizeof(partPlds[0])),	&subscribePartitionsToMQTT},
+	{MQTT_OUTPUTS_CONTROL,       PGMS,          &zonesPartEtcControlHandler, pgmPlds,  (sizeof(pgmPlds) / sizeof(pgmPlds[0])),		&subscribePgmsToMQTT},
 	//{MQTT_METRICS_EXCHANGE,      -1,            &OTAconfigHandler,           NULL,                   0,								&subscribeOTAconfig},
 	//{MQTT_GLOBAL_OPT_CONTROL,    GLOBAL_OPT,    &globalOptionsHandler,       NULL,                   0,								&subscribeGlobalOptions },
 };
 #define MQTT_SUBS_CNT   (sizeof(MQTT_subscriptions)/sizeof(MQTT_subscriptions[0]))
-
 //
+// ----------------------- Subscribe to MQTT topics -----------------------
 // int subsscriptTopic( const char mqttTopic[], const char mqttName[])
 // subsribe to MQTT topic, in case of issue, disconnects MQTT client and set reconnect timer
 // params:      const char mqttTopic[]  - topic to subscribe to
@@ -96,7 +99,7 @@ struct MQTT_cmd_t MQTT_subscriptions[] = {
 //
 int subsscriptTopic(const char mqttTopic[], const char mqttName[]) {
     snprintf(tempMQTTbuf, sizeof(tempMQTTbuf), mqttTopic, mqttName);
-    //ErrWrite(ERR_DEBUG, "MQTTsetup: subscribing to %s\n", tempMQTTbuf);
+    //printf("MQTTsetup: subscribing to %s\n", tempMQTTbuf);
     //if (!MQTTclient.subscribe(tempMQTTbuf)) {                       // subscribe failure, cancel and
     //    MQTTclient.disconnect();                                    // try again later
     //    timeoutOps(SET, MQTT_CONNECT_TIMER);						// restart timer
@@ -109,35 +112,84 @@ int subsscriptTopic(const char mqttTopic[], const char mqttName[]) {
 //
 // Family of functions to subscribe to different MQTT topics depends on the alarm domain
 //
-// void zonePartPgmSubscribe(int what, int idx)
+// bool zonePartPgmSubscribe(int what)
 //  subscribe for control topic for /zones/partitions/outputs/etc
-//  params:  int what   - index in dbPtrArr[] database to select proper DB' geometry (base address, offset of name, etc)
-//           int idx    - index in MQTT_subscriptions[] to get topic to subscribe to
+//  params:  int what    - index in MQTT_subscriptions[] to get topic to subscribe to
 //  return:  true   - if all subscriptions aresuccessfull
 //           false  - failure occured
 //
-int zonePartPgmSubscribe(int what, int idx) {
-    int atLeastOneValid = 0;                                        // subscribe only for valid zones/part/pgms/...
+//
+bool subscribeZonesToMQTT(const ALARM_DOMAINS_t what) {
+    bool success = true;
 
-    // replace this with iterator calls
-    //for (int i = 0; i < entriesCnt; i++) {                          // check if valid/enabled. For zones zoneType = 0 means disabled
-    //    //if (!subsscriptTopic(MQTT_subscriptions[idx].topic, NAME))
-    //        return false;                                           // upper level will disconnect MQTT stack and will try to reconnect
-    //    atLeastOneValid++;
-    //}
-    //if (atLeastOneValid)                                             // if at least one is valid, subscribe to /pdox/topic/all
-    //    if (!subsscriptTopic(MQTT_subscriptions[idx].topic, SUBTOPIC_WILDCARD))
-    //        return false;
-    return true;
+    // Get the maximum number of zones from the Alarm class
+    int maxZones = alarm.getZoneCount();
+    // Use the topic from MQTT_subscriptions for ZONES
+    const char* topicTemplate = MQTT_subscriptions[what].topic;
+
+    for (int i = 0; i < maxZones; ++i) {
+        const char* zoneName = alarm.getZoneName(i);
+        if (zoneName[0] == '\0') { // Check for empty string
+            continue; // Skip invalid zones
+        }
+        if (!subsscriptTopic(topicTemplate, zoneName)) {
+            printf("Failed to subscribe zone: %s\n", zoneName);
+            success = false;
+        }
+    }
+    return success;
 }
 //
-int subscribeOTAconfig(int what, int idx) {
-    if (!subsscriptTopic(MQTT_subscriptions[idx].topic, ""))
+bool subscribePartitionsToMQTT(const ALARM_DOMAINS_t what) {
+    bool success = true;
+
+    // Get the maximum number of partitions from the Alarm class
+    int maxPartitions = alarm.getPartitionCount();
+    // Use the topic from MQTT_subscriptions for PARTITIONS
+    const char* topicTemplate = MQTT_subscriptions[what].topic;
+
+    for (int i = 0; i < maxPartitions; ++i) {
+        const char* partitionName = alarm.getPartitionName(i);
+        if (partitionName[0] == '\0') { // Check for empty string
+            continue; // Skip invalid partitions
+        }
+        if (!subsscriptTopic(topicTemplate, partitionName)) {
+            printf("Failed to subscribe partition: %s\n", partitionName);
+            success = false;
+        }
+    }
+    return success;
+}
+//
+bool subscribePgmsToMQTT(const ALARM_DOMAINS_t what) {
+    bool success = true;
+
+    // Get the maximum number of PGMs from the Alarm class
+    int maxPgms = alarm.getPgmCount();
+    // Use the topic from MQTT_subscriptions for PGMS
+    const char* topicTemplate = MQTT_subscriptions[what].topic;
+
+    for (int i = 0; i < maxPgms; ++i) {
+        const char* pgmName = alarm.getPgmName(i);
+        if (pgmName[0] == '\0') { // Check for empty string
+            continue; // Skip invalid PGMs
+        }
+        if (!subsscriptTopic(topicTemplate, pgmName)) {
+            printf("Failed to subscribe PGM: %s\n", pgmName);
+            success = false;
+        }
+    }
+    return success;
+}
+
+//
+int subscribeOTAconfigToMQTT(int what) {
+    if (!subsscriptTopic(MQTT_subscriptions[what].topic, ""))
         return false;
     return true;
 }
 //
-int subscribeGlobalOptions(int what, int idx) {
+int subscribeGlobalOptionsToMQTT(int what, int idx) {
     for (int i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; i++) {                          // for zones zoneType = 0 means disabled
         if (!subsscriptTopic(MQTT_subscriptions[idx].topic, gOptsTags[i].keyStr))
             return false;
@@ -149,12 +201,14 @@ int subscribeGlobalOptions(int what, int idx) {
 int subscribeMQTTtopics(void) {
     int i;
     for (i = 0; i < MQTT_SUBS_CNT; i++) {
-        if (!MQTT_subscriptions[i].subcBack(MQTT_subscriptions[i].what, i))
+        if (!MQTT_subscriptions[i].subcBack(MQTT_subscriptions[i].what))
             return FALSE;
     }
     printf("Subscribing finished\n");
 	return TRUE;
 }
+//
+// ------------------------- Receive MQTT messages -------------------------
 //
 // void MQTTcallback(char* rcvTopic, byte* payload, unsigned int pldLen)
 // This callback is called from MQTT stack when something is received on subscribed topic
@@ -171,10 +225,10 @@ void MQTTcallback(char* rcvTopic, byte* payload, unsigned int pldLen) {
     //unsigned int    topicLen;
     int found = 0;
     //
-    payload[pldLen] = 0;                                                 // payload is not NULL terminated, but we are expecting only strings, so shall be safe to terminate it
-    //lprintf("MQTT recv:%s ", rcvTopic);
-    //lprintf("Payload: %.*s Len:%d\n", pldLen, payload, pldLen);
-    //
+    //payload[pldLen] = 0;                                                 // payload is not NULL terminated, but we are expecting only strings, so shall be safe to terminate it
+    lprintf("MQTT recv:%s ", rcvTopic);
+    lprintf("Payload: %.*s Len:%d\n", pldLen, payload, pldLen);
+    
     for (idx = 0; idx < MQTT_SUBS_CNT; idx++) {                             // iterate over all supported MQTT topics
         topicPtr = MQTT_subscriptions[idx].topic;
         //topicLen = strlen(MQTT_subscriptions[idx].topic);
@@ -239,6 +293,8 @@ void processMQTTpayload(struct  inpPlds_t Cmds[], int CmdsCnt, int itemIdx, cons
     int i; const byte* secStr = NULL;
     for (i = 0; i < CmdsCnt; i++) {
         // match payload to what allowed by command
+		if (strlen(Cmds[i].MQTTpld) != len)
+			continue;                                             // length of the payload doesn't match the command, continue the search
         if (!_strnicmp((const char*)payld, Cmds[i].MQTTpld, strlen(Cmds[i].MQTTpld))) { // note: payld is not NULL terminated
             printf("Found CMD: MQTT cmd %s, action = %d at index %d\n", Cmds[i].MQTTpld, Cmds[i].action, i);
             secStr = &payld[strlen(Cmds[i].MQTTpld)];             // secStr is pointer to rest (if any) of the payload after the command, to be parsed by the callback;
@@ -315,7 +371,7 @@ void zonesPartEtcControlHandler(ALARM_DOMAINS_t topicIdx, int argCnt, const char
     // we have zone/part/pgm/... index now and can process the payload
 	//for (int i = minIdx; i < maxIdx; i++)                     // TODO - handle SUBTOPIC_WILDCARD
 	if (itemIdx < 0) {
-		printf("MQTT topic: %s not found\n", parList);
+		printf("MQTT sub-topic: %s not found\n", parList);
 		return;
 	}
     processMQTTpayload(MQTT_subscriptions[topicIdx].pldsArrPtr, MQTT_subscriptions[topicIdx].maxPlds, itemIdx, pldPtr, pldLen);
@@ -354,5 +410,96 @@ void zoneCmd(void* param1, void* param2, void* param3) {
 void pgmCmd(void* param1, void* param2, void* param3) {
     alarm.modifyPgm(param1, param2, param3);
 }
+// ------------------------  TEST vectors ------------------------
+//
+struct MQTTTestVector {
+    const char* topic;       // The MQTT topic to test
+    const char* payload;     // The payload to send
+    const char* description; // Description of the test case
+};
+// This array contains the test vectors for the MQTT commands
+MQTTTestVector testVectors[] = {
+    // Valid zone commands
+    {"/pdox/control/zones/Front Door",                  "bypass",       "Test bypass command for Zone1"},
+    {"/pdox/control/zones/Back Door",                   "clear_bypass", "Test clear_bypass command for Zone2"},
+    {"/pdox/control/zones/Motion Sensor Living Room",   "tamper",       "Test tamper command for Zone3"},
+    {"/pdox/control/zones/Window Sensor Bedroom",       "open",         "Test open command for Zone4"},
+    {"/pdox/control/zones/Smoke Detector",              "close",        "Test close command for Zone5"},
 
+    // Valid partition commands
+    {"/pdox/control/partitions/Main Floor",     "disarm",   "Test disarm command for Partition1"},
+    {"/pdox/control/partitions/Upper Floor",    "arm",      "Test arm command for Partition2"},
+    {"/pdox/control/partitions/Main Floor",     "arm_force","Test arm_force command for Partition3"},
+    {"/pdox/control/partitions/Upper Floor",    "arm_stay", "Test arm_stay command for Partition4"},
+    {"/pdox/control/partitions/Main Floor",     "arm_instant","Test arm_instant command for Partition5"},
+
+    // Valid PGM commands
+    {"/pdox/control/outputs/External Siren",    "on",   "Test on command for PGM1"},
+    {"/pdox/control/outputs/Garage Door",       "off",  "Test off command for PGM2"},
+    {"/pdox/control/outputs/Entrance Light",    "pulse","Test pulse command for PGM3"},
+
+    // Invalid cases
+    {"/pdox/control/zones/InvalidZone", "bypass", "Test bypass command for an invalid zone"},
+    {"/pdox/control/partitions/InvalidPartition", "arm", "Test arm command for an invalid partition"},
+    {"/pdox/control/outputs/InvalidPGM", "on", "Test on command for an invalid PGM"},
+    {"/pdox/control/zones/Back Door", "invalid_command", "Test invalid command for Zone1"},
+    {"/pdox/control/partitions/Upper Floor", "invalid_command", "Test invalid command for Partition1"},
+    {"/pdox/control/outputs/Entrance Light", "invalid_command", "Test invalid command for PGM1"},
+
+    // Edge cases
+    {"/pdox/control/zones/", "bypass", "Test bypass command with an empty zone name"},
+    {"/pdox/control/partitions/", "arm", "Test arm command with an empty partition name"},
+    {"/pdox/control/outputs/", "on", "Test on command with an empty PGM name"},
+    {"/pdox/control/zones/Back Door", "", "Test empty payload for Zone1"},
+    {"/pdox/control/partitions/Main Floor", "", "Test empty payload for Partition1"},
+    {"/pdox/control/outputs/Garage Door", "", "Test empty payload for PGM1"},
+};
+// This function runs the test vectors and prints the results
+void runMQTTTests() {
+	for (const auto& test : testVectors) {
+        printf("\n--------------------- Description: %s ----------------------\n", test.description);
+		printf("Testing topic: %s with payload: %s len %d\n", test.topic, test.payload, strlen(test.payload));
+		// Simulate the MQTT callback
+		MQTTcallback((char*)test.topic, (byte*)test.payload, strlen(test.payload));
+		printf("------------------------------------------------------------\n");
+	}
+}
+
+//void testMQTTcallback() {
+//    for (const auto& test : testVectors) {
+//        printf("Running test: %s\n", test.description);
+//        MQTTcallback(const_cast<char*>(test.topic), const_cast<byte*>(reinterpret_cast<const byte*>(test.payload)), strlen(test.payload));
+//        printf("\n");
+//    }
+//}
+
+
+
+
+
+
+
+//  -----------------------  TRASH --------------------------------------
+// //
+// void zonePartPgmSubscribe(int what, int idx)
+//  subscribe for control topic for /zones/partitions/outputs/etc
+//  params:  int what   - index in dbPtrArr[] database to select proper DB' geometry (base address, offset of name, etc)
+//           int idx    - index in MQTT_subscriptions[] to get topic to subscribe to
+//  return:  true   - if all subscriptions aresuccessfull
+//           false  - failure occured
+//
+//int zonePartPgmSubscribe(ALARM_DOMAINS_t what, int idx) {
+//    int atLeastOneValid = 0;                                        // subscribe only for valid zones/part/pgms/...
+//    // replace this with iterator calls
+//    for (auto it = alarm.beginValidZones(); it != alarm.endValidZones(); ++it) {
+//        // std::cout << it->zoneName << std::endl; // Access zoneName of valid zones
+//        if (!subsscriptTopic(MQTT_subscriptions[idx].topic, it->zoneName))
+//            return false;                                           // upper level will disconnect MQTT stack and will try to reconnect
+//        atLeastOneValid++;
+//    }
+//    if (atLeastOneValid)                                             // if at least one is valid, subscribe to /pdox/topic/all
+//        if (!subsscriptTopic(MQTT_subscriptions[idx].topic, SUBTOPIC_WILDCARD))
+//            return false;
+//    return true;
+//}
 //

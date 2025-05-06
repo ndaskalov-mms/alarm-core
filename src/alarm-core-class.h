@@ -107,6 +107,7 @@ public:
     int armPartition(byte prt, ARM_METHODS_t action);
     
     // PGM-related methods
+	int addPgm(const ALARM_PGM& newPgm); 
     int getPgmCount() const;
     int getPgmValue(int pgmIndex) const;
     const char* getPgmName(int pgmIndex) const;
@@ -370,6 +371,17 @@ int Alarm::addPartition(const ALARM_PARTITION_t& newPartition) {
             partitionRT[i] = {}; // Initialize runtime data
             partitionSTATS[i] = {}; // Initialize statistics
             return i; // Return the index of the entry
+        }
+    }
+    return -1; // Return -1 if no unused entry is found
+}
+//
+int Alarm::addPgm(const ALARM_PGM& newPgm) {
+    for (int i = 0; i < MAX_ALARM_PGM; ++i) {
+        if (pgmsDB[i].valid == 0) { // Check if the entry is unused
+            pgmsDB[i] = newPgm;    // Copy the content of the parameter
+            pgmsDB[i].valid = 1;   // Mark the entry as used
+            return i;              // Return the index of the entry
         }
     }
     return -1; // Return -1 if no unused entry is found

@@ -50,13 +50,17 @@ int main() {
         return 1;
     }
 
+    subscribeMQTTtopics();
+    runMQTTTests();
+
+
     // Print the zone configuration regardless of warnings
     //alarm.printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zone, PRTCLASS_ALL);
     //alarm.printAlarmOpts((byte*)&alarmGlobalOpts);
 
-    for (auto it = alarm.beginValidZones(); it != alarm.endValidZones(); ++it) {
-        std::cout << it->zoneName << std::endl; // Access zoneName of valid zones
-    }
+    //for (auto it = alarm.beginValidZones(); it != alarm.endValidZones(); ++it) {
+    //    std::cout << it->zoneName << std::endl; // Access zoneName of valid zones
+    //}
     //for (const auto& partition : alarm) {
     //    std::cout << partition.partitionName << std::endl;
     //}
