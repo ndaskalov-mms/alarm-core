@@ -84,8 +84,9 @@ public:
 
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
-    //void alarm_loop(void);
+    void alarm_loop(void);
     void setDebugCallback(DebugCallbackFunc callback);
+
     // Zone-related methods
     int addZone(const ALARM_ZONE& newZone);
     int getZoneCount() const;
@@ -120,6 +121,7 @@ public:
 
     // Global options methods
     void setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
+    void setGlobalOptions(const char* opt_name, const char* opt_val);
     bool isRestrictionActive(int restrictionType) const;
     
     // System methods
@@ -231,7 +233,7 @@ private:
     void processAmasks(int zn);
     int processEntryDelayZones(int zn);
     int processOpenZone(int zn);
-    void alarm_loop();
+
 
 
     // Private helper methods
@@ -411,7 +413,31 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
     ErrWrite(ERR_INFO, "Global options updated successfully.\n");
     printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
+//
+void Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
+    // Loop through the gOptsTags array to find the matching option name
+    for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; ++i) {
+        if (strncmp(opt_name, gOptsTags[i].keyStr, NAME_LEN) == 0) {
+            // Found the matching option name
+            const int offset = gOptsTags[i].patchOffset;
+            const int length = gOptsTags[i].patchLen;
+            auto patchCallback = gOptsTags[i].patchCallBack;
 
+            // Call the patchCallBack function to set the value
+            if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
+                printf("Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
+            }
+            else {
+                printf("Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
+            }
+            return; // Exit the function after processing the option
+        }
+    }
+
+    // If the option name is not found in gOptsTags
+    printf("Global option '%s' not found.\n", opt_name);
+}
+//
  void Alarm::synchPGMstates() {
      printf("synchPGMstates() - NOT IMPLEMENTED\n"); //(ErrWrite(ERR_WARNING, "synchPGMstates() - NOT IMPLEMENTED\n");
 }

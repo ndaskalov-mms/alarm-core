@@ -64,6 +64,25 @@
 #define MQTT_OUTPUTS_STATES	            "/pdox/states/outputs/%s"
 #define PGM_ON_PROPERTY                 "on"
 #define PGM_OFF_PROPERTY                "off"
+//
+//enum globalOptsPlds_t {
+//    GO_SET_MAX_SLAVES = 0,
+//    GO_SET_RESTR_SPRVS_LOSS,
+//    GO_SET_RESTR_TAMPER,
+//    GO_SET_RESTR_AC_FAIL,
+//    GO_SET_RESTR_BAT_FAIL,
+//    GO_SET_RESTR_BELL_FAIL,
+//    GO_SET_RESTR_BRD_FAIL,
+//    GO_SET_RESTR_AMASK,
+//    GO_SET_TROUBLE_LATCH,
+//    GO_SET_TAMPER_BPS_OPT,
+//    GO_SET_TAMPER_OPTS,
+//    GO_SET_ANTI_MASK_OPTS,
+//    GO_SET_RF_SPRVS_OPTS
+//};
+//
+// global options
+// 
 // 
 // metrics exchange
 //

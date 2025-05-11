@@ -52,12 +52,6 @@
     <ClInclude Include="alarm-core-parseJSON.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="old-mqtt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="old-mqtt_defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="alarm-core-mqtt-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
