@@ -7,7 +7,8 @@ typedef unsigned char byte;
 #define lprintf			printf
 #define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
 
-#include "alarm-core-defs.h"
+#include "alarm-core-public-defs.h"
+#include "alarm-core-internal-defs.h"
 #include "alarm-core-timers.h"
 
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
@@ -115,14 +116,17 @@ public:
 	void modifyPgm(void* param1, void* param2, void* param3);
 
 
-    int zoneIndex(const char* name) const;
-    int partitionIndex(const char* name) const;
-    int pgmIndex(const char* name) const;
+    int getZoneIndex(const char* name) const;
+    int getPartitionIndex(const char* name) const;
+    int getPgmIndex(const char* name) const;
 
     // Global options methods
     void setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
-    void setGlobalOptions(const char* opt_name, const char* opt_val);
+    bool setGlobalOptions(const char* opt_name, const char* opt_val);
     bool isRestrictionActive(int restrictionType) const;
+    int  getGlobalOptionsCnt() const;
+    const char * getGlobalOptionKeyStr(int idx) const;
+
     
     // System methods
     void updateAlarmState();
@@ -414,7 +418,7 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
     printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
 //
-void Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
+bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
     // Loop through the gOptsTags array to find the matching option name
     for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; ++i) {
         if (strncmp(opt_name, gOptsTags[i].keyStr, NAME_LEN) == 0) {
@@ -425,17 +429,30 @@ void Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
 
             // Call the patchCallBack function to set the value
             if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
-                printf("Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
+                ErrWrite(ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
+                return TRUE;
             }
             else {
-                printf("Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
+                ErrWrite(ERR_DEBUG, "Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
+                return FALSE;
             }
-            return; // Exit the function after processing the option
+            return FALSE; // Exit the function after processing the option
         }
     }
 
     // If the option name is not found in gOptsTags
     printf("Global option '%s' not found.\n", opt_name);
+    return FALSE;           // option not found
+}
+//
+int Alarm::getGlobalOptionsCnt() const {
+    return GLOBAL_OPTIONS_TAGS_CNT;
+}
+//
+const char* Alarm::getGlobalOptionKeyStr(int idx) const {
+    if (idx < 0 || idx >= GLOBAL_OPTIONS_TAGS_CNT)
+        return nullptr;
+    return gOptsTags[idx].keyStr;
 }
 //
  void Alarm::synchPGMstates() {
@@ -458,7 +475,7 @@ bool Alarm::validatePgmIndex(int pgmIndex) const {
 
 //#include <cstring> // For strncmp
 
-int Alarm::zoneIndex(const char* name) const {
+int Alarm::getZoneIndex(const char* name) const {
     for (int i = 0; i < MAX_ALARM_ZONES; ++i) {
         if (zonesDB[i].valid == 0) { // Skip invalid entries
             continue;
@@ -470,7 +487,7 @@ int Alarm::zoneIndex(const char* name) const {
     return -1; // Zone not found
 }
 
-int Alarm::partitionIndex(const char* name) const {
+int Alarm::getPartitionIndex(const char* name) const {
     for (int i = 0; i < MAX_PARTITION; ++i) {
         if (partitionDB[i].valid == 0) { // Skip invalid entries
             continue;
@@ -482,7 +499,7 @@ int Alarm::partitionIndex(const char* name) const {
     return -1; // Partition not found
 }
 
-int Alarm::pgmIndex(const char* name) const {
+int Alarm::getPgmIndex(const char* name) const {
     for (int i = 0; i < MAX_ALARM_PGM; ++i) {
         if (pgmsDB[i].valid == 0) { // Skip invalid entries
             continue;

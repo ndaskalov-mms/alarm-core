@@ -1,6 +1,12 @@
 #pragma once
 //	MQTT defs
 #define _CRT_SECURE_NO_WARNINGS
+#ifndef FALSE
+#define FALSE               0
+#endif
+#ifndef TRUE
+#define TRUE                1
+#endif
 
 //
 //	MQTT defs
@@ -13,6 +19,8 @@
 
 #define MAX_MQTT_TOPIC					256
 #define MAX_MQTT_PAYLOAD				32700
+#define MAX_MQTT_TOKEN_LEN					32	// add some padding for \0
+#define	SUBTOPIC_WILDCARD			"all"
 
 //
 // Partitions 
@@ -64,25 +72,6 @@
 #define MQTT_OUTPUTS_STATES	            "/pdox/states/outputs/%s"
 #define PGM_ON_PROPERTY                 "on"
 #define PGM_OFF_PROPERTY                "off"
-//
-//enum globalOptsPlds_t {
-//    GO_SET_MAX_SLAVES = 0,
-//    GO_SET_RESTR_SPRVS_LOSS,
-//    GO_SET_RESTR_TAMPER,
-//    GO_SET_RESTR_AC_FAIL,
-//    GO_SET_RESTR_BAT_FAIL,
-//    GO_SET_RESTR_BELL_FAIL,
-//    GO_SET_RESTR_BRD_FAIL,
-//    GO_SET_RESTR_AMASK,
-//    GO_SET_TROUBLE_LATCH,
-//    GO_SET_TAMPER_BPS_OPT,
-//    GO_SET_TAMPER_OPTS,
-//    GO_SET_ANTI_MASK_OPTS,
-//    GO_SET_RF_SPRVS_OPTS
-//};
-//
-// global options
-// 
 // 
 // metrics exchange
 //
@@ -99,16 +88,6 @@ int         willQoS = 0;						// 0, 1 or 2 - the quality of service to be used b
 bool        willRetain = false;					// whether the will should be published with the retain flag
 const char  willMessage[] = "disconnecting";	//the payload of the will message
 //
-
-// indexes in dbPtrArr[] to find key parameters for the different alarm entities (zones, part, pgms,.. )
-enum ALARM_DOMAINS_t {
-	RESERVED = -1,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
-	ZONES = 0,
-	PARTITIONS = 1,
-	PGMS = 2,
-	KEYSW = 3,
-	GLOBAL_OPT = 4,
-};
 
 
 //#define MQTT_PARTITIONS_CONTROL			(MQTT_PREFIX ## "/control/partitions/%s")

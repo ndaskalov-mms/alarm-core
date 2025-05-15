@@ -34,7 +34,6 @@ enum errorID {
 //
 // ----------- alarm-defs.h -------------------
 //
-#define	SUBTOPIC_WILDCARD			"all"
 #define MAX_PARTITION			8
 #define MAX_FOLLOW_PART			8
 //
@@ -184,25 +183,7 @@ enum CMD_EXEC_t {
 	TO_VERIFY					= 2,
 	TO_REPORT					= 3,
 };
-//
-enum PGM_CMDS_t {
-	PGM_OFF						= 1,
-	PGM_ON						= 2,
-	PGM_PULSE					= 3,
-};
-//
-// zone commands definitions
-//
-enum ZONE_CMDS_t {
-	ZONE_BYPASS_CMD				= 1,    // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
-	ZONE_UNBYPASS_CMD			= 2,    // in zoneNewCmd TODO - check if this is correct
-	ZONE_CLOSE_CMD				= 3,
-	ZONE_OPEN_CMD				= 4,
-	ZONE_AMASK_CMD				= 5,
-	ZONE_TAMPER_CMD				= 6,
-	ZONE_ANAL_SET_CMD			= 7,
-	ZONE_DIGITAL_SET_CMD		= 8,
-};
+
 //
 // zone definitions
 //
@@ -310,14 +291,6 @@ enum PART_STAT_CHANGES_t {
 #define ENTRY_DELAY2_TIMER		2
 //
 #define	MAX_PARTITION_TIMERS	3		
-//
-enum  ARM_METHODS_t {
-    DISARM = 0,
-	REGULAR_ARM			= 0x1,
-	FORCE_ARM 			= 0x2,
-    INSTANT_ARM			= 0x4,                                    
-    STAY_ARM			= 0x8,
-};
 //
 enum  BYPASS_REQ_t {
 	USER_REQ			= 0,

@@ -137,9 +137,11 @@
   <ItemGroup>
     <ClInclude Include="alarm-core-mqtt-defs.h" />
     <ClInclude Include="alarm-core-mqtt.h" />
+    <ClInclude Include="alarm-core-public-defs.h" />
     <ClInclude Include="alarm-core.h" />
     <ClInclude Include="alarm-core-parseJSON.h" />
-    <ClInclude Include="src\alarm-core-defs.h" />
+    <ClInclude Include="alarm-FS-wrapper.h" />
+    <ClInclude Include="src\alarm-core-internal-defs.h" />
     <ClInclude Include="src\alarm-core-class.h" />
     <ClInclude Include="src\alarm-core-helpers.h" />
     <ClInclude Include="src\alarm-core-logic.h" />
