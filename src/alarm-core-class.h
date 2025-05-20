@@ -14,69 +14,6 @@ typedef unsigned char byte;
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 typedef int (*DebugCallbackFunc)(int level, const char* format, ...);
 
-template <typename T>
-class FilteredArrayIterator {
-public:
-    // Constructor
-    FilteredArrayIterator(T* ptr, T* end)
-        : current(ptr), end(end) {
-        // Skip invalid elements at the start
-        advanceToValid();
-    }
-
-    // Dereference operator
-    T& operator*() const {
-        return *current;
-    }
-
-    // Arrow operator
-    T* operator->() const {
-        return current;
-    }
-
-    // Prefix increment
-    FilteredArrayIterator& operator++() {
-        ++current;
-        advanceToValid();
-        return *this;
-    }
-
-    // Postfix increment
-    FilteredArrayIterator operator++(int) {
-        FilteredArrayIterator temp = *this;
-        ++(*this);
-        return temp;
-    }
-
-    // Equality comparison
-    bool operator==(const FilteredArrayIterator& other) const {
-        return current == other.current;
-    }
-
-    // Inequality comparison
-    bool operator!=(const FilteredArrayIterator& other) const {
-        return current != other.current;
-    }
-
-private:
-    T* current; // Pointer to the current element
-    T* end;     // Pointer to one past the last element
-
-    // Advance to the next valid element
-    void advanceToValid() {
-        while (current != end && !isValid(*current)) {
-            ++current;
-        }
-    }
-
-    // Internal validity check
-    static bool isValid(const T& element) {
-        return element.valid != 0; // Example: Check if the 'valid' field is non-zero
-    }
-};
-
-
-
 class Alarm {
 public:
     // Constructor and destructor
@@ -89,103 +26,69 @@ public:
     void setDebugCallback(DebugCallbackFunc callback);
 
     // Zone-related methods
-    int addZone(const ALARM_ZONE& newZone);
-    int getZoneCount() const;
-    bool isZoneOpen(int zoneIndex) const;
-    bool isZoneBypassed(int zoneIndex) const;
-    bool isZoneInAlarm(int zoneIndex) const;
+    int         getZoneIndex(const char* name) const; 
+    int         addZone(const ALARM_ZONE& newZone);
+    int         getZoneCount() const;
+    bool        isZoneOpen(int zoneIndex) const;
+    bool        isZoneBypassed(int zoneIndex) const;
+    bool        isZoneInAlarm(int zoneIndex) const;
     const char* getZoneName(int zoneIndex) const;
-    void modifyZn(void* param1, void* param2, void* param3);
+    void        modifyZn(void* param1, void* param2, void* param3);
     
     // Partition-related methods
-    int addPartition(const ALARM_PARTITION_t& newPartition);
-    int getPartitionCount() const;
-    bool isPartitionArmed(int partitionIndex) const;
-    int getArmStatus(int partitionIndex) const;
-    bool hasPartitionChanged(int partitionIndex) const;
+    int         getPartitionIndex(const char* name) const;
+    int         addPartition(const ALARM_PARTITION_t& newPartition);
+    int         getPartitionCount() const;
+    bool        isPartitionArmed(int partitionIndex) const;
+    int         getArmStatus(int partitionIndex) const;
+    bool        hasPartitionChanged(int partitionIndex) const;
     const char* getPartitionName(int partitionIndex) const;
-	int isPartitionValid(const int idx) const;
-	bool setPartitionTarget(int partitionIndex, ARM_METHODS_t targetArmStatus);
-    int armPartition(byte prt, ARM_METHODS_t action);
+	int         isPartitionValid(const int idx) const;
+	bool        setPartitionTarget(int partitionIndex, ARM_METHODS_t targetArmStatus);
+    int         armPartition(byte prt, ARM_METHODS_t action);
     
     // PGM-related methods
-	int addPgm(const ALARM_PGM& newPgm); 
-    int getPgmCount() const;
-    int getPgmValue(int pgmIndex) const;
+    int         getPgmIndex(const char* name) const;
+	int         addPgm(const ALARM_PGM& newPgm); 
+    int         getPgmCount() const;
+    int         getPgmValue(int pgmIndex) const;
     const char* getPgmName(int pgmIndex) const;
-	void modifyPgm(void* param1, void* param2, void* param3);
-
-
-    int getZoneIndex(const char* name) const;
-    int getPartitionIndex(const char* name) const;
-    int getPgmIndex(const char* name) const;
+	void        modifyPgm(void* param1, void* param2, void* param3);
 
     // Global options methods
-    void setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
-    bool setGlobalOptions(const char* opt_name, const char* opt_val);
-    bool isRestrictionActive(int restrictionType) const;
-    int  getGlobalOptionsCnt() const;
-    const char * getGlobalOptionKeyStr(int idx) const;
-
-    
+    void        setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
+    bool        setGlobalOptions(const char* opt_name, const char* opt_val);
+    bool        isRestrictionActive(int restrictionType) const;
+    int         getGlobalOptionsCnt() const;
+    const char* getGlobalOptionKeyStr(int idx) const;
+        
     // System methods
-    void updateAlarmState();
-    void processTimers();
-    // 
+    void        updateAlarmState();
+    void        processTimers();
+    bool        disarmPartition(int partitionIndex);
+
     // printing methods - defined in alarmClassHelpers.h
 	//
-    static int defaultDebugOut(int err_code, const char* what, ...);
+    static int  defaultDebugOut(int err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
-    //const char* zoneState2Str(struct zoneStates_t states[], int statesCnt, int action);
-    void    printConfigHeader(struct tagAccess targetKeys[], int numEntries);
-    void    printAlarmPartCfg(void);
-    void    printAlarmZones(int startZn, int endZn);
-    void    printAlarmOpts(byte* optsPtr);
-    void    printAlarmPgms(void);
-    void    printAlarmKeysw(byte* keyswArrPtr, int maxKeysw);
-    void    printAlarmPartitionRT(int idx);
-    void    printPartHeaderRT(void);
-    void    printAlarmPartRT(void);
-    void    reportZonesNamesBasedOnStatus(int prt, int stat);
-    void    reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask);
-    void    reportPartitionNamesBasedOnFlag(int offset);
-    void    printZonesSummary(int prt);
-    void    printParttionsSummary(void);
+    void        printConfigHeader(struct tagAccess targetKeys[], int numEntries);
+    void        printAlarmPartCfg(void);
+    void        printAlarmZones(int startZn, int endZn);
+    void        printAlarmOpts(byte* optsPtr);
+    void        printAlarmPgms(void);
+    void        printAlarmKeysw(byte* keyswArrPtr, int maxKeysw);
+    void        printAlarmPartitionRT(int idx);
+    void        printPartHeaderRT(void);
+    void        printAlarmPartRT(void);
+    void        reportZonesNamesBasedOnStatus(int prt, int stat);
+    void        reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask);
+    void        reportPartitionNamesBasedOnFlag(int offset);
+    void        printZonesSummary(int prt);
+    void        printParttionsSummary(void);
     const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
 
-    // Command methods
-    //bool armPartition(int partitionIndex, int armMethod);
-    bool disarmPartition(int partitionIndex);
-    bool bypassZone(int zoneIndex);
-    bool clearBypassZone(int zoneIndex);
-    bool setPgm(int pgmIndex, int value);
 	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut
     DebugCallbackFunc debugCallback;
-
-    // Iterators
-public:
-    auto beginValidZones() {
-        return FilteredArrayIterator<ALARM_ZONE>(zonesDB, zonesDB + MAX_ALARM_ZONES);
-    }
-    auto endValidZones() {
-        return FilteredArrayIterator<ALARM_ZONE>(zonesDB + MAX_ALARM_ZONES, zonesDB + MAX_ALARM_ZONES);
-    }
-
-    // Iterators for valid partitions
-    auto beginValidPartitions() {
-        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB, partitionDB + MAX_PARTITION);
-    }
-    auto endValidPartitions() {
-        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB + MAX_PARTITION, partitionDB + MAX_PARTITION);
-    }
-
-    // Iterators for valid PGMs
-    auto beginValidPgms() {
-        return FilteredArrayIterator<ALARM_PGM>(pgmsDB, pgmsDB + MAX_ALARM_PGM);
-    }
-    auto endValidPgms() {
-        return FilteredArrayIterator<ALARM_PGM>(pgmsDB + MAX_ALARM_PGM, pgmsDB + MAX_ALARM_PGM);
-    }
 
 private:
     // Private static arrays for alarm data
@@ -205,10 +108,10 @@ private:
     struct ALARM_PARTITION_STATS_t		partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
     // SW version
     uint16_t	swVersion = SW_VERSION;							// software version
-    // Global callback pointer (initialized to NULL)
+
+    // functions 
     // Timer management
     void resetAllPartitionTimers(int partitionIndex);
-    void initRTdata(void);
     int partitionTimer(int tmr, int oper, int prt);
     void processPartitionTimers(int prt);
 
@@ -224,11 +127,8 @@ private:
     int countNotBypassedEntryDelayZones(int prt);
     int check4openUnbypassedZones(int prt);
 
-    // Command handling
-
     // Arm management
     int checkArmRestrctions(byte partIdx, int action);
-
 
     // Alarm processing
     void processAlarm(int alarm);
@@ -238,30 +138,20 @@ private:
     int processEntryDelayZones(int zn);
     int processOpenZone(int zn);
 
-
-
     // Private helper methods
     void initializeZones();
     void initializePgms();
     void initializePartitions();
-    //void initRTdata(void);
-	//void resetAllPartitionTimers(int partitionIndex);
     void synchPGMstates(void);
     bool validateZoneIndex(int zoneIndex) const;
     bool validatePartitionIndex(int partitionIndex) const;
     bool validatePgmIndex(int pgmIndex) const;
-    
-    // Core alarm functionality (to be implemented)
-    void processZoneChange(int zoneIndex);
-    void processPgmChange(int pgmIndex);
-    void processPartitionChange(int partitionIndex);
-    void updatePartitionStats(int partitionIndex);
-    void clearPartitionBypass(int partitionIndex);
-    
+
     // Timer-related methods
     void checkEntryDelayTimers(int partitionIndex);
     void checkExitDelayTimer(int partitionIndex);
     void resetPartitionTimers(int partitionIndex);
+
 };  // end of class Alarm
 
 //

@@ -1,7 +1,5 @@
 #pragma once
 
-//#include "alarm-class-declarations.h"
-//#include "alarm-core-mqtt-dependancies.h"
 #include "alarm-core-public-defs.h"  // move to the cpp file???
 #include "alarm-core-mqtt-defs.h"
 #include <string.h>
@@ -16,12 +14,12 @@ typedef unsigned char byte;
 
 // declarations
 void trigerArm(void* param1, void* param2, void* param3);
-void zoneCmd(void* param1, void* param2, void* param3); 
-void pgmCmd(void* param1, void* param2, void* param3);
+extern              void zoneCmd(void* param1, void* param2, void* param3); 
+extern              void pgmCmd(void* param1, void* param2, void* param3);
 extern int          getZoneCount();
 extern int          getZoneIndex(const char* name);
 const char*         getZoneName(int zoneIdx);
-extern bool         isZoneValid(int zoneIdx);
+//extern bool         isZoneValid(int zoneIdx);
 //
 extern int          getPartitionCount();
 extern int          getPartitionIndex(const char* name);
@@ -30,9 +28,9 @@ extern bool         isPartitionValid(int partIdx);
 extern void         setPartitionTarget(int partIdx, int action);
 //
 extern int          getPgmCount();
-extern bool         isPgmValid(int pgmIdx);
+//extern bool         isPgmValid(int pgmIdx);
 extern int          getPgmIndex(const char* name);
-const char*         getPgmName(int pgmIdx);
+extern const char*  getPgmName(int pgmIdx);
 //
 extern bool         setGlobalOptions(const char* opt_name, const char* opt_val);
 extern int          getGlobalOptionsCnt();

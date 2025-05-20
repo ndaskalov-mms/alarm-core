@@ -1,0 +1,87 @@
+
+template <typename T>
+class FilteredArrayIterator {
+public:
+    // Constructor
+    FilteredArrayIterator(T* ptr, T* end)
+        : current(ptr), end(end) {
+        // Skip invalid elements at the start
+        advanceToValid();
+    }
+
+    // Dereference operator
+    T& operator*() const {
+        return *current;
+    }
+
+    // Arrow operator
+    T* operator->() const {
+        return current;
+    }
+
+    // Prefix increment
+    FilteredArrayIterator& operator++() {
+        ++current;
+        advanceToValid();
+        return *this;
+    }
+
+    // Postfix increment
+    FilteredArrayIterator operator++(int) {
+        FilteredArrayIterator temp = *this;
+        ++(*this);
+        return temp;
+    }
+
+    // Equality comparison
+    bool operator==(const FilteredArrayIterator& other) const {
+        return current == other.current;
+    }
+
+    // Inequality comparison
+    bool operator!=(const FilteredArrayIterator& other) const {
+        return current != other.current;
+    }
+
+private:
+    T* current; // Pointer to the current element
+    T* end;     // Pointer to one past the last element
+
+    // Advance to the next valid element
+    void advanceToValid() {
+        while (current != end && !isValid(*current)) {
+            ++current;
+        }
+    }
+
+    // Internal validity check
+    static bool isValid(const T& element) {
+        return element.valid != 0; // Example: Check if the 'valid' field is non-zero
+    }
+};
+
+
+   // Iterators
+public:
+    auto beginValidZones() {
+        return FilteredArrayIterator<ALARM_ZONE>(zonesDB, zonesDB + MAX_ALARM_ZONES);
+    }
+    auto endValidZones() {
+        return FilteredArrayIterator<ALARM_ZONE>(zonesDB + MAX_ALARM_ZONES, zonesDB + MAX_ALARM_ZONES);
+    }
+
+    // Iterators for valid partitions
+    auto beginValidPartitions() {
+        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB, partitionDB + MAX_PARTITION);
+    }
+    auto endValidPartitions() {
+        return FilteredArrayIterator<ALARM_PARTITION_t>(partitionDB + MAX_PARTITION, partitionDB + MAX_PARTITION);
+    }
+
+    // Iterators for valid PGMs
+    auto beginValidPgms() {
+        return FilteredArrayIterator<ALARM_PGM>(pgmsDB, pgmsDB + MAX_ALARM_PGM);
+    }
+    auto endValidPgms() {
+        return FilteredArrayIterator<ALARM_PGM>(pgmsDB + MAX_ALARM_PGM, pgmsDB + MAX_ALARM_PGM);
+    }

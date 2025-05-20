@@ -30,26 +30,26 @@ void Alarm::resetAllPartitionTimers(int prt) {
 //-----------------------------------------------------------------------------------
 // Implementation of selected methods
 //-----------------------------------------------------------------------------------
-void Alarm::initRTdata(void) {
-	int i;
-	// reset zone's tun-time data
-	for (int j = 0; j < MAX_ALARM_ZONES; j++) {
-		memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
-		zonesRT[j].zoneStat = ZONE_CLOSE;
-		zonesRT[j].changed = 0;
-	}
-	for (i = 0; i < MAX_PARTITION; i++) {
-		// reset all partition statistics
-		memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
-		// init rut-time partition timers with configured delays in seconds
-		resetAllPartitionTimers(i);
-		// reset ARM state
-		partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
-		partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
-	}
-	// clear all HW errors
-	alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
-}
+//void Alarm::initRTdata(void) {
+//	int i;
+//	// reset zone's tun-time data
+//	for (int j = 0; j < MAX_ALARM_ZONES; j++) {
+//		memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
+//		zonesRT[j].zoneStat = ZONE_CLOSE;
+//		zonesRT[j].changed = 0;
+//	}
+//	for (i = 0; i < MAX_PARTITION; i++) {
+//		// reset all partition statistics
+//		memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
+//		// init rut-time partition timers with configured delays in seconds
+//		resetAllPartitionTimers(i);
+//		// reset ARM state
+//		partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
+//		partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
+//	}
+//	// clear all HW errors
+//	alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
+//}
 
 //
 // clearBypass- un- baypasses zone
