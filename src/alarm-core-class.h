@@ -12,7 +12,7 @@ typedef unsigned char byte;
 #include "alarm-core-timers.h"
 
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
-typedef int (*DebugCallbackFunc)(int level, const char* format, ...);
+typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
 
 class Alarm {
 public:
@@ -69,7 +69,7 @@ public:
 
     // printing methods - defined in alarmClassHelpers.h
 	//
-    static int  defaultDebugOut(int err_code, const char* what, ...);
+    static void  defaultDebugOut(LogLevel_t err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     void        printConfigHeader(struct tagAccess targetKeys[], int numEntries);
     void        printAlarmPartCfg(void);
@@ -160,7 +160,7 @@ private:
 #include "alarm-core-helpers.h"
 
 
-int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
+void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
 {
     char prnBuf[512];
     va_list args;
@@ -169,19 +169,19 @@ int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // cal
     vsnprintf(prnBuf, sizeof(prnBuf) - 1, what, args);
     switch (err_code)
     {
-    case ERR_OK:
+    case LOG_ERR_OK:
         printf(prnBuf);
         break;
-    case ERR_DEBUG:
+    case LOG_ERR_DEBUG:
         printf(prnBuf);
         break;
-    case ERR_INFO:
+    case LOG_ERR_INFO:
         printf(prnBuf);
         break;
-    case ERR_WARNING:
+    case LOG_ERR_WARNING:
         printf(prnBuf);
         break;
-    case ERR_CRITICAL:
+    case LOG_ERR_CRITICAL:
         printf(prnBuf);
         break;
     default:
@@ -190,7 +190,7 @@ int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // cal
         break;
     }
     va_end(args);
-    return err_code;
+    return;
 }
 
 
@@ -198,12 +198,12 @@ int Alarm::defaultDebugOut(int err_code, const char* what, ...)           // cal
 void Alarm::setDebugCallback(DebugCallbackFunc callback) {
     debugCallback = callback;
 	//(*debugCallback)(ERR_WARNING, "Debug callback set\n");
-    ErrWrite(ERR_WARNING, "Debug callback set\n");
+    ErrWrite(LOG_ERR_WARNING, "Debug callback set\n");
 }
 // 
 // Constructor
 Alarm::Alarm() {
-    //ErrWrite(ERR_WARNING, "Init alarm from file\n");
+    //ErrWrite(LOG_ERR_WARNING, "Init alarm from file\n");
     initializeZones();
     initializePgms();
     initializePartitions();
@@ -294,17 +294,17 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 
    // Example: Reset system components based on new options
     if (alarmGlobalOpts.restrOnSprvsLoss) {
-        ErrWrite(ERR_INFO, "Supervision loss restriction enabled.\n");
+        ErrWrite(LOG_ERR_INFO, "Supervision loss restriction enabled.\n");
     }
     if (alarmGlobalOpts.restrOnTamper) {
-        ErrWrite(ERR_INFO, "Tamper restriction enabled.\n");
+        ErrWrite(LOG_ERR_INFO, "Tamper restriction enabled.\n");
     }
     if (alarmGlobalOpts.restrOnACfail) {
-        ErrWrite(ERR_INFO, "AC failure restriction enabled.\n");
+        ErrWrite(LOG_ERR_INFO, "AC failure restriction enabled.\n");
     }
 
     // Log the updated global options
-    ErrWrite(ERR_INFO, "Global options updated successfully.\n");
+    ErrWrite(LOG_ERR_INFO, "Global options updated successfully.\n");
     printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
 //
@@ -319,11 +319,11 @@ bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
 
             // Call the patchCallBack function to set the value
             if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
-                ErrWrite(ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
+                ErrWrite(LOG_ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
                 return TRUE;
             }
             else {
-                ErrWrite(ERR_DEBUG, "Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
+                ErrWrite(LOG_ERR_DEBUG, "Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
                 return FALSE;
             }
             return FALSE; // Exit the function after processing the option

@@ -144,7 +144,7 @@ void Alarm::bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 int Alarm::partitionTimer(int tmr, int oper, int prt) {
 //
 	if(tmr >= MAX_PARTITION_TIMERS)
-		ErrWrite(ERR_CRITICAL, "partitionTimer: Invalid timer for partition %d\n", prt);
+		ErrWrite(LOG_ERR_CRITICAL, "partitionTimer: Invalid timer for partition %d\n", prt);
 	if (oper == SET) {													// record the current time in milliseconds
 		partitionRT[prt].partitionTimers[tmr].timerStart_ms = millis();
 		partitionRT[prt].partitionTimers[tmr].timerFSM = RUNNING;		// and mark it as running
@@ -162,7 +162,7 @@ void Alarm::processPartitionTimers(int prt) {
 	for (tmr = 0; tmr < MAX_PARTITION_TIMERS; tmr++) {
 		if (partitionRT[prt].partitionTimers[tmr].timerFSM == RUNNING) {
 			if (partitionTimer(tmr, GET, prt)) {
-				ErrWrite(ERR_DEBUG, "Partition EXIT/ENTRY delay timer expired\n");
+				ErrWrite(LOG_ERR_DEBUG, "Partition EXIT/ENTRY delay timer expired\n");
 				partitionRT[prt].partitionTimers[tmr].timerFSM = DONE;							// TIMER expired
 				partitionRT[prt].changed |= partitionRT[prt].partitionTimers[tmr].changedMask;	// force MQTT report
 				// unbypass all zones bypassed at ENTRY DELAY start
@@ -247,13 +247,13 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 	const int action = *(int*)param2;								// command - defined in enum ZONE_CMDS_t
 	const char* payldPtr = (const char*)param3;
 	if (payldPtr)
-		ErrWrite(ERR_WARNING, "modifyZn: WARNING - garbage found after modify zone command %s\n", payldPtr);
+		ErrWrite(LOG_ERR_WARNING, "modifyZn: WARNING - garbage found after modify zone command %s\n", payldPtr);
 	//lprintf("modifyZn: ZONE action %d\n", action);
 	//
 	if (!zonesDB[zn].zoneType)												// zoneType == 0 means disabled
 		return;
 	if (zn >= MAX_ALARM_ZONES) {
-		ErrWrite(ERR_WARNING, "modifyZn: Zone No %d out of range!\n", zn);
+		ErrWrite(LOG_ERR_WARNING, "modifyZn: Zone No %d out of range!\n", zn);
 		return;
 	}
 	// handle zone status change commands
@@ -287,11 +287,11 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 		case ZONE_BYPASS_CMD:
 			// Do some checks if zone bypass is allowed and return if not
 			if (zonesDB[zn].zoneType & SPECIAL_ZONES) {
-				ErrWrite(ERR_WARNING, "Attempt to bypass special zone  (like 24H FIRE)  %s\n", zonesDB[zn].zoneName);
+				ErrWrite(LOG_ERR_WARNING, "Attempt to bypass special zone  (like 24H FIRE)  %s\n", zonesDB[zn].zoneName);
 				break;															// fire zones cannot be bypassed, forced, ...
 			}
 			if (!(zonesDB[zn].zoneBypassEn)) {									// allowed to bypass on user request?
-				ErrWrite(ERR_DEBUG, "Zone %s,  bypass disabled\n", zonesDB[zn].zoneName);
+				ErrWrite(LOG_ERR_DEBUG, "Zone %s,  bypass disabled\n", zonesDB[zn].zoneName);
 				break;															// no, return. (publishZoneStatusChanges will deect that command is not executed)
 			}
 			bypassZone(zn, ZONE_BYPASSED);
@@ -305,7 +305,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 		partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;		// and partition too
 	}
 	else {
-		ErrWrite(ERR_WARNING, "modifyZn: Invalid ZONE action %d\n", action);
+		ErrWrite(LOG_ERR_WARNING, "modifyZn: Invalid ZONE action %d\n", action);
 		return;
 	}
 }
@@ -319,13 +319,13 @@ void Alarm::modifyPgm(void* param1, void* param2, void* param3) {
 	if (!pgmsDB[pgmIdx].valid)
 		return;
 	if (!(action == PGM_ON || action == PGM_OFF || action == PGM_PULSE)) {
-		ErrWrite(ERR_WARNING, "modifyPGM: Invalid PGM action %d", action);
+		ErrWrite(LOG_ERR_WARNING, "modifyPGM: Invalid PGM action %d", action);
 		return;
 	}
 	// set result according to action selected 
 	//if (pgmsDB[brd][pgm].cValue == action)
 	//	return;														// nothing to do
-	ErrWrite(ERR_DEBUG, "modifyPGM: Setting PGM %s to %d\n", pgmsDB[pgmIdx].pgmName, action);
+	ErrWrite(LOG_ERR_DEBUG, "modifyPGM: Setting PGM %s to %d\n", pgmsDB[pgmIdx].pgmName, action);
 	pgmsDB[pgmIdx].tValue = action;									// reflect the change
 	pgmsDB[pgmIdx].pgmFSM = TO_IMPLEMENT;							// mark there is new value to set
 	//pgmsDB[pgmIdx].sValue = PGM_UNDEFINED;						// mark that transaction is on-going
@@ -342,39 +342,39 @@ void Alarm::modifyPgm(void* param1, void* param2, void* param3) {
 //	returns: true if no restrictions found, otherwise false
 //
 int Alarm::checkArmRestrctions(byte partIdx, int action) {
-	ErrWrite(ERR_DEBUG, "Checking arm restictions for part %d - ", partIdx);
+	ErrWrite(LOG_ERR_DEBUG, "Checking arm restictions for part %d - ", partIdx);
 	// TODO - add read from ADC for voltages and support for board, bell and RF link 
 	if (alarmGlobalOpts.restrOnSprvsLoss & alarmGlobalOpts.SprvsLoss) {
-		ErrWrite(ERR_INFO, "ARM blocked due to SUPERVISOR LOSS restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to SUPERVISOR LOSS restiction\n");
 		return false;
 	}
 	if (alarmGlobalOpts.restrOnACfail & alarmGlobalOpts.ACfail) {
-		ErrWrite(ERR_INFO, "ARM blocked due to AC fail restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to AC fail restiction\n");
 		return false;
 	}
 	if (alarmGlobalOpts.restrOnBatFail & alarmGlobalOpts.BatFail) {
-		ErrWrite(ERR_INFO, "ARM blocked due to BAT fail restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to BAT fail restiction\n");
 		return false;
 	}
 	if (alarmGlobalOpts.restrOnBellFail & alarmGlobalOpts.BellFail) {
-		ErrWrite(ERR_INFO, "ARM blocked due to BELL fail restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to BELL fail restiction\n");
 		return false;
 	}
 	if (alarmGlobalOpts.restrOnBrdFail & alarmGlobalOpts.BrdFail) {
-		ErrWrite(ERR_INFO, "ARM blocked due to BRD fail restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to BRD fail restiction\n");
 		return false;
 	}
 	if (alarmGlobalOpts.restrOnTamper & partitionSTATS[partIdx].tamperZonesCnt) {
 		if (partitionSTATS[partIdx].tamperZonesCnt != partitionSTATS[partIdx].ignorredTamperZonesCnt) {
-			ErrWrite(ERR_INFO, "ARM blocked due to TAMPER fail restiction\n");
+			ErrWrite(LOG_ERR_INFO, "ARM blocked due to TAMPER fail restiction\n");
 			return false;
 		}
 	}
 	if (alarmGlobalOpts.restrOnAntimask & partitionSTATS[partIdx].amaskZonesCnt) {
-		ErrWrite(ERR_INFO, "ARM blocked due to ANTI-MASK restiction\n");
+		ErrWrite(LOG_ERR_INFO, "ARM blocked due to ANTI-MASK restiction\n");
 		return false;
 	}
-	ErrWrite(ERR_DEBUG, "none\n"); 
+	ErrWrite(LOG_ERR_DEBUG, "none\n"); 
 	return true;
 }
 //
@@ -387,11 +387,11 @@ int Alarm::checkArmRestrctions(byte partIdx, int action) {
 int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	int followID; int i;
 	if (!partitionDB[prt].valid) {
-		ErrWrite(ERR_WARNING, "Request to arm/disarm invalid partition %d\n", prt);
+		ErrWrite(LOG_ERR_WARNING, "Request to arm/disarm invalid partition %d\n", prt);
 		return true;
 	}
 	if (!(prt < MAX_PARTITION)) {
-		ErrWrite(ERR_WARNING, "Request to arm/disarm out-of-range partition %d\n", prt);
+		ErrWrite(LOG_ERR_WARNING, "Request to arm/disarm out-of-range partition %d\n", prt);
 		return true;
 	}
 	//
@@ -409,7 +409,7 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	}
 	// now proceed to action on current partition
 	if (action == DISARM) {
-		ErrWrite(ERR_DEBUG, "Disarming partition %d\n", prt);
+		ErrWrite(LOG_ERR_DEBUG, "Disarming partition %d\n", prt);
 		clearBypassAllZones(prt);
 		partitionSTATS[prt].alarmZonesCnt = 0;
 		partitionRT[prt].armTime = millis();
@@ -418,16 +418,16 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	}
 	//
 	if (partitionRT[prt].armStatus == action) {
-		ErrWrite(ERR_DEBUG, "Partition %d already %s armed\n", prt, action ? " " : "dis");
+		ErrWrite(LOG_ERR_DEBUG, "Partition %d already %s armed\n", prt, action ? " " : "dis");
 		return false;
 	}
 	if (action != DISARM) {															// this is always the case, we checked for DISARM earlier
 		if (!checkArmRestrctions(prt, action)) {
-			ErrWrite(ERR_INFO, "Partition %d cannot armed due to restrictions\n", prt);
+			ErrWrite(LOG_ERR_INFO, "Partition %d cannot armed due to restrictions\n", prt);
 			return true;
 		}
 	}
-	ErrWrite(ERR_DEBUG, "Arming partition %d\n", prt);
+	ErrWrite(LOG_ERR_DEBUG, "Arming partition %d\n", prt);
 	//
 	// if STAY ARM or partition force enable, set FORCE bypass on all open zones
 	if ((action == STAY_ARM) || (action == INSTANT_ARM)) {							// TODO - what is the diff btw STAY and INSTANT?
@@ -443,7 +443,7 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	// check for open zones preventing arm
 	if (check4openUnbypassedZones(prt)) {
 		// revert all bypasses so far, EXIT_DELAY_ZONES includes all bypassable zones
-		ErrWrite(ERR_DEBUG, "Partition %d cannot be armed due to open zone(s)\n", prt);
+		ErrWrite(LOG_ERR_DEBUG, "Partition %d cannot be armed due to open zone(s)\n", prt);
 		bulkBypassZones(prt, EXIT_DELAY_ZONES, ZONE_STAY_BYPASSED | ZONE_FORCED, CLEAR_BYPASS);
 		return true;
 	}
@@ -454,9 +454,9 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	//
 	partitionRT[prt].armStatus = action;							// update arm status
 	partitionTimer(EXIT_DELAY_TIMER, SET, prt);						// start exit delay and publish accordingly
-	ErrWrite(ERR_DEBUG, "Partition EXIT delay timer started\n");
+	ErrWrite(LOG_ERR_DEBUG, "Partition EXIT delay timer started\n");
 	//
-	ErrWrite(ERR_DEBUG, "Partition %d armed\n", prt);
+	ErrWrite(LOG_ERR_DEBUG, "Partition %d armed\n", prt);
 	// 
 	return false;
 }
@@ -513,7 +513,7 @@ void Alarm::processTampers(int zn) {
 	int opt;
 	if (zonesRT[zn].bypassed & ZONE_BYPASSED) {					// can we ignore tamper on USER bypassed zone
 		if (alarmGlobalOpts.tamperBpsOpt) {						// allowed to ignore tamper in USER bypassed zone ONLY!
-			ErrWrite(ERR_DEBUG, "Tamper in bypassed zone %s  with Tamper tamper bypass enabled in global options\n", zonesDB[zn].zoneName);
+			ErrWrite(LOG_ERR_DEBUG, "Tamper in bypassed zone %s  with Tamper tamper bypass enabled in global options\n", zonesDB[zn].zoneName);
 			zonesRT[zn].ignorredTamper = true;					// set zone ignorred tamper flag
 			zonesRT[zn].in_trouble = NO_TROUBLE;				// reset in_trouble flag flag
 			zonesRT[zn].in_alarm = NO_ALARM;					// reset in_alarm flag flag
@@ -571,20 +571,20 @@ int Alarm::processEntryDelayZones(int zn) {
 		timer = ENTRY_DELAY2_TIMER;
 		break;
 	default:
-		ErrWrite(ERR_CRITICAL, "processEntryDelayZones: zone %s is not of ENTRY/STAY?FOLLOW type\n", zonesDB[zn].zoneName);	
+		ErrWrite(LOG_ERR_CRITICAL, "processEntryDelayZones: zone %s is not of ENTRY/STAY?FOLLOW type\n", zonesDB[zn].zoneName);	
 		break;
 	}
 	//
 	// handle ENTRY DELAY FSM here										
 	if (partitionRT[prt].partitionTimers[timer].timerFSM == NOT_STARTED) {	// timer is not started, do it now
 		partitionTimer(timer, SET, prt);
-		ErrWrite(ERR_DEBUG, "Partition ENTRY delay timer started\n");
+		ErrWrite(LOG_ERR_DEBUG, "Partition ENTRY delay timer started\n");
 		// bypass all zones of this type and FOLLOW type zones, when timer is done, they will be unbypassed
 		bulkBypassZones(prt, (zonesDB[zn].zoneType | FOLLOW), ZONE_EDx_BYPASSED, SET_BYPASS);
 		return NO_ALARM;										// no alarm needed YET
 	}
 	else if (partitionRT[prt].partitionTimers[timer].timerFSM == RUNNING) {					// shall never happen as zone shall be bypassed when entry delay is active	
-		ErrWrite(ERR_DEBUG, "Zone %s open but ENTRY DELAY stil RUNNING\n", zonesDB[zn].zoneName);
+		ErrWrite(LOG_ERR_DEBUG, "Zone %s open but ENTRY DELAY stil RUNNING\n", zonesDB[zn].zoneName);
 		return NO_ALARM;										// no alarm needed
 	}
 	else 														// *prtEntryDelayFSM == DONE - ED timer exired, request alarm

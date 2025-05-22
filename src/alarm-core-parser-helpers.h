@@ -1,6 +1,6 @@
 // file: parserClassHelpers.h
 #pragma once
-
+#define _CRT_SECURE_NO_WARNINGS
 extern char token[256];
 
 //#define CSV_COMMENT_CHAR '#'
@@ -84,7 +84,8 @@ static struct str2val lineErrStr2Val[] = {
  * @return          Always true
 */
 static int pokeString(byte* basePtr, int offset, int len, const char* token) {
-    strncpy((&((char*)basePtr)[offset]), token, len);
+    //strncpy((&((char*)basePtr)[offset]), token, len);
+    snprintf((char*)basePtr + offset, len, "%s", token);
     return true;
 }
 
@@ -151,7 +152,8 @@ static int pokeByte(byte* basePtr, int offset, int len, const char* token) {
  * @return          Pointer to byte value converted to ASCII string in global var token[512]
 */
 static byte* peekByte(byte* basePtr, int offset, int len) {
-    _itoa(basePtr[offset], token, 10);
+    snprintf(token, sizeof(token), "%d", basePtr[offset]);
+    //_itoa(basePtr[offset], token, 10);
     return ((byte*)&token);
 }
 //
@@ -166,7 +168,8 @@ static byte* peekByte(byte* basePtr, int offset, int len) {
  * @return          Pointer to partition number converted to ASCII string in global var token[512]
 */
 static byte* peekPrtnNo(byte* basePtr, int offset, int len) {
-    _itoa(basePtr[offset]+1, token, 10);                            // input partitions range starts at 1, but internally starts from 0
+    //_itoa(basePtr[offset]+1, token, 10);                            // input partitions range starts at 1, but internally starts from 0
+    snprintf(token, sizeof(token), "%d", basePtr[offset] + 1);
     return ((byte*)&token);
 }
 

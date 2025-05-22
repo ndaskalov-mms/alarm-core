@@ -136,6 +136,7 @@
     <None Include="iterators.bak" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alarm-core-config.h" />
     <ClInclude Include="alarm-core-mqtt-defs.h" />
     <ClInclude Include="alarm-core-mqtt.h" />
     <ClInclude Include="alarm-core-public-defs.h" />

@@ -1,3 +1,19 @@
+#pragma once
+#include <string.h>
+
+#define lprintf			printf
+extern int ErrWrite(int err_code, const char* what, ...);//
+extern char prnBuf[1024];
+// --------------- error codes -----------------//
+//enum errorID {
+//    ERR_INFO = 2,                             // just print if INFO is set
+//    ERR_OK = 0,                           	// no error
+//    ERR_CRITICAL = -1,                        // critical error occured, 
+//    ERR_DEBUG = -2, 							// debug print, can be enabled/disable by #define DEBUG
+//    ERR_WARNING = -3, 						// warning print  can be enabled/disable by #define WARNING
+//    ERR_DB_INDEX_NOT_FND = -10,				// cannot find error in the database
+//};
+
 #ifndef ARDUINO
 typedef  FILE* IOptr;
 IOptr VS_filehandle;
@@ -8,7 +24,7 @@ IOptr SPIFFS_filehandle;
 #endif
 //
 extern int parseConfigFile(char buffer[], int bufferLen, int saveFlag);
-extern int alrmConfig2Json(IOptr stream);
+//extern int alrmConfig2Json(IOptr stream);
 //
 // calculate 8-bit CRC
 byte crc8(const byte* addr, int len)
@@ -39,11 +55,11 @@ int storageSetup() {
 #ifdef ARDUINO
     logger.println("Inizializing FS...");
     if (SPIFFS.begin(true)) {   // TODO FORMAT_SPIFFS_IF_FAILED
-        ErrWrite(ERR_OK, "Storage init success\n");
+        LOG_INFO("Storage init success\n");
         return true;
     }
     else {
-        ErrWrite(ERR_CRITICAL, "Storage init fail\n");
+        LOG_CRITICAL, "Storage init fail\n");
         return false;
     }
 #endif
@@ -55,22 +71,22 @@ int storageSetup() {
 //         fail on failure
 //
 int storageClose() {
-    ErrWrite(ERR_OK, "Shutting down storage\n");
+    LOG_INFO("Shutting down storage\n");
 #ifdef ARDUINO
     SPIFFS.end();
-    ErrWrite(ERR_OK, "Shutting down storage\n");
+    LOG_INFO("Shutting down storage\n");
 #endif
     return true;
 
 }
 //
 int formatStorage() {
-    ErrWrite(ERR_WARNING, "Formatting file system\n");
+    LOG_INFO("Formatting file system\n");
     return true;
 #ifdef ARDUINO
-    ErrWrite(ERR_WARNING, "Formatting file system  ");
+    LOG_INFO("Formatting file system  ");
     if (SPIFFS.format()) {
-        ErrWrite(ERR_WARNING, "-  DONE\n");
+        LOG_INFO("-  DONE\n");
         return true;
     }
     else {
@@ -100,7 +116,7 @@ int alarmFileDelete(const char cFileName[]) {
     res = SPIFFS.remove(cFileName);   
 #endif
     if (res) 
-        ErrWrite(ERR_CRITICAL, "Unable to remove file %s", cFileName);
+        LOG_CRITICAL("Unable to remove file %s", cFileName);
     return res;
 }
 //
@@ -110,21 +126,28 @@ IOptr alarmFileOpen(const char cFileName[], const char* mode) {
     //
 #ifndef ARDUINO
     if ((strlen(masterDataPrefix) + strlen(cFileName)) > sizeof(prnBuf) - 1) {
-        ErrWrite(ERR_CRITICAL, "Too long data prefix or file name");             // cannot print names as buffer is detected as small
+        LOG_CRITICAL("Too long data prefix or file name");             // cannot print names as buffer is detected as small
         return 0;
     }
-    strcpy(prnBuf, masterDataPrefix);
-    strcpy(&prnBuf[strlen(prnBuf)], cFileName);
+    //strcpy(prnBuf, masterDataPrefix);
+    //strcpy(&prnBuf[strlen(prnBuf)], cFileName);
+    snprintf(prnBuf, sizeof(prnBuf), "%s%s", masterDataPrefix, cFileName);
     printf("Full file name to open: %s\n", prnBuf);
-    filehandle = fopen(prnBuf, mode); 
-    if (!filehandle)
+    //
+    FILE* tmpFile = nullptr;
+    if (fopen_s(&tmpFile, prnBuf, mode) == 0) {
+        filehandle = tmpFile;
+    }
+    else {
         lprintf("Unable to open file!\n");
+        filehandle = nullptr;
+    }
     return filehandle;
 #endif
 #ifdef ARDUINO
     filehandle = SPIFFS.open(cFileName, mode);
     if (!filehandle || filehandle.isDirectory()) {
-        ErrWrite(ERR_CRITICAL, "Failed to open file %s for reading\n", cFileName);
+        LOG_CRITICAL("Failed to open file %s for reading\n", cFileName);
         return (IOptr) 0;                               // to handle directory case
     }
     return filehandle;
@@ -188,9 +211,9 @@ int alarmFileRename(const char oldName[], const char newName[]) {
     res = SPIFFS.rename(oldName, newName);
 #endif
     if (!res) 
-        ErrWrite(ERR_CRITICAL, "Unable to rename file %s to %s\n", oldName, newName);
+        LOG_CRITICAL("Unable to rename file %s to %s\n", oldName, newName);
     else
-        ErrWrite(ERR_CRITICAL, "Successfully renamed file %s to %s\n", oldName, newName);
+        LOG_CRITICAL("Successfully renamed file %s to %s\n", oldName, newName);
     return res;
 }
 //
@@ -254,12 +277,12 @@ int readCsvConfig(const char cFileName[], byte* bufPtr, int bufLen) {
     lprintf("Reading CSV config file %s\n", cFileName);
     IOptr cFile = alarmFileOpen(cFileName, "rb");                 // alarmFopen will return void ptr which 
     if (!cFile) {                                    // in fact is ptr to FILE * or to File depends on platform
-        ErrWrite(ERR_CRITICAL, "Problem opening CSV config file\n");
+        LOG_CRITICAL("Problem opening CSV config file\n");
         return 0;
     }
     int rlen = alarmFileSize(cFile);
     if (rlen >= bufLen) {
-        ErrWrite(ERR_CRITICAL, "Config file size %d larger than buffer size %d\n", rlen, bufLen);
+        LOG_CRITICAL("Config file size %d larger than buffer size %d\n", rlen, bufLen);
         alarmFileClose(cFile);
         return 0;
 
@@ -267,13 +290,13 @@ int readCsvConfig(const char cFileName[], byte* bufPtr, int bufLen) {
     memset((void*)bufPtr, 0, bufLen);
     int alen = alarmFileRead(bufPtr, rlen, cFile);
     if (rlen != alen) {
-        ErrWrite(ERR_CRITICAL, "Problem reading config file file system len %d, read %d\n", rlen, alen);
+        LOG_CRITICAL("Problem reading config file file system len %d, read %d\n", rlen, alen);
         alarmFileClose(cFile);
         return 0;
     }
     //
     alarmFileClose(cFile);
-    ErrWrite(ERR_DEBUG, "Content of config file read\n");
+    LOG_DEBUG("Content of config file read\n");
     return rlen;
 }
 //
@@ -289,21 +312,21 @@ int saveCsvConfig(const char cFileName[], const byte* buf, int len) {
     // err = fopen_s(&cFile, cFileName, "wb");
     cFile = alarmFileOpen(cFileName, "wb");
     if (cFile) {
-        ErrWrite(ERR_DEBUG, "Writing config file\n");
+        LOG_DEBUG("Writing config file\n");
         //cFile.write((byte*) &alarmConfig, sizeof(alarmConfig));
         //cntwritten = fwrite(&alarmConfig, sizeof(byte), sizeof(alarmConfig), cFile);
         if (!alarmFileWrite(buf, len, cFile)) {
-            ErrWrite(ERR_CRITICAL, "Problem writing config file!\n");
+            LOG_CRITICAL("Problem writing config file!\n");
             return false;
         }
         if (alarmFileClose(cFile)) {
-            ErrWrite(ERR_CRITICAL, "Problem on closing config file!\n");
+            LOG_CRITICAL("Problem on closing config file!\n");
             return false;
         }
         return true;
     }
     else {
-        ErrWrite(ERR_CRITICAL, "Problem opening config file\n");
+        LOG_CRITICAL("Problem opening config file\n");
         return false;
     }
 }
@@ -312,31 +335,31 @@ int saveCsvConfig(const char cFileName[], const byte* buf, int len) {
 //  params:     const char cFileName[] - filename
 //  returns:    true on success, otherwise false
 //
-int saveJsonConfig(const char cFileName[]) {
-#ifdef ARDUINO
-    // SPIFFS.remove(F("/cFileName"));
-#endif
-    IOptr cFile;
-    cFile = alarmFileOpen(cFileName, "w");
-    if (cFile) {
-        ErrWrite(ERR_DEBUG, "Writing JSON config file\n");
-        //
-        if (!alrmConfig2Json(cFile)) {
-            ErrWrite(ERR_CRITICAL, "Problem writing JSON config file!\n");
-            return false;
-        }
-        //
-        if (alarmFileClose(cFile)) {
-            ErrWrite(ERR_CRITICAL, "Problem on closing JSON config file!\n");
-            return false;
-        }
-        return true;
-    }
-    else {
-        ErrWrite(ERR_CRITICAL, "Problem opening JSON config file\n");
-        return false;
-    }
-}
+//int saveJsonConfig(const char cFileName[]) {
+//#ifdef ARDUINO
+//    // SPIFFS.remove(F("/cFileName"));
+//#endif
+//    IOptr cFile;
+//    cFile = alarmFileOpen(cFileName, "w");
+//    if (cFile) {
+//        LOG_DEBUG("Writing JSON config file\n");
+//        //
+//        if (!alrmConfig2Json(cFile)) {
+//            LOG_CRITICAL("Problem writing JSON config file!\n");
+//            return false;
+//        }
+//        //
+//        if (alarmFileClose(cFile)) {
+//            LOG_CRITICAL("Problem on closing JSON config file!\n");
+//            return false;
+//        }
+//        return true;
+//    }
+//    else {
+//        LOG_CRITICAL("Problem opening JSON config file\n");
+//        return false;
+//    }
+//}
 //
 // TODO - rework to use array of pointer:len entries. Entries shall include at least: version, all items in dbPtrArr[], csum
 // then save/read chunks of len size from/to pointer

@@ -188,13 +188,13 @@ void Alarm::reportZonesNamesBasedOnStatus(int prt, int stat) {
             continue;
         //printAlarmZone(zn);
         if (zonesRT[zn].zoneStat == stat) {
-            ErrWrite(ERR_DEBUG, "%s ", zonesDB[zn].zoneName);
+            ErrWrite(LOG_ERR_DEBUG, "%s ", zonesDB[zn].zoneName);
             res++;
         }
     }
     if (!res)
-        ErrWrite(ERR_DEBUG, "%s", "None");
-    ErrWrite(ERR_DEBUG, "%s", "\n");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "None");
+    ErrWrite(LOG_ERR_DEBUG, "%s", "\n");
 }
 //
 // report (print) zone names with particular flag set - bypassed, ignorred tamper,ignorredAmask, etc
@@ -210,13 +210,13 @@ void Alarm::reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask) {
             continue;
         basePtr = (byte*)&zonesRT[zn];
         if (basePtr[offset] & bitmask) {
-            ErrWrite(ERR_DEBUG, "%s ", zonesDB[zn].zoneName);
+            ErrWrite(LOG_ERR_DEBUG, "%s ", zonesDB[zn].zoneName);
             res++;
         }
     }
     if (!res)
-        ErrWrite(ERR_DEBUG,"%s", "None");
-    ErrWrite(ERR_DEBUG, "%s", "\n");
+        ErrWrite(LOG_ERR_DEBUG,"%s", "None");
+    ErrWrite(LOG_ERR_DEBUG, "%s", "\n");
 }
 //
 // report (print) zone names with particular flag set - bypassed, ignorred tamper,ignorredAmask, etc
@@ -228,13 +228,13 @@ void Alarm::reportPartitionNamesBasedOnFlag(int offset) {
             continue;
         basePtr = (byte*)&partitionSTATS[prt];
         if (basePtr[offset]) {
-            ErrWrite(ERR_DEBUG, "%s ", partitionDB[prt].partitionName);
+            ErrWrite(LOG_ERR_DEBUG, "%s ", partitionDB[prt].partitionName);
             res++;
         }
     }
     if (!res)
-        ErrWrite(ERR_DEBUG, "%s", "None");
-    ErrWrite(ERR_DEBUG, "%s", "\n");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "None");
+    ErrWrite(LOG_ERR_DEBUG, "%s", "\n");
 }
 //
 // report (print) zone names recently changed
@@ -275,33 +275,33 @@ void Alarm::printZonesSummary(int prt) {
         //ErrWrite(ERR_DEBUG, "-------------- Recent zones changes: ");                  // first report all changed zones
         //reportChangedZones();
         lprintf("-------------- Zones summary for partition %s --------------\n", partitionDB[prt].partitionName);
-        ErrWrite(ERR_DEBUG, "%s", "Zones w TAMPER:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones w TAMPER:\t\t");
         reportZonesNamesBasedOnStatus(prt, ZONE_TAMPER);
-        ErrWrite(ERR_DEBUG, "%s", "Zones w AMASK:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones w AMASK:\t\t");
         reportZonesNamesBasedOnStatus(prt, ZONE_AMASK);
-        ErrWrite(ERR_DEBUG, "%s", "Zones OPEN:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones OPEN:\t\t");
         reportZonesNamesBasedOnStatus(prt, ZONE_OPEN);
-        ErrWrite(ERR_DEBUG, "%s", "Zones USER BYPASSED:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones USER BYPASSED:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, bypassed), ZONE_BYPASSED);
-        ErrWrite(ERR_DEBUG, "%s", "Zones FORCE BYPASSED:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones FORCE BYPASSED:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, bypassed), ZONE_FORCED);
-        ErrWrite(ERR_DEBUG, "%s", "Zones STAY BYPASSED:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones STAY BYPASSED:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, bypassed), ZONE_STAY_BYPASSED);
-        ErrWrite(ERR_DEBUG, "%s", "Zones ENTRY-D BYPASSED:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones ENTRY-D BYPASSED:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, bypassed), ZONE_EDx_BYPASSED);
-        ErrWrite(ERR_DEBUG, "%s", "Zones EXYT-D BYPASSED:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones EXYT-D BYPASSED:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, bypassed), ZONE_EX_D_BYPASSED);
-        ErrWrite(ERR_DEBUG, "%s", "Zones w IGNORRED TAMPER:");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones w IGNORRED TAMPER:");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, ignorredTamper), 0xFF);
-        ErrWrite(ERR_DEBUG, "%s", "Zones w IGNORRED AMASK:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones w IGNORRED AMASK:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, ignorredAmask), 0xFF);
-        ErrWrite(ERR_DEBUG, "%s", "Open ED1&2 Zones:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Open ED1&2 Zones:\t\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, openEDSD1zone), 0xFF);
-        ErrWrite(ERR_DEBUG, "%s", "Open SD1&2 Zones:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Open SD1&2 Zones:\t\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, openEDSD2zone), 0xFF);
-        ErrWrite(ERR_DEBUG, "%s", "Zones in ALARM:\t\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones in ALARM:\t\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, in_alarm), 0xFF);
-        ErrWrite(ERR_DEBUG, "%s", "Zones in TROUBLE:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Zones in TROUBLE:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, in_trouble), 0xFF);
     }
 }
@@ -312,23 +312,23 @@ void Alarm::printParttionsSummary() {
         // print now partitons 
         //
         lprintf("-------------- Partitions summary --------------\n");
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w OPEN zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w OPEN zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, openZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w ALARM zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w ALARM zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, alarmZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w BYPASSED zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w BYPASSED zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, bypassedZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w TAMPER zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w TAMPER zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, tamperZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w OPEN ED1 zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w OPEN ED1 zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, openZonesCntEDSD1));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w OPEN ED2 zones: ");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w OPEN ED2 zones: ");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, openZonesCntEDSD2));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w IGNORRED TAMPERS: ");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w IGNORRED TAMPERS: ");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, ignorredTamperZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w AMASK zones:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w AMASK zones:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, amaskZonesCnt));
-        ErrWrite(ERR_DEBUG, "%s", "Partitions w IGNORRED AMASK:\t");
+        ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w IGNORRED AMASK:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, ignorredAmaskZonesCnt));
         lprintf("-------------- End of report --------------\n");
     }

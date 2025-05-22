@@ -67,5 +67,8 @@
     <ClInclude Include="alarm-core-public-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="alarm-core-config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

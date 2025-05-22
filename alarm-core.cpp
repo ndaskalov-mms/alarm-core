@@ -1,14 +1,19 @@
 // this is heeded for windows JSON library
 //#include "json.hpp"
+#include <stdio.h>
+typedef unsigned char byte;
+#include "alarm-core-config.h"
+#include "src\alarm-core-debug.h"
+#include "alarm-FS-wrapper.h"
 #include "alarm-core-mqtt.h" // Include the new header
 #include "alarm-core.h"
 #include "alarm-core-parseJSON.h" // Include the new header
 
-
-//#include <windows.h>
+// global storage definitions
+typedef unsigned char byte;
 char prnBuf[1024];
 char token[256];
-
+// instance of the Alarm class
 Alarm alarm;
 
 void debugPrinter(const char* message, size_t length) {

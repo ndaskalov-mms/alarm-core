@@ -30,17 +30,17 @@ extern struct tagAccess gOptsTags[];
 
 // Define logger if not already defined
 #ifndef GlobalDebugLogger
-extern int GlobalDebugLogger(int level, const char* format, ...);
+extern void GlobalDebugLogger(LogLevel_t level, const char* format, ...);
 #endif
 
 // Log level definitions if not already defined
 #ifndef LOG_ERR_CRITICAL
-enum LogLevels {
-    LOG_ERR_DEBUG = 0,
-    LOG_ERR_INFO,
-    LOG_ERR_WARNING,
-    LOG_ERR_CRITICAL
-};
+//enum LogLevels_t {
+//    LOG_ERR_DEBUG = 0,
+//    LOG_ERR_INFO,
+//    LOG_ERR_WARNING,
+//    LOG_ERR_CRITICAL
+//};
 #endif
 // Function to extract zone fields from JSON using the zoneTags structure
 int extractZoneFields(const JsonObject& zoneJson, ALARM_ZONE& zone);

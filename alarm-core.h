@@ -5,5 +5,5 @@
 #include <string>
 #include <cstdarg>
 #include <cstdio>
-#include "src\alarm-core-debug.h"
+//#include "src\alarm-core-debug.h"
 #include "src\alarm-core-class.h" 
