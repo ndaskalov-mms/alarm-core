@@ -5,7 +5,18 @@
 
 typedef unsigned char byte;
 #define lprintf			printf
+#ifndef LOGLEVELS_ENUM_DEFINED
+#define LOGLEVELS_ENUM_DEFINED
+enum LogLevel_t {
+    LOG_ERR_OK = 0,
+    LOG_ERR_INFO = 1,
+    LOG_ERR_DEBUG = 2,
+    LOG_ERR_WARNING = -2,
+    LOG_ERR_CRITICAL = -1,
+};
+#endif
 #define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
+
 
 #include "alarm-core-public-defs.h"
 #include "alarm-core-internal-defs.h"
@@ -85,7 +96,7 @@ public:
     void        reportPartitionNamesBasedOnFlag(int offset);
     void        printZonesSummary(int prt);
     void        printParttionsSummary(void);
-    const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
+    //const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
 
 	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut
     DebugCallbackFunc debugCallback;

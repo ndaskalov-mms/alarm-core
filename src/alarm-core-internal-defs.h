@@ -20,14 +20,11 @@ const char FALSE_t[] = "false";
 #define SW_VERSION			100				// UPDATE ON EVERY CHANGE OF ZONEs, PGMs, etc
 //
 // --------------- error codes -----------------//
-enum errorID {
-	ERR_INFO = 2,                             // just print if INFO is set
-	ERR_OK = 0,                           	// no error
-	ERR_CRITICAL = -1,                        // critical error occured, 
-	ERR_DEBUG = -2, 							// debug print, can be enabled/disable by #define DEBUG
-	ERR_WARNING = -3, 						// warning print  can be enabled/disable by #define WARNING
-	ERR_DB_INDEX_NOT_FND = -10,				// cannot find error in the database
+enum {
+	ERR_NO_ERR			=	 0,
+	ERR_IDX_NOT_FND		=	-1,    // Error code for when a timer index is not found
 };
+//
 //
 //
 #define UNKNOWN_TTL "unknown"

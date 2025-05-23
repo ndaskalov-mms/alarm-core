@@ -28,7 +28,7 @@ int main() {
 
     alarm.setDebugCallback(GlobalDebugLogger);
     alarm.debugCallback(LOG_ERR_OK, "test\n");
-
+    storageSetup();
 #ifndef ARDUINO
     std::ifstream inputFile(inFilename);
     if (!inputFile.is_open()) {

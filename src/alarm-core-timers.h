@@ -48,7 +48,7 @@ namespace WinTimers {
 			}
 		}
 		//ErrWrite(ERR_DEBUG, "Timer not found!!!!!!!\n");
-		return ERR_DB_INDEX_NOT_FND;
+		return ERR_IDX_NOT_FND;
 	}
 	// 
 	// set timeout / check if timeout expired
@@ -57,7 +57,7 @@ namespace WinTimers {
 	bool timeoutOps(int oper, int whichOne) {
 		int index;
 		// find timer index first
-		if ((index = findTimer(whichOne)) < 0) {        // timer not found
+		if ((index = findTimer(whichOne)) == ERR_IDX_NOT_FND) {        // timer not found
 			//Alarm::ErrWrite(ERR_CRITICAL, "Timer %d NOT FOUND\n", whichOne);
 			return false;						        // TODO - report error
 		}
@@ -80,7 +80,7 @@ namespace WinTimers {
 	bool timerSetInterval(int whichOne, unsigned long Interval) {
 		int index;
 		// find timer index first
-		if ((index = findTimer(whichOne)) < 0)	    // timer not found
+		if ((index = findTimer(whichOne)) == ERR_IDX_NOT_FND)	    // timer not found
 			return false;						    // TODO - report error
 		timerDB[index].interval = Interval;
 		return true;

@@ -128,53 +128,6 @@ void Alarm::printAlarmPartRT(void) {
     }
 }
 //
-//
-    //// 
-    //void resetAllPartitionTimers(int prt) {
-    //    int j;
-    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].timerDelay = partitionDB[prt].exitDelay;
-    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassWhat = EXIT_DELAY_ZONES;
-    //    partitionRT[prt].partitionTimers[EXIT_DELAY_TIMER].bypassMask = ZONE_EX_D_BYPASSED;
-    //    //
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].timerDelay = partitionDB[prt].entryDelay1Intvl;
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassWhat = ENTRY_DELAY1_ZONES;
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].bypassMask = ZONE_EDx_BYPASSED;
-    //    //
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].timerDelay = partitionDB[prt].entryDelay2Intvl;
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassWhat = ENTRY_DELAY2_ZONES;
-    //    partitionRT[prt].partitionTimers[ENTRY_DELAY2_TIMER].bypassMask = ZONE_EDx_BYPASSED;
-    //    //
-    //    for (j = 0; j < MAX_PARTITION_TIMERS; j++)
-    //        partitionRT[prt].partitionTimers[j].timerFSM = NOT_STARTED;
-    //    //
-    //    partitionRT[prt].changed |= (CHG_EXIT_DELAY_TIMER | CHG_ENTRY_DELAY1_TIMER | CHG_ENTRY_DELAY2_TIMER);	// TODO ??? tova trqbwa da e vyv funkciata force MQTT report
-    //    return;
-    //}
-    ////
-    //// clean-up run time data - staistics and zone statuses TODO - update here when new data added
-    ////
-    //void initRTdata(void) {
-    //    int i;
-    //    // reset zone's tun-time data
-    //    for (int j = 0; j < MAX_ALARM_ZONES; j++) {    
-    //        memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
-    //        zonesRT[j].zoneStat = ZONE_CLOSE;
-    //        zonesRT[j].changed = 0;
-    //    }
-    //    for (i = 0; i < MAX_PARTITION; i++) {
-    //        // reset all partition statistics
-    //        memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
-    //        // init rut-time partition timers with configured delays in seconds
-    //        resetAllPartitionTimers(i);
-    //        // reset ARM state
-    //        partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
-    //        partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
-    //    }
-    //    // clear all HW errors
-    //    alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
-    //}
-//
-//
 // report (print) zone names with particular status OPEN/CLOSE/TAMPER/AMASK
 //
 void Alarm::reportZonesNamesBasedOnStatus(int prt, int stat) {
@@ -236,34 +189,6 @@ void Alarm::reportPartitionNamesBasedOnFlag(int offset) {
         ErrWrite(LOG_ERR_DEBUG, "%s", "None");
     ErrWrite(LOG_ERR_DEBUG, "%s", "\n");
 }
-//
-// report (print) zone names recently changed
-//
-//void reportChangedZones(void) {
-//    int res = 0;
-//    for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {                      // for each board' zone
-//        if (!partitionDB[zonesDB[zn].zonePartition].valid)			    // zone belongs to valid partiton
-//            continue;													// yes, try the next one
-//        if (!zonesDB[zn].zoneType)									    // 0 = DISABLED
-//            continue;
-//        if (zoneStatusChanged(zn))                                      // zone status changed
-//            res++;
-//        //printAlarmZone(zn);
-//        if (zoneStatChanged(zn)) {                                      // zoneStat changed only
-//            int zoneStateBak = zoneStatBackup(zn);
-//            lprintf("\nZone %s status changed from %s to %s", zonesDB[zn].zoneName, zoneState2Str(zoneStatesTitles, ZONE_STATES_TITLE_CNT, zoneStateBak), zoneState2Str(zoneStatesTitles, ZONE_STATES_TITLE_CNT, zonesRT[zn].zoneStat));
-//        }
-//        else if (zoneBypassChanged(zn))
-//            lprintf("\nZone %s bypass changed from %s to %s", zonesDB[zn].zoneName, (zonesRT[zn].zoneBypassBak & ZONE_BYPASSED) ? "BYPASSED" : "NOT BYPASSED", (zonesRT[zn].bypassed & ZONE_BYPASSED) ? "BYPASSED" : "NOT BYPASSED");
-//        else if (zoneForcedChanged(zn))
-//            lprintf("\nZone %s forced status changed from %s to %s", zonesDB[zn].zoneName, (zonesRT[zn].bypassed & ZONE_FORCED) ? "FORCED" : "NOT NORCED", (zonesRT[zn].bypassed & ZONE_FORCED)  ? "FORCED" : "NOT FORCED");
-//    }
-//    if (!res)
-//        lprintf(" None\n");
-//    else
-//        lprintf("\n");
-//}
-// 
 // 
 //
 void Alarm::printZonesSummary(int prt) {
@@ -333,6 +258,48 @@ void Alarm::printParttionsSummary() {
         lprintf("-------------- End of report --------------\n");
     }
 }
+//
+//
+// ------------------- old staff TODO - remove ---------------------
+//
+// report (print) zone names recently changed
+//
+//void reportChangedZones(void) {
+//    int res = 0;
+//    for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {                      // for each board' zone
+//        if (!partitionDB[zonesDB[zn].zonePartition].valid)			    // zone belongs to valid partiton
+//            continue;													// yes, try the next one
+//        if (!zonesDB[zn].zoneType)									    // 0 = DISABLED
+//            continue;
+//        if (zoneStatusChanged(zn))                                      // zone status changed
+//            res++;
+//        //printAlarmZone(zn);
+//        if (zoneStatChanged(zn)) {                                      // zoneStat changed only
+//            int zoneStateBak = zoneStatBackup(zn);
+//            lprintf("\nZone %s status changed from %s to %s", zonesDB[zn].zoneName, zoneState2Str(zoneStatesTitles, ZONE_STATES_TITLE_CNT, zoneStateBak), zoneState2Str(zoneStatesTitles, ZONE_STATES_TITLE_CNT, zonesRT[zn].zoneStat));
+//        }
+//        else if (zoneBypassChanged(zn))
+//            lprintf("\nZone %s bypass changed from %s to %s", zonesDB[zn].zoneName, (zonesRT[zn].zoneBypassBak & ZONE_BYPASSED) ? "BYPASSED" : "NOT BYPASSED", (zonesRT[zn].bypassed & ZONE_BYPASSED) ? "BYPASSED" : "NOT BYPASSED");
+//        else if (zoneForcedChanged(zn))
+//            lprintf("\nZone %s forced status changed from %s to %s", zonesDB[zn].zoneName, (zonesRT[zn].bypassed & ZONE_FORCED) ? "FORCED" : "NOT NORCED", (zonesRT[zn].bypassed & ZONE_FORCED)  ? "FORCED" : "NOT FORCED");
+//    }
+//    if (!res)
+//        lprintf(" None\n");
+//    else
+//        lprintf("\n");
+//}
+// 
+//
+//const char* Alarm::titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode) {
+//    int i;
+//    for (i = 0; i < CmdsCnt; i++) {
+//        if (Cmds[i].state == stateCode) {
+//            return (Cmds[i].stateTitle);
+//        }
+//    }
+//    lprintf("Cannot find zone state by stateCode %d\n", stateCode);
+//    return &UNKNOWN_TTL[0];
+//}
 /**
  * @brief Init board(s) level data 
  */
@@ -410,18 +377,29 @@ void Alarm::printParttionsSummary() {
     //    //
     //    return true;
     //}
-//
-const char* Alarm::titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode) {
-    int i;
-    for (i = 0; i < CmdsCnt; i++) {
-        if (Cmds[i].state == stateCode) {
-            return (Cmds[i].stateTitle);
-        }
-    }
-    lprintf("Cannot find zone state by stateCode %d\n", stateCode);
-    return &UNKNOWN_TTL[0];
-}
-
+///
+//// clean-up run time data - staistics and zone statuses TODO - update here when new data added
+////
+//void initRTdata(void) {
+//    int i;
+//    // reset zone's tun-time data
+//    for (int j = 0; j < MAX_ALARM_ZONES; j++) {    
+//        memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
+//        zonesRT[j].zoneStat = ZONE_CLOSE;
+//        zonesRT[j].changed = 0;
+//    }
+//    for (i = 0; i < MAX_PARTITION; i++) {
+//        // reset all partition statistics
+//        memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
+//        // init rut-time partition timers with configured delays in seconds
+//        resetAllPartitionTimers(i);
+//        // reset ARM state
+//        partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
+//        partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
+//    }
+//    // clear all HW errors
+//    alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
+//}
 
 // -------------  timers ------------------------------------
     //#define ALARM_LOOP_INTERVAL		1000

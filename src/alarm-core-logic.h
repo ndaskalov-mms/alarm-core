@@ -138,7 +138,7 @@ void Alarm::bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 // params: timer - int ENTRY_DELAY1 or ENTRY_DELAY2 or EXIT_DELAY_TIMER
 //		   oper  - int SET, GET or FORCE
 //		   partition - int index in partitionDB
-// returns: ERR_OK for SET
+// returns: 0 for SET
 //			> 0 if timeout set by corresponding delay in partition definition expired, 0 if not
 // 
 int Alarm::partitionTimer(int tmr, int oper, int prt) {
@@ -152,7 +152,7 @@ int Alarm::partitionTimer(int tmr, int oper, int prt) {
 	}
 	else if (oper == GET) 									
 		return ((unsigned long)(millis() - partitionRT[prt].partitionTimers[tmr].timerStart_ms) > ((unsigned long)partitionRT[prt].partitionTimers[tmr].timerDelay) * 1000);
-	return ERR_OK;
+	return 0;
 }
 //
 void Alarm::processPartitionTimers(int prt) {
