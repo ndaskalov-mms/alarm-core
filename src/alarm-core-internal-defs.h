@@ -12,6 +12,12 @@ const char FALSE_t[] = "false";
 #define NAME_LEN				32
 #define MAX_KEYSW_CNT			32
 
+enum timeoutOper {
+	TIMER_SET = 1,
+	TIMER_GET = 2,
+	TIMER_FORCE = 3,
+};
+
 //#define PGM_STATES_LEN			1							// contains bitmap of PGM states (PGM1->bit 0, PGM2->bit1) 
 //#define SZONERES_LEN			(SLAVE_ZONES_CNT/2 + SLAVE_ZONES_CNT%2) // 
 //#define POLL_RES_PAYLD_LEN		SZONERES_LEN+PGM_STATES_LEN	// poll payload is 4bits per zone  + one byte for PGMs states

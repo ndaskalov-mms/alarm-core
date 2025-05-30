@@ -1,10 +1,10 @@
 #pragma once
 //
-enum timeoutOper {
-	SET = 1,
-	GET = 2,
-	FORCE = 3,
-};
+//enum timeoutOper {
+//	TIMER_SET = 1,
+//	TIMER_GET = 2,
+//	TIMER_FORCE = 3,
+//};
 //
 //enum TIMERS {
 //	ALARM_LOOP_TIMER = 1,
@@ -13,18 +13,25 @@ enum timeoutOper {
 //	WIFI_CONNECT_TIMER = 7,
 //};
 
-namespace WinTimers {
-#ifndef ARDUINO
-#include <windows.h>
-	unsigned long millis() {
-		SYSTEMTIME st;
-		GetSystemTime(&st);
-		printf("The system time is: %02d:%02d:%02d\n", st.wHour, st.wMinute,st.wSecond);
-		unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
-		printf("Time in mS: %lu\n", res);
-		return res;
-	} 
-#endif
+//namespace WinTimers {   // needed because clash of ArduinJSON with windows.h 	// 
+	// millis() function for Windows
+	// 
+	// This function returns the number of milliseconds since the system started.
+	// It is similar to Arduino's millis() function.
+	// 
+	// Note: millis() is available in Arduino environment, so it is wrapped in a preprocessor directive.
+	//
+//#ifndef ARDUINO
+//#include <windows.h>
+//	unsigned long millis() {
+//		SYSTEMTIME st;
+//		GetSystemTime(&st);
+//		printf("The system time is: %02d:%02d:%02d\n", st.wHour, st.wMinute,st.wSecond);
+//		unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
+//		printf("Time in mS: %lu\n", res);
+//		return res;
+//	} 
+//#endif
 //	//
 //	// command records structure for cmdDB
 //	struct TIMER {
@@ -88,7 +95,7 @@ namespace WinTimers {
 //		return true;
 //	}
 //
-}
+//}
 //
 // -------------- end timers -----------------------------
 

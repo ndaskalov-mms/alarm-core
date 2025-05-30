@@ -4,7 +4,27 @@
 #error "This file should only be included inside the Alarm class definition"
 #endif
 
-#include "alarm-core-timers.h"
+namespace WinTimers {   // needed because clash of ArduinJSON with windows.h 	// 
+	// millis() function for Windows
+	// 
+	// This function returns the number of milliseconds since the system started.
+	// It is similar to Arduino's millis() function.
+	// 
+	// Note: millis() is available in Arduino environment, so it is wrapped in a preprocessor directive.
+	//
+#ifndef ARDUINO
+#include <windows.h>
+	unsigned long millis() {
+		SYSTEMTIME st;
+		GetSystemTime(&st);
+		printf("The system time is: %02d:%02d:%02d\n", st.wHour, st.wMinute, st.wSecond);
+		unsigned long res = (st.wHour * 60 * 60 * 1000 + st.wMinute * 60 * 1000 + st.wSecond * 1000 + st.wMilliseconds);
+		printf("Time in mS: %lu\n", res);
+		return res;
+	}
+#endif
+} // namespace WinTimers
+
 using namespace WinTimers;  // neede to avoid conflict between ArduinoJSON.h and windows.h
 
 void Alarm::resetAllPartitionTimers(int prt) {
@@ -145,12 +165,12 @@ int Alarm::partitionTimer(int tmr, int oper, int prt) {
 //
 	if(tmr >= MAX_PARTITION_TIMERS)
 		ErrWrite(LOG_ERR_CRITICAL, "partitionTimer: Invalid timer for partition %d\n", prt);
-	if (oper == SET) {													// record the current time in milliseconds
+	if (oper == TIMER_SET) {													// record the current time in milliseconds
 		partitionRT[prt].partitionTimers[tmr].timerStart_ms = millis();
 		partitionRT[prt].partitionTimers[tmr].timerFSM = RUNNING;		// and mark it as running
 		partitionRT[prt].changed |= partitionRT[prt].partitionTimers[tmr].changedMask;// will be used to mark which timer is changed for MQTT publish for partition
 	}
-	else if (oper == GET) 									
+	else if (oper == TIMER_GET)
 		return ((unsigned long)(millis() - partitionRT[prt].partitionTimers[tmr].timerStart_ms) > ((unsigned long)partitionRT[prt].partitionTimers[tmr].timerDelay) * 1000);
 	return 0;
 }
@@ -161,7 +181,7 @@ void Alarm::processPartitionTimers(int prt) {
 		return;
 	for (tmr = 0; tmr < MAX_PARTITION_TIMERS; tmr++) {
 		if (partitionRT[prt].partitionTimers[tmr].timerFSM == RUNNING) {
-			if (partitionTimer(tmr, GET, prt)) {
+			if (partitionTimer(tmr, TIMER_GET, prt)) {
 				ErrWrite(LOG_ERR_DEBUG, "Partition EXIT/ENTRY delay timer expired\n");
 				partitionRT[prt].partitionTimers[tmr].timerFSM = DONE;							// TIMER expired
 				partitionRT[prt].changed |= partitionRT[prt].partitionTimers[tmr].changedMask;	// force MQTT report
@@ -453,7 +473,7 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	// partition is properly armed, do some houskeeping
 	//
 	partitionRT[prt].armStatus = action;							// update arm status
-	partitionTimer(EXIT_DELAY_TIMER, SET, prt);						// start exit delay and publish accordingly
+	partitionTimer(EXIT_DELAY_TIMER, TIMER_SET, prt);						// start exit delay and publish accordingly
 	ErrWrite(LOG_ERR_DEBUG, "Partition EXIT delay timer started\n");
 	//
 	ErrWrite(LOG_ERR_DEBUG, "Partition %d armed\n", prt);
@@ -577,7 +597,7 @@ int Alarm::processEntryDelayZones(int zn) {
 	//
 	// handle ENTRY DELAY FSM here										
 	if (partitionRT[prt].partitionTimers[timer].timerFSM == NOT_STARTED) {	// timer is not started, do it now
-		partitionTimer(timer, SET, prt);
+		partitionTimer(timer, TIMER_SET, prt);
 		ErrWrite(LOG_ERR_DEBUG, "Partition ENTRY delay timer started\n");
 		// bypass all zones of this type and FOLLOW type zones, when timer is done, they will be unbypassed
 		bulkBypassZones(prt, (zonesDB[zn].zoneType | FOLLOW), ZONE_EDx_BYPASSED, SET_BYPASS);

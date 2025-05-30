@@ -151,7 +151,6 @@
     <ClInclude Include="src\alarm-core-logic.h" />
     <ClInclude Include="src\alarm-core-debug.h" />
     <ClInclude Include="src\alarm-core-parser-helpers.h" />
-    <ClInclude Include="src\alarm-core-timers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

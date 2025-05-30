@@ -18,8 +18,6 @@ enum LogLevel_t {
 
 #include "..\alarm-core-public-defs.h"
 #include "alarm-core-internal-defs.h"
-#include "alarm-core-timers.h"
-//#include "alarm-core-timers-new.h"  // New system
 
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
