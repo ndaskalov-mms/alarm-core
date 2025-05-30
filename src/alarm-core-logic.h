@@ -648,10 +648,11 @@ void Alarm::alarm_loop() {
 	int prt; int alarm = NO_ALARM; int trouble = NO_TROUBLE;
 	// 
 	// run alarm loop only if there is zones status change or on ALARM_LOOP_INTERVAL
-	if (!timeoutOps(GET, ALARM_LOOP_TIMER))										// run the loop on spec intervals									
-		return;																	// interval did not expired, do something else
-	else
-		timeoutOps(SET, ALARM_LOOP_TIMER);										// restart timer and execute the alarm logic
+	// TODO - this shall be controlled by the alarm class client
+	//if (!timeoutOps(GET, ALARM_LOOP_TIMER))										// run the loop on spec intervals									
+	//	return;																	// interval did not expired, do something else
+	//else
+	//	timeoutOps(SET, ALARM_LOOP_TIMER);										// restart timer and execute the alarm logic
 	//
 	for (prt = 0; prt < MAX_PARTITION; prt++) {									// process each partition individually
 		if (!partitionDB[prt].valid)											// not a valid partition

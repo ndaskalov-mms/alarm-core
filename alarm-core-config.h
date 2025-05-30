@@ -17,8 +17,9 @@ const char* mqttUser = ""; // "alarm";
 const char* mqttPassword = ""; // "12345";
 //
 // config file(s)
-const char masterDataPrefix[] = "../master/data";
-const char jsonConfigFname[] = "/alarmConfig.json";
+const char masterDataPrefix[] = ""; //    "../master/data/";
+const char jsonConfigFname[] = "alarm-config.json"; // alarmConfig.json";
+
 //
 // //const char configFileName[]					= "/alarmConfig3.cfg";
 //#define completeFilePath(prefix,filename)	prefix ## filename

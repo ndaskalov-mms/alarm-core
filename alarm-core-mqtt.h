@@ -452,6 +452,66 @@ void trigerArm(void* param1, void* param2, void* param3) {
     //	}
     //}
 }
+//
+#ifdef ARDUINO
+//
+// void mqttSetup(void)
+// tries at MQTT_CONNECT_TIMER interval to setup MQTT connection and subscribe to needed topics
+// if not successful, disconnect (in case of subscription failure) and restarts the interval
+//
+void mqttSetup(void) {
+    //
+    int i; int res = 0;
+    //lprintf("Time for MQTT connection retry?\n");
+    if (!timeoutOps(GET, MQTT_CONNECT_TIMER)) {									// run the loop on spec intervals									
+        return;																	// nothing to do
+    }
+    lprintf("Connecting to MQTT...\n");
+    MQTTclient.setCallback(MQTTcallback);
+    if (MQTTclient.setBufferSize(MAX_MQTT_PAYLOAD)) {
+        if (MQTTclient.getBufferSize() == MAX_MQTT_PAYLOAD)
+            lprintf("Success setting MQTT buffer size\n");
+        else
+            LOG_CRITICAL("Failures setting MQTT buffer size\n");
+    }
+    else
+        LOG_CRITICAL("Failures setting MQTT buffer size\n");
+    //
+    if (MQTTclient.connect(MQTT_CLIENT_NAME, mqttUser, mqttPassword, willTopic, willQoS, willRetain, willMessage, true)) {
+        lprintf("MQTT client connected as %s\n", MQTT_CLIENT_NAME);
+        // subscribe to endpoints 
+        for (i = 0; i < MQTT_SUBS_CNT; i++) {
+            if (!MQTT_subscriptions[i].subcBack(MQTT_subscriptions[i].what, i)) // in case of unsuccessfull subscription the callback 
+                return;                                                         // will disconnect MQTT client, no point to continue
+        }
+#ifdef HASS_INTEGRATION
+        // publish HASS integration staff
+        res = MQTT_HASS_integration();
+#endif
+        if (res && (i == MQTT_SUBS_CNT))
+            lprintf("Subscribing finished\n");
+    }
+    else {
+        timeoutOps(SET, MQTT_CONNECT_TIMER);					// cannot connect, restart timer
+        LOG_WARNING("MQTT connect failed with state %d\n", MQTTclient.state());
+    }
+}
+//
+//
+void MQTT_loop() {
+    if (WIFIsetup()) {                                      // WLAN connected
+        if (!MQTTclient.connected())
+            mqttSetup();									// MQTT - connect if not connected
+        else
+            MQTTclient.loop();                              // run MQTT code
+    }// run MQTT stack
+    //else
+        //lprintf("!");                                     // MQTT client not connected\n
+}
+#endif // ARDUINO
+//
+
+
 
 //
 // ------------------------  TEST vectors ------------------------

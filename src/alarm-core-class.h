@@ -1,8 +1,6 @@
 #ifndef ALARM_H
 #define ALARM_H
 
-#include <functional>
-
 typedef unsigned char byte;
 #define lprintf			printf
 #ifndef LOGLEVELS_ENUM_DEFINED
@@ -15,12 +13,13 @@ enum LogLevel_t {
     LOG_ERR_CRITICAL = -1,
 };
 #endif
-#define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
+//#define ErrWrite (debugCallback ? (debugCallback) : defaultDebugOut)
 
 
-#include "alarm-core-public-defs.h"
+#include "..\alarm-core-public-defs.h"
 #include "alarm-core-internal-defs.h"
 #include "alarm-core-timers.h"
+//#include "alarm-core-timers-new.h"  // New system
 
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
@@ -30,6 +29,9 @@ public:
     // Constructor and destructor
     Alarm();
     ~Alarm();
+
+    // debug prints
+    void ErrWrite(LogLevel_t level, const char* format, ...);
 
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
@@ -203,8 +205,7 @@ void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)         
     va_end(args);
     return;
 }
-
-
+//
 // Function to set the debug callback
 void Alarm::setDebugCallback(DebugCallbackFunc callback) {
     debugCallback = callback;
@@ -547,7 +548,24 @@ void Alarm::resetPartitionTimers(int partitionIndex) {
     // Reset all timers for a partition
     // Implementation would depend on how timers are managed
 }
+//
+// debug prints and log
+void Alarm::ErrWrite(LogLevel_t level, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
 
+    if (debugCallback) {
+        va_list argsCopy;
+        va_copy(argsCopy, args);
+        debugCallback(level, format, argsCopy);
+        va_end(argsCopy);
+    }
+    else {
+        defaultDebugOut(level, format, args);
+    }
+
+    va_end(args);
+}
 
 //
 

@@ -20,7 +20,7 @@ IOptr VS_filehandle;
 #endif
 #ifdef ARDUINO
 typedef File IOptr;
-IOptr SPIFFS_filehandle;
+IOptr LittleFS_filehandle;
 #endif
 //
 extern int parseConfigFile(char buffer[], int bufferLen, int saveFlag);
@@ -53,13 +53,14 @@ int storageSetup() {
     //
     lprintf("Inizializing FS...\n");
 #ifdef ARDUINO
-    logger.println("Inizializing FS...");
-    if (SPIFFS.begin(true)) {   // TODO FORMAT_SPIFFS_IF_FAILED
-        LOG_INFO("Storage init success\n");
+    log_i("Begin setup\n");
+    //logger.println("Inizializing FS...");
+    if (LittleFS.begin(true)) {   // TODO FORMAT_LittleFS_IF_FAILED
+        log_i("Storage init success\n");
         return true;
     }
     else {
-        LOG_CRITICAL, "Storage init fail\n");
+        log_e("Storage init fail\n");
         return false;
     }
 #endif
@@ -73,7 +74,7 @@ int storageSetup() {
 int storageClose() {
     LOG_INFO("Shutting down storage\n");
 #ifdef ARDUINO
-    SPIFFS.end();
+    LittleFS.end();
     LOG_INFO("Shutting down storage\n");
 #endif
     return true;
@@ -85,12 +86,12 @@ int formatStorage() {
     return true;
 #ifdef ARDUINO
     LOG_INFO("Formatting file system  ");
-    if (SPIFFS.format()) {
+    if (LittleFS.format()) {
         LOG_INFO("-  DONE\n");
         return true;
     }
     else {
-        ErrWrite(ERR_WARNING, "-  FAIL!!!\n");
+        LOG_INFO("-  FAIL!!!\n");
         return false;
     }
 #endif
@@ -107,13 +108,13 @@ int alarmFileDelete(const char cFileName[]) {
     int res;
 #ifndef ARDUINO
     int i = 0;
-    if (cFileName[i] == '/') {                          // in SPIFFS all file names start with /
+    if (cFileName[i] == '/') {                          // in LittleFS all file names start with /
         i++;
     }
     res = remove(&cFileName[i]);            
 #endif
 #ifdef ARDUINO
-    res = SPIFFS.remove(cFileName);   
+    res = LittleFS.remove(cFileName);
 #endif
     if (res) 
         LOG_CRITICAL("Unable to remove file %s", cFileName);
@@ -145,7 +146,7 @@ IOptr alarmFileOpen(const char cFileName[], const char* mode) {
     return filehandle;
 #endif
 #ifdef ARDUINO
-    filehandle = SPIFFS.open(cFileName, mode);
+    filehandle = LittleFS.open(cFileName, mode);
     if (!filehandle || filehandle.isDirectory()) {
         LOG_CRITICAL("Failed to open file %s for reading\n", cFileName);
         return (IOptr) 0;                               // to handle directory case
@@ -208,7 +209,7 @@ int alarmFileRename(const char oldName[], const char newName[]) {
     res = !rename(&oldName[offOld], &newName[offNew]);
 #endif
 #ifdef ARDUINO
-    res = SPIFFS.rename(oldName, newName);
+    res = LittleFS.rename(oldName, newName);
 #endif
     if (!res) 
         LOG_CRITICAL("Unable to rename file %s to %s\n", oldName, newName);
@@ -273,7 +274,7 @@ int alarmFileSize(IOptr stream) {
 //              byte* bufPtr            - buf to read the file content
 //              int   bufLen            - max buffer size
 //
-int readCsvConfig(const char cFileName[], byte* bufPtr, int bufLen) {
+int loadConfig(const char cFileName[], byte* bufPtr, int bufLen) {
     lprintf("Reading CSV config file %s\n", cFileName);
     IOptr cFile = alarmFileOpen(cFileName, "rb");                 // alarmFopen will return void ptr which 
     if (!cFile) {                                    // in fact is ptr to FILE * or to File depends on platform
@@ -304,11 +305,11 @@ int readCsvConfig(const char cFileName[], byte* bufPtr, int bufLen) {
 //
 int saveCsvConfig(const char cFileName[], const byte* buf, int len) {
 #ifdef ARDUINO
-    // SPIFFS.remove(F("/cFileName"));
+    // LittleFS.remove(F("/cFileName"));
 
 #endif
     IOptr cFile;
-    // File cFile = SPIFFS.open(cFileName, "w");
+    // File cFile = LittleFS.open(cFileName, "w");
     // err = fopen_s(&cFile, cFileName, "wb");
     cFile = alarmFileOpen(cFileName, "wb");
     if (cFile) {
@@ -337,7 +338,7 @@ int saveCsvConfig(const char cFileName[], const byte* buf, int len) {
 //
 //int saveJsonConfig(const char cFileName[]) {
 //#ifdef ARDUINO
-//    // SPIFFS.remove(F("/cFileName"));
+//    // LittleFS.remove(F("/cFileName"));
 //#endif
 //    IOptr cFile;
 //    cFile = alarmFileOpen(cFileName, "w");
@@ -412,13 +413,13 @@ int saveCsvConfig(const char cFileName[], const byte* buf, int len) {
 //
 //int saveBinConfig(const char cFileName[]) {
 //#ifdef ARDUINO
-//    // SPIFFS.remove(F("/cFileName"));
+//    // LittleFS.remove(F("/cFileName"));
 //#endif
 //   //  calc 8 bit checksum first
 //   alarmConfig.csum = crc8((byte*)&alarmConfig, sizeof(alarmConfig) - 1);
 //   //    
 //   IOptr cFile;
-//   // File cFile = SPIFFS.open(cFileName, "w");
+//   // File cFile = LittleFS.open(cFileName, "w");
 //   // err = fopen_s(&cFile, cFileName, "wb");
 //   cFile = alarmFileOpen(cFileName, "wb");
 //   if (cFile) {

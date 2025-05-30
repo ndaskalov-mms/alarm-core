@@ -4,6 +4,7 @@
 typedef unsigned char byte;
 #include "alarm-core-config.h"
 #include "src\alarm-core-debug.h"
+//#include "src\alarm-core-timers.h"
 #include "alarm-FS-wrapper.h"
 #include "alarm-core-mqtt.h" // Include the new header
 #include "alarm-core.h"
@@ -13,6 +14,7 @@ typedef unsigned char byte;
 typedef unsigned char byte;
 char prnBuf[1024];
 char token[256];
+//TimerManager alarmTimerManager;
 // instance of the Alarm class
 Alarm alarm;
 
@@ -20,7 +22,6 @@ void debugPrinter(const char* message, size_t length) {
     printf("[DEBUG] %.*s\n", (int)length, message);
 }
 
-#define inFilename "alarm-config.json"
 
 int main() {
     // Print a welcome message
@@ -28,24 +29,33 @@ int main() {
 
     alarm.setDebugCallback(GlobalDebugLogger);
     alarm.debugCallback(LOG_ERR_OK, "test\n");
-    storageSetup();
-#ifndef ARDUINO
-    std::ifstream inputFile(inFilename);
-    if (!inputFile.is_open()) {
-        GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", inFilename);
+    LOG_INFO("Init alarm from JSON file %s\n", jsonConfigFname);
+    if (!storageSetup()) {					                                    // mount file system
+        LOG_CRITICAL("Error initializing storage while processing the new config\n");
+        storageClose();
+        return false;
+    }
+    //  Read config file into tempMQTTpayload buffer
+    int rlen = loadConfig(jsonConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload));
+    if (!rlen) {
+        LOG_WARNING("Wrong or missing CSV config file\n");
+        storageClose();
         return false;
     }
 
-    // Read the file into a string
-    std::string jsonString((std::istreambuf_iterator<char>(inputFile)),
-        std::istreambuf_iterator<char>());
-    inputFile.close();
-#else
-    //readFile(LittleFS, "/foo.txt");
-#endif
+    //std::ifstream inputFile(jsonConfigFname);
+    //if (!inputFile.is_open()) {
+    //    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", inFilename);
+    //    return false;
+    //}
+
+    //// Read the file into a string
+    //std::string jsonString((std::istreambuf_iterator<char>(inputFile)),
+    //    std::istreambuf_iterator<char>());
+    //inputFile.close();
 
     // Parse JSON configuration and populate the alarm system
-    if (parseJsonConfig(jsonString, alarm)) {
+    if (parseJsonConfig((char *) tempMQTTpayload, alarm)) {
         std::cout << "Alarm Data Loaded from JSON successfully\n";
     }
     else {

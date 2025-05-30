@@ -6,6 +6,7 @@
 //extern int GlobalDebugLogger(int level, const char* format, ...);
 
 // Error level definitions (if not already defined elsewhere)
+#ifndef LOGLEVELS_ENUM_DEFINED
 #define LOGLEVELS_ENUM_DEFINED
 enum LogLevel_t { 
     LOG_ERR_OK        = 0,
@@ -14,7 +15,7 @@ enum LogLevel_t {
     LOG_ERR_WARNING   =-2,
     LOG_ERR_CRITICAL  =-1,
 };
-
+#endif
 // Default log level (can be changed at runtime)
 static LogLevel_t g_logLevel = LOG_ERR_DEBUG;
 

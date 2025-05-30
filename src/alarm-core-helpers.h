@@ -192,12 +192,12 @@ void Alarm::reportPartitionNamesBasedOnFlag(int offset) {
 // 
 //
 void Alarm::printZonesSummary(int prt) {
-    if (partitionRT[prt].changed)
-        timeoutOps(FORCE, STATUS_REPORT_TIMER);
-    if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
-        timeoutOps(SET, STATUS_REPORT_TIMER);
+    //if (partitionRT[prt].changed)                                         // TODO shall be requested by Alarm client
+    //    timeoutOps(FORCE, STATUS_REPORT_TIMER);
+    //if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
+    //    timeoutOps(SET, STATUS_REPORT_TIMER);
         //lprintf("-------------- Periodic status report --------------\n");
-        //ErrWrite(ERR_DEBUG, "-------------- Recent zones changes: ");                  // first report all changed zones
+        //ErrWrite(ERR_DEBUG, "-------------- Recent zones changes: ");     // first report all changed zones
         //reportChangedZones();
         lprintf("-------------- Zones summary for partition %s --------------\n", partitionDB[prt].partitionName);
         ErrWrite(LOG_ERR_DEBUG, "%s", "Zones w TAMPER:\t\t");
@@ -228,11 +228,11 @@ void Alarm::printZonesSummary(int prt) {
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, in_alarm), 0xFF);
         ErrWrite(LOG_ERR_DEBUG, "%s", "Zones in TROUBLE:\t");
         reportZonesNamesBasedOnFlag(prt, offsetof(struct ALARM_ZONE_RT, in_trouble), 0xFF);
-    }
+    //}
 }
 void Alarm::printParttionsSummary() {
-    if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
-        timeoutOps(SET, STATUS_REPORT_TIMER);
+    //if (timeoutOps(GET, STATUS_REPORT_TIMER)) {					        // publish zones statistics on spec intervals									
+    //    timeoutOps(SET, STATUS_REPORT_TIMER);                             // TODO shall be requested by Alarm client
         //
         // print now partitons 
         //
@@ -256,8 +256,69 @@ void Alarm::printParttionsSummary() {
         ErrWrite(LOG_ERR_DEBUG, "%s", "Partitions w IGNORRED AMASK:\t");
         reportPartitionNamesBasedOnFlag(offsetof(struct ALARM_PARTITION_STATS_t, ignorredAmaskZonesCnt));
         lprintf("-------------- End of report --------------\n");
-    }
+    //}
 }
+
+
+/**
+ * @brief Tries to load complete alarm configuration data from storage or memory.
+ *
+ * This function attempts to initialize the alarm loop by loading the complete alarm
+ * configuration data. It may involve retrieving data from storage or memory, depending
+ * on the implementation.
+ *
+ * @return 0 on success, non-zero on errors.
+ *
+ */
+ //int initAlarmLoop() {
+ //    ErrWrite(LOG_ERR_WARNING, "Init alarm from file\n");
+ //    if (!storageSetup()) {					                                    // mount file system
+ //        ErrWrite(LOG_ERR_CRITICAL, "Error initializing storage while processing the new config\n");
+ //        storageClose();
+ //        return false;
+ //    }
+ //    //  Read config file into tempMQTTpayload buffer
+ //    int rlen = loadConfig(jsonConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload));
+ //    if (!rlen) {  
+ //        ErrWrite(LOG_ERR_WARNING, "Wrong or missing CSV config file\n");
+ //        storageClose();
+ //        return false;
+ //    }
+ //    //
+ //    // clear all storage arrays (DBs) for all alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
+ //    //clearAllDBs();
+ //    //
+ //    // now parse the config data and store it in corresponding arrays (DBs) - zonesDB[], partitonsDB[], pgmsDB[], ... 
+ //    // config data are loaded in  tempMQTTpayload   from CSV config file                   
+ //    if (parseConfigFile((char*)&tempMQTTpayload, rlen, true)) {
+ //        ErrWrite(LOG_ERR_CRITICAL, "Config file parse fail\n");
+ //        return 0;
+ //    }
+ //    else
+ //        ErrWrite(LOG_ERR_CRITICAL, "Config file successfully parsed\n");
+ //    //
+ //    //initBoardsData();
+ //    //initRTdata();
+ //    //synchPGMstates();                                                       // copy mPGM cValue (default init value) to pgmsDB
+ //    //printAlarmOpts((byte*)&alarmGlobalOpts);
+ //    //printAlarmPartCfg();
+ //    //printAlarmZones(0, MAX_ALARM_ZONES);
+ //    //printAlarmPgms((alarmPgmArr_t*)&alarmConfig.pgmConfig, MASTER_ADDRESS, maxSlaves);
+ //    //printAlarmPgms();
+ //    //printAlarmKeysw((byte*) &keyswDB, MAX_KEYSW_CNT); 
+ //    //  write BIN config
+ //    //if(ENABLE_CONFIG_CREATE) { 					// do not create config, we have to wait for data from MQTT 	
+ //    //    saveBinConfig(configFileName);          // create the file, maybe this is the first ride TODO - make it to check only once
+ //    //}
+ //#ifndef ARDUINO
+ //    //lprintf("Saving JSON config file\n");
+ //    //saveJsonConfig(jsonConfigFname);
+ //#endif
+ //    storageClose();
+ //    //
+ //    return true;
+ //}
+
 //
 //
 // ------------------- old staff TODO - remove ---------------------
@@ -318,64 +379,6 @@ void Alarm::printParttionsSummary() {
     //    //lprintf("Size of sbPtrArr = %d\n", sizeof(dbPtrArr));
     //    for(i=0; i<DB_PTR_ARR_CNT; i++)
     //        memset((void*)dbPtrArr[i].dbBaseAddr, 0, dbPtrArr[i].elmCnt * dbPtrArr[i].elmLen);
-    //}
-/**
- * @brief Tries to load complete alarm configuration data from storage or memory.
- *
- * This function attempts to initialize the alarm loop by loading the complete alarm
- * configuration data. It may involve retrieving data from storage or memory, depending
- * on the implementation.
- *
- * @return 0 on success, non-zero on errors.
- *
- */
-    //int initAlarmLoop() {
-    //    ErrWrite(ERR_WARNING, "Init alarm from file\n");
-    //    if (!storageSetup()) {					                                    // mount file system
-    //        ErrWrite(ERR_CRITICAL, "Error initializing storage while processing the new config\n");
-    //        storageClose();
-    //        return false;
-    //    }
-    //    //  Read config file into tempMQTTpayload buffer
-    //    int rlen = readCsvConfig(csvConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload)); 
-    //    if (!rlen) {  
-    //        ErrWrite(ERR_WARNING, "Wrong or missing CSV config file\n");
-    //        storageClose();
-    //        return false;
-    //    }
-    //    //
-    //    // clear all storage arrays (DBs) for all alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
-    //    clearAllDBs();
-    //    //
-    //    // now parse the config data and store it in corresponding arrays (DBs) - zonesDB[], partitonsDB[], pgmsDB[], ... 
-    //    // config data are loaded in  tempMQTTpayload   from CSV config file                   
-    //    if (parseConfigFile((char*)&tempMQTTpayload, rlen, true)) {
-    //        ErrWrite(ERR_CRITICAL, "Config file parse fail\n");
-    //        return 0;
-    //    }
-    //    else
-    //        ErrWrite(ERR_CRITICAL, "Config file successfully parsed\n");
-    //    //
-    //    initBoardsData();
-    //    initRTdata();
-    //    synchPGMstates();                                                       // copy mPGM cValue (default init value) to pgmsDB
-    //    printAlarmOpts((byte*)&alarmGlobalOpts);
-    //    printAlarmPartCfg();
-    //    printAlarmZones(0, MAX_ALARM_ZONES);
-    //    //printAlarmPgms((alarmPgmArr_t*)&alarmConfig.pgmConfig, MASTER_ADDRESS, maxSlaves);
-    //    printAlarmPgms();
-    //    //printAlarmKeysw((byte*) &keyswDB, MAX_KEYSW_CNT); 
-    //    //  write BIN config
-    //    //if(ENABLE_CONFIG_CREATE) { 					// do not create config, we have to wait for data from MQTT 	
-    //    //    saveBinConfig(configFileName);          // create the file, maybe this is the first ride TODO - make it to check only once
-    //    //}
-    //#ifndef ARDUINO
-    //    lprintf("Saving JSON config file\n");
-    //    saveJsonConfig(jsonConfigFname);
-    //#endif
-    //    storageClose();
-    //    //
-    //    return true;
     //}
 ///
 //// clean-up run time data - staistics and zone statuses TODO - update here when new data added

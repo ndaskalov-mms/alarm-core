@@ -1,6 +1,9 @@
 #pragma once
 //
 // //
+#define TRUE	1
+#define FALSE	0
+
 const char TRUE_t[] = "true";
 const char FALSE_t[] = "false";
 //
