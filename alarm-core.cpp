@@ -9,19 +9,21 @@ typedef unsigned char byte;
 #include "alarm-core-mqtt.h" // Include the new header
 #include "alarm-core.h"
 #include "alarm-core-parseJSON.h" // Include the new header
+#include "alarm-core-CSV-parser.h" // Include the new header
 
 // global storage definitions
 typedef unsigned char byte;
 char prnBuf[1024];
 char token[256];
 //TimerManager alarmTimerManager;
-// instance of the Alarm class
-Alarm alarm;
+
 
 void debugPrinter(const char* message, size_t length) {
     printf("[DEBUG] %.*s\n", (int)length, message);
 }
 
+// instance of the Alarm class
+Alarm alarm;
 
 int main() {
     // Print a welcome message
@@ -42,17 +44,6 @@ int main() {
         storageClose();
         return false;
     }
-
-    //std::ifstream inputFile(jsonConfigFname);
-    //if (!inputFile.is_open()) {
-    //    GlobalDebugLogger(LOG_ERR_CRITICAL, "Error: Failed to open %s\n", inFilename);
-    //    return false;
-    //}
-
-    //// Read the file into a string
-    //std::string jsonString((std::istreambuf_iterator<char>(inputFile)),
-    //    std::istreambuf_iterator<char>());
-    //inputFile.close();
 
     // Parse JSON configuration and populate the alarm system
     if (parseJsonConfig((char *) tempMQTTpayload, alarm)) {

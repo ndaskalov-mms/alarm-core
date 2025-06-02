@@ -170,13 +170,12 @@ int alarmFileClose(IOptr filehandle) {
 //
 // 
 //
-int alarmFileRead(byte* bufferptr, size_t size, IOptr stream) {
+size_t alarmFileRead(byte* bufferptr, size_t size, IOptr stream) {
 #ifndef ARDUINO
-    int i = fread((void*)bufferptr, sizeof(byte), size, stream);
-    return (i);
+    size_t i = fread((void*)bufferptr, sizeof(byte), size, stream);
+    return i;
 #endif
 #ifdef ARDUINO
-    //return (stream.read((byte*)&tmpConfig, sizeof(tmpConfig)));
     return (stream.read(bufferptr, size));
 #endif
 }

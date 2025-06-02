@@ -73,5 +73,8 @@
     <ClInclude Include="alarm-core-timers-new.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="alarm-core-CSV-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
