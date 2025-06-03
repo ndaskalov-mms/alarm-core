@@ -19,6 +19,7 @@ const char* mqttPassword = ""; // "12345";
 // config file(s)
 const char masterDataPrefix[] = ""; //    "../master/data/";
 const char jsonConfigFname[] = "alarm-config.json"; // alarmConfig.json";
+const char csvConfigFname[] = "alarm-config.csv"; 
 
 //
 // //const char configFileName[]					= "/alarmConfig3.cfg";

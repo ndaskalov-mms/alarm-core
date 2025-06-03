@@ -17,7 +17,7 @@ enum LogLevel_t {
 };
 #endif
 // Default log level (can be changed at runtime)
-static LogLevel_t g_logLevel = LOG_ERR_DEBUG;
+static LogLevel_t g_logLevel = LOG_ERR_INFO;
 
 // Set log level at runtime
 inline void SetLogLevel(LogLevel_t level) { g_logLevel = level; }

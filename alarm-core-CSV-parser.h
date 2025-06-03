@@ -297,20 +297,18 @@ int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag) {
         return 1;
         break;
     case ZONES:
-        //tmpZn = (struct ALARM_ZONE*)srcPtr;
-        //if (tmpZn->zoneType == ZONE_DISABLED)
-        //    return 1;
-        //if ((tmpZn->boardID > maxSlaves) || (tmpZn->zoneID >= (tmpZn->boardID ? SLAVE_ALARM_ZONES_CNT : MASTER_ALARM_ZONES_CNT))) {
-        //    LOG_CRITICAL("Board %d or zone %d out of range\n", tmpZn->boardID, tmpZn->zoneID);
-        //    return 0;
-        //}
-        //if (saveFlag) {
-        //    idx = BOARD_ZONE_2_IDX(tmpZn->boardID, tmpZn->zoneID);
-        //    zonesDB[idx] = *tmpZn;
-        //    lprintf("Zone def %s successfully imported/stored\n", tmpZn->zoneName);
-        //    //printConfigHeader(zoneTags, ZONE_TAGS_CNT);
-        //    //printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zonesDB[idx], PRTCLASS_ALL);
-        //}
+        tmpZn = (struct ALARM_ZONE*)srcPtr;
+        if (tmpZn->zoneType == ZONE_DISABLED)
+            return 1;
+        if (saveFlag) {
+            if(alarm.addZone(*tmpZn) == -1) {
+                LOG_CRITICAL("No space for zone, Zone %s not added\n", tmpZn->zoneName);
+                return 0;
+			}
+            lprintf("Zone def %s successfully imported/stored\n", tmpZn->zoneName);
+            //alarm.printConfigHeader(zoneTags, ZONE_TAGS_CNT);
+            //alarm.printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zonesDB[idx], PRTCLASS_ALL);
+        }
         return 1;
     case PARTITIONS:
         tmpPart = (struct ALARM_PARTITION_t *)srcPtr;
@@ -318,13 +316,17 @@ int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag) {
             LOG_CRITICAL("Partition %d out of range\n", tmpPart->partIdx);
             return 0;
         }
-        //if (saveFlag) {
-        //    idx = tmpPart->partIdx;
-        //    partitionDB[idx] = *tmpPart;
-        //    lprintf("Partition def %s successfully imported/stored\n", tmpPart->partitionName);
-        //    //printConfigHeader(partitionTags, PARTITION_TAGS_CNT);
-        //    //printConfigData(partitionTags, PARTITION_TAGS_CNT, (byte*)&partitionDB[idx], PRTCLASS_ALL);
-        //}
+        if (saveFlag) {
+            idx = tmpPart->partIdx;
+            //partitionDB[idx] = *tmpPart;
+            if(alarm.addPartition(*tmpPart) == -1) {
+                LOG_CRITICAL("No space for partition, Partition %s not added\n", tmpPart->partitionName);
+                return 0;
+			}
+            lprintf("Partition def %s successfully imported/stored\n", tmpPart->partitionName);
+            //alarm.printConfigHeader(partitionTags, PARTITION_TAGS_CNT);
+            //alarm.printConfigData(partitionTags, PARTITION_TAGS_CNT, (byte*)&partitionDB[idx], PRTCLASS_ALL);
+        }
         return 1;
     case PGMS:
         tmpPgm = (struct ALARM_PGM*)srcPtr;
@@ -416,7 +418,7 @@ unsigned int alarmGetLine(char lineBuf[], int lineLen, char inBuf[], unsigned in
     while (offset < inBufLen) {                             // (stream.available())
         c = inBuf[offset++];                                // read the next char
         if ((c == '\n') || (c == '\r')) {                   // check for LF/CR
-            while (offset < inBufLen && isSpace(inBuf[offset]))
+            while (offset < inBufLen && isWhitespace(inBuf[offset]))
                 offset++;                                   // Skip trailing whitespace after the line terminator
             break;
         }
@@ -473,7 +475,7 @@ int parseConfigFile(char buffer[], int bufferLen, int saveFlag) {
         if (line[0] == CSV_COMMENT_CHAR)                                         // comment                     
             continue;
         GET_FIRST_TOKEN;                                                    // line specifier - zone, partition or globaOptions?
-        //printf("\nToken:%s\n", token);
+        printf("\nToken:%s\n", token);
         for (i = 0; i < CSV_HEADERS_CNT; i++) {                             // for all allowed headers
             if (_stricmp(token, csvHeaders[i].hdrTTL))                      // try to match the current token to any of the allowed headers
                 continue;                                                   // not matching
@@ -497,6 +499,7 @@ int parseConfigFile(char buffer[], int bufferLen, int saveFlag) {
     return 0;                                        // TODO - shall have some config data validation
 
 }
+
 //
 // match keyboard command to implemented commands
 // parms: 

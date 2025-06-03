@@ -183,7 +183,7 @@ size_t alarmFileRead(byte* bufferptr, size_t size, IOptr stream) {
 //  returns true if all bytes of the buffer written successfully
 //
 int alarmFileWrite(const byte* bufferptr, int size, IOptr stream) {
-    int cnt;
+    size_t cnt;
 #ifndef ARDUINO
     cnt = fwrite((void*)bufferptr, sizeof(byte), size, stream);
 #endif
@@ -288,7 +288,7 @@ int loadConfig(const char cFileName[], byte* bufPtr, int bufLen) {
 
     }
     memset((void*)bufPtr, 0, bufLen);
-    int alen = alarmFileRead(bufPtr, rlen, cFile);
+    size_t alen = alarmFileRead(bufPtr, rlen, cFile);
     if (rlen != alen) {
         LOG_CRITICAL("Problem reading config file file system len %d, read %d\n", rlen, alen);
         alarmFileClose(cFile);

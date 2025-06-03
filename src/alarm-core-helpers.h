@@ -31,7 +31,7 @@ void Alarm::printConfigData(struct tagAccess targetKeys[], int numEntries, byte 
 void Alarm::printConfigHeader(struct tagAccess targetKeys[], int numEntries) {
     for (int i = 0; i < numEntries; i++) {
         lprintf("%s ", targetKeys[i].keyStr);
-        for (int j = strlen(targetKeys[i].keyStr); j < (int)targetKeys[i].keyStrLen; j++)
+        for (size_t j = strlen(targetKeys[i].keyStr); j < (int)targetKeys[i].keyStrLen; j++)
             lprintf("%c", ' ');
     }
     lprintf("\n");
