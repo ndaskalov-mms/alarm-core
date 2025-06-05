@@ -132,6 +132,7 @@
     <ClCompile Include="alarm-core.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="alarm-config.csv" />
     <None Include="alarm-config.json" />
     <None Include="alarm_core_test.ino\alarm_core_test.ino.ino" />
     <None Include="iterators.bak" />

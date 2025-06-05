@@ -78,9 +78,11 @@ public:
     void        processTimers();
     bool        disarmPartition(int partitionIndex);
 
+	// Debugging and logging methods
+    static void defaultDebugOut(LogLevel_t err_code, const char* what, ...);
+
     // printing methods - defined in alarmClassHelpers.h
 	//
-    static void  defaultDebugOut(LogLevel_t err_code, const char* what, ...);
     static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
     void        printConfigHeader(struct tagAccess targetKeys[], int numEntries);
     void        printAlarmPartCfg(void);

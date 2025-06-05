@@ -63,18 +63,18 @@ struct csvHeader_t {
     const           char* hdrTTL;                                   //!< header title - first cell in each line to identify the line content (e.g. zone, partition, zHeader, pgmHeader, etc.)
     int			    domain_idx;						                //!< index in dbProps to find the database for the corresponding entry
     int             (*handlerCB)  (int dataTyp, char* strbuf);      //!< pointer to function to handle the rest of the line
-    struct          tagAccess* hdrParamArrPtr;                     //!< array with all possible parameters in the header
+    struct          tagAccess* hdrParamArrPtr;                      //!< array with all possible parameters in the header
     int             paramCnt;                                       //!< size of the above array
     unsigned int    setFlags;                                       //!< we need to have certain data in order to know how to interpreate current one - e.g. we need to get global options before any data, or to get header before the data line
     unsigned int    checkFlags;                                     //!< we need to have certain data in order to know how to interpreate current one - e.g. we need to get global options before any data, or to get header before the data line
-    byte* dataPtr;                                        //!< pointer to temp storage to store the imported data
-    int             (*dataStoreCB) (int dataTyp, maxTmp_t* src, int saveFl);    //!< fuct callback to postproces and copy line data from tmp storage to corrsponding database
+    byte* dataPtr;                                                  //!< pointer to temp storage to store the imported data
+    int             (*dataStoreCB)(Alarm& alarm, int dataTyp, maxTmp_t* src, int saveFl);    //!< fuct callback to postproces and copy line data from tmp storage to corrsponding database
 };
 
 // forward declarations of functions used in csvHeaders[]
 int getHeaderLine(int hdrTyp, char* strbuf);
 int getDataLine(int hdrTyp, char* strbuf);
-int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag);
+int postprocesStoreImportedCSVData(Alarm& alarm, int srcTyp, maxTmp_t* srcPtr, int saveFlag);
 
 /**
  * @brief Contains all line headers allowed in CSV file
@@ -84,9 +84,9 @@ struct csvHeader_t csvHeaders[] = {
         {CSV_PRT_HDR_TTL,	    RESERVED,   &getHeaderLine, partitionTags,  PARTITION_TAGS_CNT,       HAVE_PRT_HDR,           CLEAR_FLAGS,                                NULL,           NULL},
         {CSV_PGM_HDR_TTL,	    RESERVED,   &getHeaderLine, pgmTags ,       PGM_TAGS_CNT,             HAVE_PGM_HDR,           CLEAR_FLAGS,                                NULL,           NULL},
         {CSV_GOPT_HDR_TTL,      RESERVED,   &getHeaderLine, gOptsTags,      GLOBAL_OPTIONS_TAGS_CNT,  HAVE_GOPT_HDR,          CLEAR_FLAGS,                                NULL,           NULL},
-        {CSV_ZONE_TTL,		    ZONES,      &getDataLine,   zoneTags,       ZONE_TAGS_CNT,            CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_ZN_HDR | HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-        {CSV_PRT_TTL,	        PARTITIONS, &getDataLine,   partitionTags,  PARTITION_TAGS_CNT,       CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_PRT_HDR | HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-        {CSV_PGM_TTL,	        PGMS,       &getDataLine,   pgmTags ,       PGM_TAGS_CNT,             CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_PGM_HDR | HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+        {CSV_ZONE_TTL,		    ZONES,      &getDataLine,   zoneTags,       ZONE_TAGS_CNT,            CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_ZN_HDR | HAVE_G_OPT,   (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+        {CSV_PRT_TTL,	        PARTITIONS, &getDataLine,   partitionTags,  PARTITION_TAGS_CNT,       CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_PRT_HDR | HAVE_G_OPT,  (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+        {CSV_PGM_TTL,	        PGMS,       &getDataLine,   pgmTags ,       PGM_TAGS_CNT,             CLEAR_FLAGS,            HAVE_GOPT_HDR | HAVE_PGM_HDR | HAVE_G_OPT,  (byte*)&maxTmp, &postprocesStoreImportedCSVData},
         {CSV_GOPT_TTL,          GLOBAL_OPT, &getDataLine,   gOptsTags,      GLOBAL_OPTIONS_TAGS_CNT,  HAVE_G_OPT,             HAVE_GOPT_HDR,                              (byte*)&maxTmp, &postprocesStoreImportedCSVData},
         //{CSV_KEYSW_HDR_TTL,   KEYSW,      &getHeaderLine,   KEYSW_HDR   },
 };
@@ -229,9 +229,8 @@ int getDataLine(int hdrTyp, char* strbuf) {
                break;
             }
         }
-        if (csvHeaders[hdrTyp].paramCnt == i)
-            ;                                                                   // all keys checked till the end but current parma is not found
-            //lprintf("Data value %s at position %d skipped\n", token, j);
+        if (csvHeaders[hdrTyp].paramCnt == i)                                  // all keys checked till the end but current parma is not found
+            lprintf("Data value %s at position %d skipped\n", token, j);
     }
     csvParserFlags |= csvHeaders[hdrTyp].setFlags;                              // mark that header was imported by setting the appropriate flag in global var
     return 1;
@@ -252,11 +251,14 @@ int getDataLine(int hdrTyp, char* strbuf) {
 int getHeaderLine(int hdrTyp, char* strbuf) {
     int i, j;
     char token[NAME_LEN];
+    const char* currPar;
     for (j = 0; getToken(strbuf, token, csvDel, false, NAME_LEN); j++) {
         if (token[0] == '#')
             continue;
         for (i = 0; i < csvHeaders[hdrTyp].paramCnt; i++) {
-            if (!_stricmp(token, csvHeaders[hdrTyp].hdrParamArrPtr[i].keyStr)) {
+            currPar = (const char *) & csvHeaders[hdrTyp].hdrParamArrPtr[i].keyStr;
+            //printf("Current param to compare = %s\n", currPar);
+            if (!_stricmp(token, currPar)) {
                 csvHeaders[hdrTyp].hdrParamArrPtr[i].pos = j;
                 //lprintf("Storing header field %s at position %d\n", csvHeaders[hdrTyp].hdrParamArrPtr[i].keyStr, j);
                 break;
@@ -268,7 +270,7 @@ int getHeaderLine(int hdrTyp, char* strbuf) {
         }
     }   
     csvParserFlags |= csvHeaders[hdrTyp].setFlags;                     // mark that header was imported by setting the appropriate flag in global var
-    //ErrWrite(ERR_DEBUG, "CSV header %s successfully imported\n", csvHeaders[hdrTyp].hdrTTL);
+    LOG_DEBUG("CSV header %s successfully imported", csvHeaders[hdrTyp].hdrTTL);
     //printConfigHeader(keyArr, entryCnt);
     return 1;
 }
@@ -285,7 +287,8 @@ int getHeaderLine(int hdrTyp, char* strbuf) {
  * @return 1 if is successful, 0 otherwise.
  *
  */
-int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag) {
+//
+int postprocesStoreImportedCSVData(Alarm & alarm, int srcTyp, maxTmp_t * srcPtr, int saveFlag) {
     int     idx;
     struct ALARM_ZONE* tmpZn;
     struct ALARM_PARTITION_t* tmpPart;
@@ -301,13 +304,13 @@ int postprocesStoreImportedCSVData(int srcTyp, maxTmp_t* srcPtr, int saveFlag) {
         if (tmpZn->zoneType == ZONE_DISABLED)
             return 1;
         if (saveFlag) {
-            if(alarm.addZone(*tmpZn) == -1) {
+            auto zNo = alarm.addZone(*tmpZn);
+            if(zNo == -1) {
                 LOG_CRITICAL("No space for zone, Zone %s not added\n", tmpZn->zoneName);
                 return 0;
 			}
             lprintf("Zone def %s successfully imported/stored\n", tmpZn->zoneName);
-            //alarm.printConfigHeader(zoneTags, ZONE_TAGS_CNT);
-            //alarm.printConfigData(zoneTags, ZONE_TAGS_CNT, (byte*)&zonesDB[idx], PRTCLASS_ALL);
+            alarm.printAlarmZones(zNo, zNo+1);
         }
         return 1;
     case PARTITIONS:
@@ -456,7 +459,7 @@ unsigned int alarmGetLine(char lineBuf[], int lineLen, char inBuf[], unsigned in
  *       Ensure that these variables are correctly initialized and accessible before calling this function.
  *       The function returns 0 on success, and non-zero values on error conditions.
  */
-int parseConfigFile(char buffer[], int bufferLen, int saveFlag) {
+int parseConfigFile(Alarm& alarm, char buffer[], int bufferLen, int saveFlag) {
     unsigned int offset = 0;                                // stores the offset in the input line from which the next token shall be retrieved
     csvParserFlags = 0;                                     // global flag to track import dependancies e.g. header must be imported before data line
     int i;
@@ -469,13 +472,14 @@ int parseConfigFile(char buffer[], int bufferLen, int saveFlag) {
     // in a loop, fetch the data lines and depends on the content of the first column in each line, process it
     // it shall contain valid identifier from csvHeaders[];
     while ((offset = alarmGetLine(line, sizeof(line), buffer, bufferLen, offset))) {
-        //printf("offset = %d\n", offset);  //printf("\nParsing input line:%s\n", line);
+        //printf("offset = %d\n", offset);
+        //printf("\nParsing input line:%s\n", line);
         memset((void*)&maxTmp, 0, sizeof(maxTmp));                          // clear temp storage
         //
         if (line[0] == CSV_COMMENT_CHAR)                                         // comment                     
             continue;
         GET_FIRST_TOKEN;                                                    // line specifier - zone, partition or globaOptions?
-        printf("\nToken:%s\n", token);
+        //printf("\nLine content to be imported: %s\n", token);
         for (i = 0; i < CSV_HEADERS_CNT; i++) {                             // for all allowed headers
             if (_stricmp(token, csvHeaders[i].hdrTTL))                      // try to match the current token to any of the allowed headers
                 continue;                                                   // not matching
@@ -484,7 +488,7 @@ int parseConfigFile(char buffer[], int bufferLen, int saveFlag) {
                 return 1;
             }
             if (csvHeaders[i].dataStoreCB) {                                // callback == NULL means we don't have to call it
-                if (!csvHeaders[i].dataStoreCB(csvHeaders[i].domain_idx, &maxTmp, saveFlag)) {      //  call callback to postpocess and save the header/dataline content
+                if (!csvHeaders[i].dataStoreCB(alarm, csvHeaders[i].domain_idx, &maxTmp, saveFlag)) { //  call callback to postpocess and save the header/dataline content 
                     LOG_CRITICAL("CSV header/dataline %s save error\n", line);
                     return 1;
                 }

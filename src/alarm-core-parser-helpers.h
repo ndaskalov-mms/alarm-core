@@ -186,7 +186,7 @@ static int pokePrtNo(byte* basePtr, int offset, int len, const char* token) {
     tmp = (unsigned int)atoi(token);
     tmp--;                                                          // input partitions range starts at 1, but internally starts from 0
     if (tmp < 0 || tmp >= MAX_PARTITION) {
-        lprintf("Follows: Partition number %d out of range\n", tmp);
+        LOG_CRITICAL("Follows: Partition number %d out of range\n", tmp);
         return false;
     }
     basePtr[offset] = tmp;
@@ -260,7 +260,7 @@ static int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
         }
     }
     if (i == ERRORS_TITLE_CNT) {
-        lprintf(" Invalid Zone opts: %s\n", token);
+        lprintf(" Invalid Line error opts: %s\n", token);
         return false;
     }
     return true;
@@ -341,7 +341,6 @@ static byte* peekAlarmType(byte* basePtr, int offset, int len) {
 */
 struct tagAccess zoneTags[] = {
 {ZN_NAME_TTL,           -1, offsetof(struct ALARM_ZONE, zoneName),         sizeof(((struct ALARM_ZONE*)0)->zoneName),        &pokeString   , &peekString    , 16                       , PRTCLASS_GENERAL},
-{ZN_BRD_ID_TTL,         -1, offsetof(struct ALARM_ZONE, boardID),          sizeof(((struct ALARM_ZONE*)0)->boardID),         &pokeByte     , &peekByte      , strlen(ZN_BRD_ID_TTL)    , PRTCLASS_GENERAL},
 {ZN_ID_TTL,             -1, offsetof(struct ALARM_ZONE, zoneID),           sizeof(((struct ALARM_ZONE*)0)->zoneID),          &pokeByte     , &peekByte      , strlen(ZN_ID_TTL)        , PRTCLASS_GENERAL},
 {ZN_TYPE_TTL,           -1, offsetof(struct ALARM_ZONE, zoneType),         sizeof(((struct ALARM_ZONE*)0)->zoneType),        &pokeZoneType , &peekZoneType  , 12                       , PRTCLASS_GENERAL},
 {ZN_PRT_TTL,            -1, offsetof(struct ALARM_ZONE, zonePartition),    sizeof(((struct ALARM_ZONE*)0)->zonePartition),   &pokePrtNo    , &peekPrtnNo    , strlen(ZN_PRT_TTL)       , PRTCLASS_GENERAL},

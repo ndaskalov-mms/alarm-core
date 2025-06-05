@@ -46,7 +46,7 @@ int main() {
     }
 
     // Parse CSV configuration and populate the alarm system
-    if (!parseConfigFile((char*)tempMQTTpayload, rlen, 0)) {
+    if (!parseConfigFile(alarm,(char*)tempMQTTpayload, rlen, 1)) {
         std::cout << "Alarm Data Loaded from CSV successfully\n";
     }
     else {

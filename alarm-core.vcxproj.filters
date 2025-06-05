@@ -29,6 +29,9 @@
     <None Include="alarm_core_test.ino\alarm_core_test.ino.ino">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="alarm-config.csv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\alarm-core-class.h">
