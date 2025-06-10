@@ -1,4 +1,3 @@
-#new style csv config
 # Global options shall be first as the configure numbr of boards. Etc;;;;;;;;;;;;;;;;;;;
 gOptHeader;	#;	#;  TroubleLatch;	TamperBpsOpt;	TamperOpts;			AntiMaskOpt;	RestrSprvsL;		RestrTamper;	RestrBatFail;	RestrOnBell;	RestrOnBrdFail;	RestrOnAmask;  	RestrACfail;	RfSprvsOpt		
 globalOpt;	-;	-;	FALSE;			TRUE;	  		ALARM_WHEN_ARMED;	TROUBLE_ONLY;	ALARM_WHEN_ARMED;	TRUE;			TRUE;			TRUE;			TRUE;			TRUE;			TRUE;			ALARM;			;;;

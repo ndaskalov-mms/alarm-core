@@ -1,0 +1,48 @@
+# Global options shall be first as the configure numbr of boards. Etc;;;;;;;;;;;;;;;;;;;
+gOptHeader;#;maxSlaveBrds;#;troubleLatch;tamperBpsOpt;tamperOpts;antiMaskOpt;rfSprvsOpt;restrOnTamper;restrOnBell;restrOnBatFail;restrOnBrdFail;restrOnAntimask;restrOnACfail;restrOnSprvsLoss;;;;
+globalOpt;;0;;FALSE;FALSE;ALARM_WHEN_ARMED;TROUBLE_ONLY;ALARM_WHEN_ARMED;TRUE;TRUE;TRUE;TRUE;TRUE;TRUE;FALSE;;;;
+#;;;;;;;;;;;;;;;;;;;
+#Pdox titles;;Label;;;Input No;Zone Type;Area assignment;Alarm Type;Bypass;Stay;Force;Module;Auto shutdown;Intellizone;Delay before TRM;Zone tampered follow panel;Zone tamper supervision;Anti mask  follow panel;Anti-mask supervision
+zHeader;#;zoneName;#PdxIn;#BrdLabel;zoneID;zoneType;zonePartition;ALARM_TYPE;BYPASS_EN;STAY_ZONE;FORCE_EN;boardID;SHUTDWN_EN;INTELIZONE;DELAY_TRM;TAMPER_GLOBAL;ZONE_TAMPER_OPT;ANTIMASK_GLOBAL;ZONE_ANTIMASK_OPT
+# Master;;;;;;;;;;;;;;;;;;;
+zone;0;Vhodna_vrata;1;Z1;0;H24_BURGLAR;3;STEADY_ALARM;TRUE;FALSE;TRUE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;1;Banja_MUK_prozor;9;Z1;1;INSTANT;3;STEADY_ALARM;TRUE;FALSE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;2;Kabine_MUK_proz;2;Z2;2;INSTANT;3;STEADY_ALARM;TRUE;FALSE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;3;Kabinet_Shock_pr;10;Z2;3;INSTANT;3;STEADY_ALARM;TRUE;FALSE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;4;Kabinet_PIR;3;Z3;4;INSTANT;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;5;Vhodno_antre;11;Z3;5;FOLLOW;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;6;Holl_PIR;4;Z1A;6;INSTANT;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;7;Kuhnia_PIR;12;Z1A;7;INSTANT;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;8;Holl_vrata_MUK_R;5;Z2A;8;INSTANT;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;9;Holl_vrata_MUK_L;13;Z2A;9;INSTANT;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;10;Kuhnia_vrata_MUK;6;Z3A;10;DISABLED;3;STEADY_ALARM;TRUE;TRUE;FALSE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;11;Garajna_vrata;14;Z3A;11;DISABLED;4;STEADY_ALARM;TRUE;FALSE;TRUE;0;FALSE;FALSE;FALSE;TRUE;ALARM_WHEN_ARMED;TRUE;ALARM_WHEN_ARMED
+zone;18;Vzone_REF;;Z1B;18;DISABLED;NA;NA;NA;NA;NA;0;NA;NA;NA;NA;NA;NA;NA
+zone;19;ADC_AUX;;Z2B;19;DISABLED;NA;NA;NA;NA;NA;0;NA;NA;NA;NA;NA;NA;NA
+zone;20;ADC_VBAT;;Z3B;20;DISABLED;NA;NA;NA;NA;NA;0;NA;NA;NA;NA;NA;NA;NA
+#;;;;;;;;;;;;;;;;;;;
+#;;;;;;;;;;;;;;;;;;;
+#Master PGMs;;;;;;;;;;;;;;;;;;;
+pgmHdr;#;pgmName;#;pgmID;boardID;;;;;;;;;;;;;;
+pgm;1;MASTER_PGM1;;0;0;;;;;;;;;;;;;;
+pgm;2;MASTER_PGM2;;1;0;;;;;;;;;;;;;;
+pgm;3;MASTER_PGM3;;2;0;;;;;;;;;;;;;;
+pgm;4;MASTER_PGM4;;3;0;;;;;;;;;;;;;;
+pgm;5;MASTER_PGM5;;4;0;;;;;;;;;;;;;;
+pgm;6;MASTER_PGM6;;5;0;;;;;;;;;;;;;;
+pgm;7;MASTER_PGM7;;6;0;;;;;;;;;;;;;;
+pgm;8;MASTER_PGM8;;7;0;;;;;;;;;;;;;;
+#;;;;;;;;;;;;;;;;;;;
+#;;;;;;;;;;;;;;;;;;;
+#;;;;;;;;;;;;;;;;;;;
+#;;;;;;;;;;;;;;;;;;;
+# Pdox label;;#;Label;No:;Switch to force on regular Arm;Switch to force onstay Arm;Folow zone switches to Entry Delay 2;Bell output;Bell cut-off time;;;Entry Delay 1;Entry Delay 2;Exit Delay;;;"??? Special Arm exit delay; Disarm Delay; Exit delay termination; no exit delay upon Arm via remote";;
+pHeader;valid;#;PartitonName;partIdx;forceOnRegArm;forceOnStayArm;followZoneEntryDelay2;alarmOutputEn;alarmCutOffTime;noCutOffOnFire;alarmRecycleTime;entryDelay1Interval;entryDelay2Interval;exitDelay;;;;;
+partition;TRUE;;ROOM_E;0;TRUE;TRUE;FALSE;TRUE;60;TRUE;10;15;13;1;;;;;
+partition;TRUE;;ROOM_Z;1;TRUE;TRUE;FALSE;TRUE;61;TRUE;10;4;5;15;;;;;
+partition;TRUE;;ROOM_S;2;TRUE;TRUE;FALSE;TRUE;62;TRUE;10;5;7;3;;;;;
+partition;TRUE;;Floor_1;3;TRUE;TRUE;FALSE;TRUE;63;TRUE;10;6;9;6;;;;;
+partition;TRUE;;Garaj;4;TRUE;TRUE;FALSE;TRUE;64;TRUE;10;7;11;3;;;;;
+partition;TRUE;;Perimeter;5;TRUE;TRUE;FALSE;TRUE;65;TRUE;10;45;13;3;;;;;
+partition;FALSE;;PARTITION_7;6;TRUE;TRUE;FALSE;TRUE;5;TRUE;10;14;15;3;;;;;
+partition;FALSE;;PARTITION_8;7;TRUE;TRUE;FALSE;TRUE;5;TRUE;10;16;17;3;;;;;

@@ -1,0 +1,45 @@
+ Different flags in zone combination for zone testing 
+# Global options shall be first as the configure numbr of boards. Etc;;;;;;;;;;;;;;;;;;;
+
+gOptHeader;	#;MaxSlaves;#;TroubleLatch;TamperBpsOpt;	TamperOpts;			AntiMaskOpt;	RfSprvsOpt;			RestrTamper;  RestrOnBell; RestrBatFail; RestrOnBrdFail; RestrOnAmask; RestrACfail; RestrSprvsL; 	;;;
+globalOpt;	-;	0;		-;	FALSE;		TRUE;	  	ALARM_WHEN_ARMED;		TROUBLE_ONLY;	ALARM_WHEN_ARMED;	TRUE;			TRUE;			TRUE;			TRUE;			TRUE;	TRUE;			FALSE;			;;;
+
+#zHeader;zoneName;	zoneID;	zoneType;	zonePartition;	ALARM_TYPE;		BYPASS_EN;	STAY_ZONE;	FORCE_EN;	boardID;	SHUTDWN_EN;	INTELIZONE;	DELAY_TRM;	TAMPER_GLOBAL;	ZONE_TAMPER_OPT;	ANTIMASK_GLOBAL;	ZONE_ANTIMASK_OPT
+zHeader; zName;	zID;	zType;	zPartn;	zAlarmT;		zBypEn;	zStayZ;	zFrceEn;	zBRD;	zShdnEn;	zIntelZ;	zDlyTRM;	zTmprGlb;	zTmprOPT;	zAmskGlb;	zAmskOpt
+# newTest1 settings
+zone;	1_ED1_!S_!B_!F;	0;	ENTRY_DELAY1;	1;			STEADY_ALARM;	FALSE;		FALSE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			DISABLE;			FALSE;			DISABLE;			
+zone;	1_I_!S_B_!F;	1;	INSTANT;		1;			STEADY_ALARM;	TRUE;		FALSE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			TROUBLE_ONLY;		TRUE;			TROUBLE_ONLY;		
+zone;	1_ED2_!S_!B_F;	2;	ENTRY_DELAY2;	1;			STEADY_ALARM;	FALSE;		FALSE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			ALARM_WHEN_ARMED;	FALSE;			ALARM_WHEN_ARMED;	
+zone;	1_I_!S_B_F;		3;	INSTANT;		1;			STEADY_ALARM;	TRUE;		FALSE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			ALARM;				TRUE;			ALARM;				
+zone;	1_SD1_S_!B_!F;	4;	STAY_DELAY1;	1;			STEADY_ALARM;	FALSE;		TRUE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			DISABLE;			FALSE;			DISABLE;			
+zone;	1_SD2_S_B_!F;	5;	STAY_DELAY2_ANTI_MASK;1;	STEADY_ALARM;	TRUE;		TRUE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			TROUBLE_ONLY;		TRUE;			TROUBLE_ONLY;		
+zone;	1_ED1_S_!B_F;	6;	ENTRY_DELAY1;	1;			STEADY_ALARM;	FALSE;		TRUE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			ALARM_WHEN_ARMED;	FALSE;			ALARM_WHEN_ARMED;	
+zone;	1_I_S_B_F;		7;	INSTANT;		1;			STEADY_ALARM;	TRUE;		TRUE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			ALARM;				TRUE;			ALARM;				
+# newTest00 settings			
+zone;	2_I_!S_!B_!F;	10;	INSTANT;		2;			STEADY_ALARM;	FALSE;		FALSE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			DISABLE;			FALSE;			DISABLE;			
+zone;	2_ED1_!S_B_!F;	11;	ENTRY_DELAY1;	1;			STEADY_ALARM;	TRUE;		FALSE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			TROUBLE_ONLY;		TRUE;			TROUBLE_ONLY;		
+#zone;	2_ED1_!S_!B_F;	12;	ENTRY_DELAY1;	1;			STEADY_ALARM;	FALSE;		FALSE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			ALARM_WHEN_ARMED;	FALSE;			ALARM_WHEN_ARMED;	
+#zone;	2_ED2_!S_B_F;	13;	ENTRY_DELAY2;	1;			STEADY_ALARM;	TRUE;		FALSE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			ALARM;				TRUE;			ALARM;				
+#zone;	2_I_S_!B_!F;	14;	INSTANT;		1;			STEADY_ALARM;	FALSE;		TRUE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			DISABLE;			FALSE;			DISABLE;			
+#zone;	2_I_S_B_!F;		15;	STAY_DELAY1;	1;			STEADY_ALARM;	TRUE;		TRUE;		FALSE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			TROUBLE_ONLY;		TRUE;			TROUBLE_ONLY;		
+#zone;	2_I_S_!B_F;		16;	STAY_DELAY2_ANTI_MASK;1;	STEADY_ALARM;	FALSE;		TRUE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		FALSE;			ALARM_WHEN_ARMED;	FALSE;			ALARM_WHEN_ARMED;	
+#zone;	2_I_S_B_F;		17;	INSTANT;		1;			STEADY_ALARM;	TRUE;		TRUE;		TRUE;		0;			FALSE;		FALSE;		FALSE;		TRUE;			ALARM;				TRUE;			ALARM;				
+
+#
+#pHeader;	valid;	PartitonName;	partIdx;	forceOnRegArm;	forceOnStayArm;	followZoneEntryDelay2;	alarmOutputEn;	alarmCutOffTime;	noCutOffOnFire;	alarmRecycleTime;	entryDelay1Interval;	entryDelay2Interval;	exitDelay; follow1; follow2; follow3; follow4; follow5; follow6; follow7; follow8
+pHeader;	pValid;	pName;	pIdx;	pFrceOnRegArm;	pFrceOnStayArm;	pED2znFollow;	pAlrmOutEn;	pAlrmTime;	pNoCutOnFire;	pAlrmRecTime;	pED1Intvl;	pED2Intvl;	pExitDly;	pFollow1;	pFollow2;	pFollow3;	pFollow4;	pFollow5;	pFollow6;	pFollow7;	pFollow8
+partition;	TRUE;	ROOM_E;	1;			TRUE;			TRUE;			FALSE;		TRUE;			60;			TRUE;			10;				15;			13;			6;		0;			2;			
+partition;	TRUE;	ROOM_X;	2;			TRUE;			TRUE;			FALSE;		TRUE;			60;			TRUE;			10;				15;			13;			6;	
+
+#Master PGMs;;;;;;;;;;;;;;;;
+pgmHdr;	#;	pgmName;	#;	pgmID; pgmBrd;	pgmValid
+pgm;	1;	MASTER_PGM1; ;	  0;	0;       1
+pgm;	2;	MASTER_PGM2; ;	  1;	0;       1
+pgm;	3;	MASTER_PGM3; ;	  2;	0;       1
+pgm;	4;	MASTER_PGM4; ;	  3;	0;       1
+pgm;	5;	MASTER_PGM5; ;	  4;	0;       1
+pgm;	6;	MASTER_PGM6; ;	  5;	0;       1
+pgm;	7;	MASTER_PGM7; ;	  6;	0;       1
+pgm;	8;	MASTER_PGM8; ;	  7;	0;       1
+#
+     
