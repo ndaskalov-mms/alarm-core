@@ -53,29 +53,7 @@ int main() {
         std::cerr << "Failed to load alarm configuration from CSV file\n";
         return 1;
     }
-//
- //   LOG_INFO("Init alarm from JSON file %s\n", jsonConfigFname);
- //   if (!storageSetup()) {					                                    // mount file system
- //       LOG_CRITICAL("Error initializing storage while processing the new config\n");
- //       storageClose();
- //       return false;
- //   }
- //   //  Read config file into tempMQTTpayload buffer
- //   int rlen = loadConfig(jsonConfigFname, tempMQTTpayload, sizeof(tempMQTTpayload));
- //   if (!rlen) {
- //       LOG_WARNING("Wrong or missing CSV config file\n");
- //       storageClose();
- //       return false;
- //   }
 
- //   // Parse JSON configuration and populate the alarm system
- //   if (parseJsonConfig((char *) tempMQTTpayload, alarm)) {
- //       std::cout << "Alarm Data Loaded from JSON successfully\n";
- //   }
- //   else {
- //       std::cerr << "Failed to load alarm configuration\n";
- //       return 1;
- //   }
 
  //   if(subscribeMQTTtopics())
 	//	std::cout << "MQTT topics subscribed successfully\n";
@@ -84,7 +62,9 @@ int main() {
 	//	return 1;
 	//}   
 
- //   runMQTTTests();
+    //int functionIndex = 0;
+    //(alarm.*zonePldsPtr[functionIndex])(NULL, NULL, NULL);
+    runMQTTTests();
 
 
     // Print the zone configuration regardless of warnings

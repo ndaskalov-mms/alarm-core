@@ -36,12 +36,29 @@ inline void GlobalDebugLogger(LogLevel_t level, const char* fmt, ...) {
 #else
 #include <cstdio>
 inline void GlobalDebugLogger(LogLevel_t level, const char* fmt, ...) {
-    if (level < g_logLevel) return;
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
-    va_end(args);
-    printf("\n");
+
+        if (level < g_logLevel) return;
+
+        // Print log level prefix
+        const char* levelStr = "UNKNOWN";
+        switch (level) {
+        case LOG_ERR_OK:        levelStr = "OK      "; break;
+        case LOG_ERR_DEBUG:     levelStr = "DEBUG   "; break;
+        case LOG_ERR_INFO:      levelStr = "INFO    "; break;
+        case LOG_ERR_WARNING:   levelStr = "WARNING "; break;
+        case LOG_ERR_CRITICAL:  levelStr = "CRITICAL"; break;
+        default:                levelStr = "UNKNOWN "; break;
+        }
+        printf("[%s] ", levelStr);
+
+        // Print the actual message with arguments
+        va_list args;
+        va_start(args, fmt);
+        vprintf(fmt, args);  // Use vprintf instead of vfprintf for simplicity
+        va_end(args);
+
+        // Add newline at the end
+        printf("\n");
 }
 #endif
 

@@ -173,37 +173,35 @@ private:
 #include "alarm-core-helpers.h"
 
 
-void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)           // callback to dump info to serial console from inside RS485 library
+void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)
 {
     char prnBuf[512];
     va_list args;
     va_start(args, what);
-    int index = 0;
     vsnprintf(prnBuf, sizeof(prnBuf) - 1, what, args);
     switch (err_code)
     {
     case LOG_ERR_OK:
-        printf(prnBuf);
+        printf("%s", prnBuf);  // Fixed: Use as string, not format
         break;
     case LOG_ERR_DEBUG:
-        printf(prnBuf);
+        printf("%s", prnBuf);  // Fixed
         break;
     case LOG_ERR_INFO:
-        printf(prnBuf);
+        printf("%s", prnBuf);  // Fixed
         break;
     case LOG_ERR_WARNING:
-        printf(prnBuf);
+        printf("%s", prnBuf);  // Fixed
         break;
     case LOG_ERR_CRITICAL:
-        printf(prnBuf);
+        printf("%s", prnBuf);  // Fixed
         break;
     default:
         if (what)
-            printf(prnBuf);
+            printf("%s", prnBuf);  // Fixed
         break;
     }
     va_end(args);
-    return;
 }
 //
 // Function to set the debug callback
@@ -554,18 +552,36 @@ void Alarm::ErrWrite(LogLevel_t level, const char* format, ...) {
     va_list args;
     va_start(args, format);
 
+    // Create a buffer for the formatted message
+    char prnBuf[512];
+    vsnprintf(prnBuf, sizeof(prnBuf), format, args);
+
+    // Now pass the formatted string to the appropriate output function
     if (debugCallback) {
-        va_list argsCopy;
-        va_copy(argsCopy, args);
-        debugCallback(level, format, argsCopy);
-        va_end(argsCopy);
+        debugCallback(level, "%s", prnBuf);  // Formatted message as a string
     }
     else {
-        defaultDebugOut(level, format, args);
+        defaultDebugOut(level, "%s", prnBuf);  // Same here
     }
 
     va_end(args);
 }
+
+//    va_list args;
+//    va_start(args, format);
+//
+//    if (debugCallback) {
+//        va_list argsCopy;
+//        va_copy(argsCopy, args);
+//        debugCallback(level, format, argsCopy);
+//        va_end(argsCopy);
+//    }
+//    else {
+//        defaultDebugOut(level, format, args);
+//    }
+//
+//    va_end(args);
+//}
 
 //
 

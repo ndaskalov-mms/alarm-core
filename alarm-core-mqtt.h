@@ -14,6 +14,14 @@ typedef unsigned char byte;
 
 class Alarm;
 
+//typedef void (Alarm::* AlarmMemberFunc)(void*, void*, void*);
+//
+//AlarmMemberFunc zonePldsPtr[] = {
+//    &Alarm::modifyZn,
+//    // other member functions with matching signature
+//};
+
+
 // declarations
 void trigerArm(Alarm& alarm_instance, void* param1, void* param2, void* param3);
 extern              void zoneCmd(Alarm& alarm_instance, void* param1, void* param2, void* param3);
