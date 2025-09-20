@@ -61,9 +61,6 @@
     <ClInclude Include="alarm-core-mqtt-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alarm-core-mqtt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="alarm-FS-wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -74,12 +71,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="alarm-core-timers-new.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="alarm-core-CSV-parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="alarm-core-mqtt-json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

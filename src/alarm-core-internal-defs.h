@@ -443,14 +443,16 @@ struct partitionTimer_t {
 //
 //
 struct ALARM_PARTITION_RUN_TIME_t {
-	byte newCmd;					// new partition cmd received
-	ARM_METHODS_t armStatus;					// current arm status: DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
-	ARM_METHODS_t targetArmStatus;	// set when arm command received:DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
-	unsigned long armTime;			// arm time
-	byte changed;					// contains bitmap of the reaso for partition change see enum PART_STAT_CHANGES_t 
-	struct partitionTimer_t partitionTimers[MAX_PARTITION_TIMERS] = {{NOT_STARTED,0,CHG_EXIT_DELAY_TIMER,	EXIT_DELAY_ZONES,	ZONE_EX_D_BYPASSED, 0},
-																	 {NOT_STARTED,0,CHG_ENTRY_DELAY1_TIMER,	ENTRY_DELAY1_ZONES, ZONE_EDx_BYPASSED, 0},
-																	 {NOT_STARTED,0,CHG_ENTRY_DELAY2_TIMER,	ENTRY_DELAY2_ZONES, ZONE_EDx_BYPASSED, 0}};
+	byte newCmd = 0;						// new partition cmd received
+	ARM_METHODS_t armStatus = DISARM;		// current arm status: DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
+	ARM_METHODS_t targetArmStatus = DISARM;	// set when arm command received:DISARM = 0, REGULAR_ARM, FORCE_ARM, INSTANT_ARM, STAY_ARM 
+	unsigned long armTime = 0;				// arm time
+	byte changed = 0;						// contains bitmap of the reaso for partition change see enum PART_STAT_CHANGES_t 
+	struct partitionTimer_t partitionTimers[MAX_PARTITION_TIMERS] = {
+		{NOT_STARTED,0,CHG_EXIT_DELAY_TIMER,	EXIT_DELAY_ZONES,	ZONE_EX_D_BYPASSED, 0},
+		{NOT_STARTED,0,CHG_ENTRY_DELAY1_TIMER,	ENTRY_DELAY1_ZONES, ZONE_EDx_BYPASSED, 0},
+		{NOT_STARTED,0,CHG_ENTRY_DELAY2_TIMER,	ENTRY_DELAY2_ZONES, ZONE_EDx_BYPASSED, 0}
+	};
 };
 // 
 //
@@ -555,6 +557,12 @@ struct ALARM_PARTITION_STATS_t {
 // 
 // char 		token[256];		//used in parser to store tokenized string
 // ------------------------ end shall not be used  --------------------------
+
+
+
+
+
+
 
 
 

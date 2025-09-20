@@ -33,8 +33,8 @@ public:
 
     // Public methods to interact with alarm system
     // These methods don't provide direct access to underlying arrays
-    void alarm_loop(void);
-    void setDebugCallback(DebugCallbackFunc callback);
+    void        alarm_loop(void);
+    void        setDebugCallback(DebugCallbackFunc callback);
 
     // Zone-related methods
     int         getZoneIndex(const char* name) const; 
@@ -103,7 +103,52 @@ public:
 	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut
     DebugCallbackFunc debugCallback;
 
+
+#define INTERNAL_JSON_HANDLERS // comment out to disable internal JSON handlers
+#ifdef INTERNAL_JSON_HANDLERS
+    // Structure to define a JSON key handler
+    struct JsonKeyHandler {
+        const char* key;                // JSON key name
+        bool (*handler)(Alarm& alarm, const char* value, int itemIndex, void* context); // Function to handle this key's value
+        const char* description;        // Description of what this key does
+    };
+
+    // Structure to define a topic and its JSON handlers
+    struct JsonTopicHandler {
+        const char* topic;              // MQTT topic to subscribe to
+        const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
+        bool (*processor)(Alarm& alarm, const char* jsonPayload, size_t length); // Function to process the entire JSON
+        const char* description;        // Description of topic purpose
+    };
+
+    // Static JSON handler functions
+    static bool handleZoneJsonPayload(Alarm& alarm, const char* value, int zoneIndex, void* context);
+    static bool handlePartitionJsonPayload(Alarm& alarm, const char* value, int partitionIndex, void* context);
+    static bool handlePgmJsonPayload(Alarm& alarm, const char* value, int pgmIndex, void* context);
+    static bool handleGlobalOptionJsonPayload(Alarm& alarm, const char* value, int optionIndex, void* context);
+
+    // Static JSON processor functions
+    static bool processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+    static bool processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+    static bool processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+    static bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+
+    // Accessor methods for MQTT integration
+    static const JsonTopicHandler* getJsonTopicHandlers() { return mqttTopicHandlers; }
+    static int getJsonTopicHandlerCount() { return MQTT_TOPIC_HANDLER_COUNT; }
+    
+    // Process a JSON message received via MQTT
+    bool processMqttMessage(const char* topic, const char* payload, size_t length);
+#endif //INTERNAL_JSON_HANDLERS
+
 private:
+
+#ifdef INTERNAL_JSON_HANDLERS
+    // Static array of MQTT topics and their handlers
+    static const JsonTopicHandler mqttTopicHandlers[];
+    static const int MQTT_TOPIC_HANDLER_COUNT;
+#endif //INTERNAL_JSON_HANDLERS
+
     // Private static arrays for alarm data
     // zoneDB - database with all zones CONFIG info. 
     // zonesRT = all run time zone related data. 
@@ -567,23 +612,113 @@ void Alarm::ErrWrite(LogLevel_t level, const char* format, ...) {
     va_end(args);
 }
 
-//    va_list args;
-//    va_start(args, format);
-//
-//    if (debugCallback) {
-//        va_list argsCopy;
-//        va_copy(argsCopy, args);
-//        debugCallback(level, format, argsCopy);
-//        va_end(argsCopy);
-//    }
-//    else {
-//        defaultDebugOut(level, format, args);
-//    }
-//
-//    va_end(args);
-//}
 
-//
+#ifdef INTERNAL_JSON_HANDLERS
+// Define the JSON processor functions (payload handlers)
+bool Alarm::processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    printf("processGlobalOptionsJson() - NOT IMPLEMENTED\n");
+    return false;
+}
+bool Alarm::processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    printf("processPgmJson() - NOT IMPLEMENTED\n");
+    return false;
+}
+
+bool Alarm::processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    printf("processPartitionJson() - NOT IMPLEMENTED\n");
+	return false;   
+}
+bool Alarm::processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+	printf("processZoneJson() - NOT IMPLEMENTED\n");    
+    return false;// Define the JSON
+}
+ // Define the JSON topic handlers array as a static member of the Alarm class
+const Alarm::JsonTopicHandler Alarm::mqttTopicHandlers[] = {
+    {"/alarm/zones/control", "zone", &Alarm::processZoneJsonPayload, 
+     "Control zones (bypass, tamper, etc.)"},
+    
+    {"/alarm/partitions/control", "partition", &Alarm::processPartitionJsonPayload, 
+     "Control partitions (arm, disarm, etc.)"},
+    
+    {"/alarm/pgms/control", "pgm", &Alarm::processPgmJsonPayload, 
+     "Control PGMs (on, off, pulse)"},
+    
+    {"/alarm/global/options", "option", &Alarm::processGlobalOptionsJsonPayload, 
+     "Set global alarm options"}
+};
+
+const int Alarm::MQTT_TOPIC_HANDLER_COUNT = sizeof(Alarm::mqttTopicHandlers) / sizeof(Alarm::mqttTopicHandlers[0]);
+
+// Process a JSON message by finding the matching topic handler
+bool Alarm::processMqttMessage(const char* topic, const char* payload, size_t length) {
+    // Find the handler for this topic
+    for (int i = 0; i < MQTT_TOPIC_HANDLER_COUNT; i++) {
+        if (strcmp(topic, mqttTopicHandlers[i].topic) == 0) {
+            // Call the JSON processor for this topic
+            if (mqttTopicHandlers[i].processor) {
+                return mqttTopicHandlers[i].processor(*this, payload, length);
+            } else {
+                ErrWrite(LOG_ERR_WARNING, "No processor defined for topic: %s\n", topic);
+                return false;
+            }
+        }
+    }
+    
+    ErrWrite(LOG_ERR_WARNING, "No handler found for topic: %s\n", topic);
+    return false;
+}
+
+// Implement handler functions (after the class definition but still in the header)
+bool Alarm::handleZoneJsonPayload(Alarm& alarm, const char* value, int zoneIndex, void* context) {
+    printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
+    
+    unsigned int action = 0;
+    if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
+    else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
+    else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
+    else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
+    else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
+    else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
+    else {
+        printf("Unknown zone action: %s\n", value);
+        return false;
+    }
+    
+    // Call the zone modification function with the appropriate action
+    alarm.modifyZn(&zoneIndex, &action, nullptr);
+    return true;
+}
+
+// Dummy implementation for handlePartitionAction
+bool Alarm::handlePartitionJsonPayload(Alarm& alarm, const char* value, int partitionIndex, void* context) {
+    printf("Processing partition action: %s for partition index %d\n", value, partitionIndex);
+    
+    // Here you would normally implement logic to handle different partition actions
+    // such as arm, disarm, stay arm, etc.
+    
+    return true; // Return success for the dummy implementation
+}
+
+// Dummy implementation for handlePgmAction
+bool Alarm::handlePgmJsonPayload(Alarm& alarm, const char* value, int pgmIndex, void* context) {
+    printf("Processing PGM action: %s for PGM index %d\n", value, pgmIndex);
+    
+    // Here you would normally implement logic to handle different PGM actions
+    // such as turn on, turn off, pulse, etc.
+    
+    return true; // Return success for the dummy implementation
+}
+
+// Dummy implementation for handleGlobalOptionValue
+bool Alarm::handleGlobalOptionJsonPayload(Alarm& alarm, const char* value, int optionIndex, void* context) {
+    printf("Processing global option value: %s for option index %d\n", value, optionIndex);
+    
+    // Here you would normally implement logic to handle different global option settings
+    // such as enable/disable supervision loss restrictions, etc.
+    
+    return true; // Return success for the dummy implementation
+}
+#endif //INTERNAL_JSON_HANDLERS
 
 #endif // ALARM_H
 

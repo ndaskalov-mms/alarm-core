@@ -162,10 +162,16 @@ void Alarm::bulkBypassZones(int prtId, int znType, int bypassBits, int invert) {
 //			> 0 if timeout set by corresponding delay in partition definition expired, 0 if not
 // 
 int Alarm::partitionTimer(int tmr, int oper, int prt) {
-//
-	if(tmr >= MAX_PARTITION_TIMERS)
-		ErrWrite(LOG_ERR_CRITICAL, "partitionTimer: Invalid timer for partition %d\n", prt);
-	if (oper == TIMER_SET) {													// record the current time in milliseconds
+	// Add bounds checking for tmr and prt before accessing partitionRT[prt].partitionTimers[tmr]
+	if (tmr < 0 || tmr >= MAX_PARTITION_TIMERS) {
+		ErrWrite(LOG_ERR_CRITICAL, "partitionTimer: Invalid timer %d for partition %d\n", tmr, prt);
+		return 0;
+	}
+	if (prt < 0 || prt >= MAX_PARTITION) {
+		ErrWrite(LOG_ERR_CRITICAL, "partitionTimer: Invalid partition %d\n", prt);
+		return 0;
+	}
+	if (oper == TIMER_SET) {                                                    // record the current time in milliseconds
 		partitionRT[prt].partitionTimers[tmr].timerStart_ms = millis();
 		partitionRT[prt].partitionTimers[tmr].timerFSM = RUNNING;		// and mark it as running
 		partitionRT[prt].changed |= partitionRT[prt].partitionTimers[tmr].changedMask;// will be used to mark which timer is changed for MQTT publish for partition
@@ -312,7 +318,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 			}
 			if (!(zonesDB[zn].zoneBypassEn)) {									// allowed to bypass on user request?
 				ErrWrite(LOG_ERR_DEBUG, "Zone %s,  bypass disabled\n", zonesDB[zn].zoneName);
-				break;															// no, return. (publishZoneStatusChanges will deect that command is not executed)
+				break;															// no, return. (publishZoneStatusChanges will dect that command is not executed)
 			}
 			bypassZone(zn, ZONE_BYPASSED);
 			//newZonesDataAvailable |= NEW_DATA_BIT;							// force alarm loop to execute		
