@@ -143,14 +143,13 @@
     <ClInclude Include="alarm-core-public-defs.h" />
     <ClInclude Include="alarm-core-timers-new.h" />
     <ClInclude Include="alarm-core.h" />
-    <ClInclude Include="alarm-core-parseJSON.h" />
     <ClInclude Include="alarm-FS-wrapper.h" />
     <ClInclude Include="src\alarm-core-internal-defs.h" />
     <ClInclude Include="src\alarm-core-class.h" />
     <ClInclude Include="src\alarm-core-helpers.h" />
     <ClInclude Include="src\alarm-core-logic.h" />
     <ClInclude Include="src\alarm-core-debug.h" />
-    <ClInclude Include="src\alarm-core-parser-helpers.h" />
+    <ClInclude Include="src\alarm-core-json-val-parsers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

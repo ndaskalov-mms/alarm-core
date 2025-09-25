@@ -1,7 +1,7 @@
 #pragma once
 
 #include "alarm-core-public-defs.h"  // move to the cpp file???
-#include "alarm-core-mqtt-defs.h"
+//#include "alarm-core-mqtt-defs.h"
 #include <string.h>
 #include <stdio.h>
 

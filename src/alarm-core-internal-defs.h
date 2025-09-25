@@ -42,134 +42,7 @@ enum {
 //
 #define MAX_PARTITION			8
 #define MAX_FOLLOW_PART			8
-//
-// keys allowed in zone header in CSV config file
-//
-#define ZN_NAME_TTL					"zName"
-#define ZN_BRD_ID_TTL				"zBRD"
-#define ZN_ID_TTL					"zID"
-#define ZN_TYPE_TTL					"zType"
-#define ZN_PRT_TTL					"zPartn"
-#define ZN_ALARM_TTL				"zAlarmT"
-#define ZN_SHD_EN_TTL				"zShdnEn"
-#define ZN_BPS_EN_TTL				"zBypEn"
-#define ZN_STAY_TTL					"zStayZ"
-#define ZN_FORCE_TTL				"zFrceEn"
-#define ZN_INTEL_TTL				"zIntelZ"
-#define ZN_DLYTRM_TTL				"zDlyTRM"
-#define ZN_TMPR_GLB_TTL				"zTmprGlb"
-#define ZN_TMPR_OPT_TTL				"zTmprOPT"
-#define ZN_AMSK_GLB_TTL				"zAmskGlb"
-#define ZN_AMSK_OPT_TTL				"zAmskOpt"
-//
-#define ZN_BYPASSED_TTL				"BYPASSED"
-#define ZN_TAMPER_TTL				"TAMPER"
-#define ZN_OPEN_TTL					"OPEN"
-#define ZN_ERROR_TTL				"ERROR"
-#define ZN_FORCED_TTL				"FORCED"
-#define ZN_CLOSE_TTL				"CLOSED"
-#define ZN_AMASK_TTL				"AMASK"
-//
-//
-// keys allowed in partition header in CSV config file
-//
-#define	PT_NAME_TTL					"pName"
-#define	PT_IDX						"pIdx"
-#define	PT_FORCE_ON_REG				"pFrceOnRegArm"
-#define	PT_FORCE_ON_STAY			"pFrceOnStayArm"
-#define	PT_ED2_FOLLOW				"pED2znFollow"
-#define	PT_ALRM_OUT_EN				"pAlrmOutEn"
-#define	PT_ALRM_LENGHT				"pAlrmTime"
-#define	PT_NO_CUT_ON_FIRE			"pNoCutOnFire"
-#define	PT_ALARM_RECYCLE_TIME		"pAlrmRecTime"
-#define	PT_ED1_INTERVAL				"pED1Intvl"
-#define	PT_ED2_INTERVAL				"pED2Intvl"
-#define	PT_EXIT_DELAY				"pExitDly"
-#define	PT_VALID					"pValid"
-#define	PT_FOLLOW_1					"pFollow1"
-#define	PT_FOLLOW_2					"pFollow2"
-#define	PT_FOLLOW_3					"pFollow3"
-#define	PT_FOLLOW_4					"pFollow4"
-#define	PT_FOLLOW_5					"pFollow5"
-#define	PT_FOLLOW_6					"pFollow6"
-#define	PT_FOLLOW_7					"pFollow7"
-#define	PT_FOLLOW_8					"pFollow8"
-//
-// keys allowed in global options  header in CSV config file
-//
-#define	GO_MAX_SLAVES				"MaxSlaves"
-#define	GO_RESTR_SPRVS_LOSS			"RestrSprvsL"
-#define	GO_RESTR_TAMPER				"RestrTamper"
-#define	GO_RESTR_AC_FAIL			"RestrACfail"
-#define	GO_RESTR_BAT_FAIL			"RestrBatFail"
-#define	GO_RESTR_BELL				"RestrOnBell"
-#define	GO_RESTR_ON_BRDFAIL			"RestrOnBrdFail"
-#define	GO_RESTR_AMASK				"RestrOnAmask"
-#define	GO_TROUBLE_LATCH			"TroubleLatch"
-#define	GO_TAMPER_BPS_OPT			"TamperBpsOpt"
-#define	GO_TAMPER_OPTS				"TamperOpts"
-#define	GO_AMASK_OPTS				"AntiMaskOpt"
-#define	GO_RF_SPRVS_OPTS			"RfSprvsOpt"
-//
-// keys allowed in pgm header in CSV config file
-//
-#define	PGM_NAME					"pgmName"
-#define	PGM_BRD						"pgmBrd"
-#define	PGM_ID						"pgmID"
-#define	PGM_PULSE_LEN				"pgmPulseLen"
-#define	PGM_VALID					"pgmValid"
-//
-// general keys allowed
-//
-#define	KEY_NOT_APPLICABLE			"NA"
-//
-// strings allowed as values for zone type in zone config in CSV
-//
-#define	ZONE_DISABLED_TTL			"DISABLED"             
-#define	INSTANT_TTL					"INSTANT"              		
-#define	ENTRY_DELAY1_TTL			"ENTRY_DELAY1"         	
-#define	ENTRY_DELAY2_TTL			"ENTRY_DELAY2"         	
-#define	FOLLOW_TTL					"FOLLOW"               			
-#define	STAY_DELAY1_TTL				"STAY_DELAY1"          
-#define	STAY_DELAY2_ANTI_MASK_TTL	"STAY_DELAY2_ANTI_MASK"	
-#define	H24_BUZZER_TTL				"H24_BUZZER"           
-#define	H24_BURGLAR_TTL				"H24_BURGLAR"          
-#define	H24_HOLDUP_TTL				"H24_HOLDUP"           
-#define	H24_GAS_TTL					"H24_GAS"              
-#define	H24_HEAT_TTL				"H24_HEAT"             
-#define	H24_WATER_TTL				"H24_WATER"            
-#define	H24_FREEZE_TTL				"H24_FREEZE"           
-#define	H24_FIRE_DELAYED_TTL		"H24_FIRE_DELAYED"     
-#define	H24_FIRE_STANDARD_TTL		"H24_FIRE_STANDARD"    
-//
-// strings allowed as values for alarm type in zone config in CSV
-//
-#define	STEADY_ALARM_TTL			"STEADY_ALARM"
-#define	SILENT_ALARM_TTL			"SILENT_ALARM"
-#define	PULSED_ALARM_TTL			"PULSED_ALARM"
-#define	REPORT_ALARM_TTL			"REPORT_ALARM"
-//
-// strings allowed as values for line errors control in zone config in CSV
-//
-#define LINE_ERR_OPT_DISABLED_TTL			"DISABLE"
-#define LINE_ERR_OPT_TROUBLE_ONLY_TTL		"TROUBLE_ONLY"
-#define LINE_ERR_OPT_ALARM_WHEN_ARMED_TTL	"ALARM_WHEN_ARMED"
-#define LINE_ERR_OPT_ALARM_TTL				"ALARM"
-//
-// here are the identifying string for different configurable items 
-// the parser will look in CSV file for lines starting with these identificators and will process accordingly
-//
-#define RESERVED_TTL				SUBTOPIC_WILDCARD	//all' is reserved and cannot be used in CSV because of function to convert string to index
-#define CSV_ZONE_TTL				"zone"
-#define CSV_ZONE_HDR_TTL			"zHeader"
-#define CSV_PGM_TTL					"pgm"
-#define CSV_PGM_HDR_TTL				"pgmHdr"
-#define CSV_PRT_TTL					"partition"
-#define CSV_PRT_HDR_TTL				"pHeader"
-#define CSV_GOPT_TTL				"globalOpt"
-#define CSV_GOPT_HDR_TTL			"gOptHeader"
-#define CSV_KEYSW_TTL				"keysw"
-#define CSV_KEYSW_HDR_TTL			"kswHeader"
+
 //
 #define BACKUP						false
 #define CHECK_4_CHANGE				true
@@ -558,7 +431,23 @@ struct ALARM_PARTITION_STATS_t {
 // char 		token[256];		//used in parser to store tokenized string
 // ------------------------ end shall not be used  --------------------------
 
-
+/*
+//
+// here are the identifying string for different configurable items
+// the parser will look in CSV file for lines starting with these identificators and will process accordingly
+//
+#define RESERVED_TTL				SUBTOPIC_WILDCARD	//all' is reserved and cannot be used in CSV because of function to convert string to index
+#define CSV_ZONE_TTL				"zone"
+#define CSV_ZONE_HDR_TTL			"zHeader"
+#define CSV_PGM_TTL					"pgm"
+#define CSV_PGM_HDR_TTL				"pgmHdr"
+#define CSV_PRT_TTL					"partition"
+#define CSV_PRT_HDR_TTL				"pHeader"
+#define CSV_GOPT_TTL				"globalOpt"
+#define CSV_GOPT_HDR_TTL			"gOptHeader"
+#define CSV_KEYSW_TTL				"keysw"
+#define CSV_KEYSW_HDR_TTL			"kswHeader"
+*/
 
 
 

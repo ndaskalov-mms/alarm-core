@@ -81,10 +81,10 @@ public:
 	// Debugging and logging methods
     static void defaultDebugOut(LogLevel_t err_code, const char* what, ...);
 
-    // printing methods - defined in alarmClassHelpers.h
+    // printing methods - defined in alarm-core-helpers.h
 	//
-    static void printConfigData(struct tagAccess targetKeys[], int numEntries, byte* targetPtr, int printClass);
-    void        printConfigHeader(struct tagAccess targetKeys[], int numEntries);
+    static void printConfigData(struct jsonValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
+    void        printConfigHeader(struct jsonValProcessor targetKeys[], int numEntries);
     void        printAlarmPartCfg(void);
     void        printAlarmZones(int startZn, int endZn);
     void        printAlarmOpts(byte* optsPtr);
@@ -214,7 +214,7 @@ private:
 
 //
 #include "alarm-core-logic.h"
-#include "alarm-core-parser-helpers.h"
+#include "alarm-core-json-val-parsers.h"
 #include "alarm-core-helpers.h"
 
 
@@ -366,11 +366,11 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
     // Loop through the gOptsTags array to find the matching option name
     for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; ++i) {
-        if (strncmp(opt_name, gOptsTags[i].keyStr, NAME_LEN) == 0) {
+        if (strncmp(opt_name, gOptsValProcessors[i].jsonValStr, NAME_LEN) == 0) {
             // Found the matching option name
-            const int offset = gOptsTags[i].patchOffset;
-            const int length = gOptsTags[i].patchLen;
-            auto patchCallback = gOptsTags[i].patchCallBack;
+            const int offset = gOptsValProcessors[i].patchOffset;
+            const int length = gOptsValProcessors[i].patchLen;
+            auto patchCallback = gOptsValProcessors[i].patchCallBack;
 
             // Call the patchCallBack function to set the value
             if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
@@ -397,7 +397,7 @@ int Alarm::getGlobalOptionsCnt() const {
 const char* Alarm::getGlobalOptionKeyStr(int idx) const {
     if (idx < 0 || idx >= GLOBAL_OPTIONS_TAGS_CNT)
         return nullptr;
-    return gOptsTags[idx].keyStr;
+    return gOptsValProcessors[idx].jsonValStr;
 }
 //
  void Alarm::synchPGMstates() {
@@ -630,6 +630,22 @@ bool Alarm::processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, s
 }
 bool Alarm::processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
 	printf("processZoneJson() - NOT IMPLEMENTED\n");    
+    printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
+
+    unsigned int action = 0;
+    if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
+    else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
+    else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
+    else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
+    else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
+    else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
+    else {
+        printf("Unknown zone action: %s\n", value);
+        return false;
+    }
+
+    // Call the zone modification function with the appropriate action
+    alarm.modifyZn(&zoneIndex, &action, nullptr);
     return false;// Define the JSON
 }
  // Define the JSON topic handlers array as a static member of the Alarm class
@@ -668,57 +684,7 @@ bool Alarm::processMqttMessage(const char* topic, const char* payload, size_t le
     return false;
 }
 
-// Implement handler functions (after the class definition but still in the header)
-bool Alarm::handleZoneJsonPayload(Alarm& alarm, const char* value, int zoneIndex, void* context) {
-    printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
-    
-    unsigned int action = 0;
-    if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
-    else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
-    else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
-    else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
-    else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
-    else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
-    else {
-        printf("Unknown zone action: %s\n", value);
-        return false;
-    }
-    
-    // Call the zone modification function with the appropriate action
-    alarm.modifyZn(&zoneIndex, &action, nullptr);
-    return true;
-}
-
-// Dummy implementation for handlePartitionAction
-bool Alarm::handlePartitionJsonPayload(Alarm& alarm, const char* value, int partitionIndex, void* context) {
-    printf("Processing partition action: %s for partition index %d\n", value, partitionIndex);
-    
-    // Here you would normally implement logic to handle different partition actions
-    // such as arm, disarm, stay arm, etc.
-    
-    return true; // Return success for the dummy implementation
-}
-
-// Dummy implementation for handlePgmAction
-bool Alarm::handlePgmJsonPayload(Alarm& alarm, const char* value, int pgmIndex, void* context) {
-    printf("Processing PGM action: %s for PGM index %d\n", value, pgmIndex);
-    
-    // Here you would normally implement logic to handle different PGM actions
-    // such as turn on, turn off, pulse, etc.
-    
-    return true; // Return success for the dummy implementation
-}
-
-// Dummy implementation for handleGlobalOptionValue
-bool Alarm::handleGlobalOptionJsonPayload(Alarm& alarm, const char* value, int optionIndex, void* context) {
-    printf("Processing global option value: %s for option index %d\n", value, optionIndex);
-    
-    // Here you would normally implement logic to handle different global option settings
-    // such as enable/disable supervision loss restrictions, etc.
-    
-    return true; // Return success for the dummy implementation
-}
 #endif //INTERNAL_JSON_HANDLERS
-
+S
 #endif // ALARM_H
 
