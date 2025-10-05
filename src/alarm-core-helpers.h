@@ -41,11 +41,11 @@ void Alarm::printConfigHeader(struct jsonValProcessor targetKeys[], int numEntri
 //
 void Alarm::printAlarmPartCfg(void) {
     lprintf("Partition(s)\n");
-    printConfigHeader(partitionValProcessors, PARTITION_TAGS_CNT);
+    printConfigHeader(partitionValProcessors, PARTITION_KEYS_CNT);
     for (int j = 0; j < MAX_PARTITION; j++) {
         if (!partitionDB[j].valid)
             continue;
-        printConfigData(partitionValProcessors, PARTITION_TAGS_CNT, (byte*)&partitionDB[j], PRTCLASS_ALL);
+        printConfigData(partitionValProcessors, PARTITION_KEYS_CNT, (byte*)&partitionDB[j], PRTCLASS_ALL);
     }
     lprintf("\n");
 }
@@ -55,10 +55,10 @@ void Alarm::printAlarmPartCfg(void) {
 //
 void Alarm::printAlarmZones(int startZn, int endZn) {
     lprintf("\nZone(s)\n");
-    printConfigHeader(zoneValProcessors, ZONE_TAGS_CNT);
+    printConfigHeader(zoneValProcessors, ZONE_KEYS_CNT);
     for (int i = startZn; i < endZn; i++) {             // for each board' zone
         if (zonesDB[i].zoneType)                        // 0 means disable zone
-            printConfigData(zoneValProcessors, ZONE_TAGS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
+            printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
     }
     lprintf("\n");
 }
@@ -67,8 +67,8 @@ void Alarm::printAlarmZones(int startZn, int endZn) {
 //
 void Alarm::printAlarmOpts(byte* optsPtr) {
     lprintf("\nGlobal options\n");
-    printConfigHeader(gOptsValProcessors, GLOBAL_OPTIONS_TAGS_CNT);
-    printConfigData(gOptsValProcessors, GLOBAL_OPTIONS_TAGS_CNT, optsPtr, PRTCLASS_ALL);
+    printConfigHeader(gOptsValProcessors, GOPTS_KEYS_CNT);
+    printConfigData(gOptsValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
     lprintf("\n");
 }
 //
@@ -79,11 +79,11 @@ void Alarm::printAlarmPgms(void) {
     //alarmPgmArr_t *pgmArr = (alarmPgmArr_t *)pgmArrPtr;
     //lprintf("       boardID pgmID tval cval pulseLen pgmName\n");
     lprintf("\nPGM(s)\n");
-    printConfigHeader(pgmValProcessors, PGM_TAGS_CNT);
+    printConfigHeader(pgmValProcessors, PGM_KEYS_CNT);
     for (int i = 0; i < MAX_ALARM_PGM; i++) {                        // iterate
         if (!pgmsDB[i].valid)
             continue;
-        printConfigData(pgmValProcessors, PGM_TAGS_CNT,(byte*)&pgmsDB[i], PRTCLASS_ALL);
+        printConfigData(pgmValProcessors, PGM_KEYS_CNT,(byte*)&pgmsDB[i], PRTCLASS_ALL);
         //printOneAlarmPgm((struct ALARM_PGM*) &(*pgmArrPtr)[i]);
     }
     lprintf("\n");

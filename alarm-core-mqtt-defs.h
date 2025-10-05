@@ -69,7 +69,7 @@
 // OUTPUTS (PGM)
 //
 #define MQTT_OUTPUTS_CONTROL	        "/pdox/control/outputs/%s"
-#define MQTT_OUTPUTS_STATES	            "/pdox/states/outputs/%s"
+#define MQTT_OUTPUTS_STATES	        "/pdox/states/outputs/%s"
 #define PGM_ON_PROPERTY                 "on"
 #define PGM_OFF_PROPERTY                "off"
 // 
@@ -77,7 +77,8 @@
 //
 #define MQTT_METRICS_EXCHANGE           "/pdox/metrics/exchange"
 //
-#define MQTT_GLOBAL_OPT_CONTROL			"/pdox/settings/global_options/%s"
+#define MQTT_GLOBAL_OPT_CONTROL		"/pdox/settings/global_options/%s"
+
 //
 #define ALARM_PROPERTY                  "alarm"
 //

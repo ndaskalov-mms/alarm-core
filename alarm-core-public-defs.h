@@ -1,7 +1,23 @@
 #pragma once
+// MQTT topics defs
+#define MQTT_PARTITIONS_CONTROL_TOPIC		"/pdox/partitions/control"
+#define MQTT_PARTITIONS_STATES_TOPIC		"/pdox/partitions/states"
+#define MQTT_ZONES_CONTROL_TOPIC	        "/pdox/zones/control"
+#define MQTT_ZONES_STATES_TOPIC             "/pdox/zones/states"
+#define MQTT_OUTPUTS_CONTROL_TOPIC			"/pdox/outputs/control"
+#define MQTT_OUTPUTS_STATES_TOPIC			"/pdox/outputs/states"
+#define MQTT_GLOBAL_OPT_CONTROL_TOPIC		"/pdox/global_options/control"
+
+// JSON sections
+#define JSON_SECTION_ZONES				"zones"
+#define JSON_SECTION_PARTITIONS			"partitions"
+#define JSON_SECTION_PGMS				"pgms"
+#define JSON_SECTION_GLOBAL_OPTIONS		"global_options"
+	
+
+// MQTT JSON keys
 
 // ------------   ZONES ------------------
-//
 // keys allowed in zone JSON config 
 #define ZN_NAME_KEY_STR					"zName"
 #define ZN_BRD_ID_KEY_STR				"zBRD"
@@ -75,7 +91,6 @@
 #define LINE_ERR_OPT_ALARM_ONLY_VAL_STR			"ALARM"
 
 // ------------   PARTITIONS ------------------
-//
 // keys allowed in partition JSON config 
 #define	PT_NAME_KEY_STR					"pName"
 #define	PT_IDX_KEY_STR					"pIdx"

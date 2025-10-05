@@ -147,6 +147,7 @@
     <ClInclude Include="src\alarm-core-internal-defs.h" />
     <ClInclude Include="src\alarm-core-class.h" />
     <ClInclude Include="src\alarm-core-helpers.h" />
+    <ClInclude Include="src\alarm-core-JSON.h" />
     <ClInclude Include="src\alarm-core-logic.h" />
     <ClInclude Include="src\alarm-core-debug.h" />
     <ClInclude Include="src\alarm-core-json-val-parsers.h" />

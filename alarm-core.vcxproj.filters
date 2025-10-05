@@ -70,5 +70,8 @@
     <ClInclude Include="alarm-core-timers-new.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\alarm-core-JSON.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

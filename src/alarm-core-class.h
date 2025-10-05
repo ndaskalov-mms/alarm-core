@@ -23,6 +23,10 @@ enum LogLevel_t {
 typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
 
 class Alarm {
+
+    // Grant alarmJSON access to private and protected members
+    friend class alarmJSON;
+
 public:
     // Constructor and destructor
     Alarm();
@@ -365,7 +369,7 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 //
 bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
     // Loop through the gOptsTags array to find the matching option name
-    for (size_t i = 0; i < GLOBAL_OPTIONS_TAGS_CNT; ++i) {
+    for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
         if (strncmp(opt_name, gOptsValProcessors[i].jsonValStr, NAME_LEN) == 0) {
             // Found the matching option name
             const int offset = gOptsValProcessors[i].patchOffset;
@@ -391,11 +395,11 @@ bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
 }
 //
 int Alarm::getGlobalOptionsCnt() const {
-    return GLOBAL_OPTIONS_TAGS_CNT;
+    return GOPTS_KEYS_CNT;
 }
 //
 const char* Alarm::getGlobalOptionKeyStr(int idx) const {
-    if (idx < 0 || idx >= GLOBAL_OPTIONS_TAGS_CNT)
+    if (idx < 0 || idx >= GOPTS_KEYS_CNT)
         return nullptr;
     return gOptsValProcessors[idx].jsonValStr;
 }
@@ -629,37 +633,38 @@ bool Alarm::processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, s
 	return false;   
 }
 bool Alarm::processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
-	printf("processZoneJson() - NOT IMPLEMENTED\n");    
-    printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
+
+    printf("processZoneJson() - NOT IMPLEMENTED\n");    
+    //printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
 
     unsigned int action = 0;
-    if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
-    else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
-    else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
-    else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
-    else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
-    else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
-    else {
-        printf("Unknown zone action: %s\n", value);
-        return false;
-    }
+    //if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
+    //else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
+    //else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
+    //else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
+    //else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
+    //else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
+    //else {
+    //    printf("Unknown zone action: %s\n", value);
+    //    return false;
+    //}
 
     // Call the zone modification function with the appropriate action
-    alarm.modifyZn(&zoneIndex, &action, nullptr);
+    //alarm.modifyZn(&zoneIndex, &action, nullptr);
     return false;// Define the JSON
 }
  // Define the JSON topic handlers array as a static member of the Alarm class
 const Alarm::JsonTopicHandler Alarm::mqttTopicHandlers[] = {
-    {"/alarm/zones/control", "zone", &Alarm::processZoneJsonPayload, 
+    {MQTT_ZONES_CONTROL_TOPIC,      JSON_SECTION_ZONES,         &Alarm::processZoneJsonPayload,
      "Control zones (bypass, tamper, etc.)"},
     
-    {"/alarm/partitions/control", "partition", &Alarm::processPartitionJsonPayload, 
+    {MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &Alarm::processPartitionJsonPayload,
      "Control partitions (arm, disarm, etc.)"},
     
-    {"/alarm/pgms/control", "pgm", &Alarm::processPgmJsonPayload, 
+    {MQTT_OUTPUTS_CONTROL_TOPIC,    JSON_SECTION_PGMS,          &Alarm::processPgmJsonPayload,
      "Control PGMs (on, off, pulse)"},
     
-    {"/alarm/global/options", "option", &Alarm::processGlobalOptionsJsonPayload, 
+    {MQTT_GLOBAL_OPT_CONTROL_TOPIC, JSON_SECTION_GLOBAL_OPTIONS, &Alarm::processGlobalOptionsJsonPayload,
      "Set global alarm options"}
 };
 
@@ -685,6 +690,6 @@ bool Alarm::processMqttMessage(const char* topic, const char* payload, size_t le
 }
 
 #endif //INTERNAL_JSON_HANDLERS
-S
+
 #endif // ALARM_H
 
