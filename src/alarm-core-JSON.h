@@ -323,17 +323,17 @@ public:
 
 private:
     // A union to hold the different possible value types from the JSON.
-    union ParsedValue {
+    union parsedValue {
         int i;
         bool b;
         char s[128]; // Use a character array to store string data safely
     };
 
     // A tagged union to store the result, indicating which type is valid.
-    struct ValueResult {
-        field_type_t type;
-        ParsedValue value;
-    };
+    //struct ValueResult {
+    //    field_type_t type;
+    //    ParsedValue value;
+    //};
 
     // Reference to the Alarm instance we are populating
     Alarm& m_alarm;
@@ -341,28 +341,30 @@ private:
     /**
      * @brief Parses a single field from the JSON object based on the processor definition.
      */
-    bool parse_and_print_field(jparse_ctx_t* jctx, const jsonValProcessor& processor, const char* print_prefix, ValueResult* result) {
+    bool parseJSONval(jparse_ctx_t* jctx, const jsonValProcessor& processor, const char* print_prefix, parsedValue* result) {
+
+        if (!result) 
+            return false;
+      
+        // Use a local buffer for parsing and printing.
         char str_val[128];
         int int_val;
         bool bool_val;
 
-        if (result) {
-            result->type = processor.fieldType;
-        }
-        // If a result struct is provided, parse directly into its buffer.
-        // Otherwise, use a local buffer just for printing.
-        char* target_buf = result ? result->value.s : str_val;
-        size_t target_size = result ? sizeof(result->value.s) : sizeof(str_val);
+        // Correctly get the address of the char array within the union.
+        char* target_buf = result->s;
+        size_t target_size = sizeof(result->s);
 
         switch (processor.fieldType) {
         case VAL_TYP_INT:
             if (json_obj_get_int(jctx, processor.jsonValStr, &int_val) == OS_SUCCESS) {
                 printf("%s%s: %d\n", print_prefix, processor.jsonValStr, int_val);
-                if (result) result->value.i = int_val;
+                result->i = int_val;
                 return true;
             }
             break;
         case VAL_TYP_STR:
+            // Use target_buf and target_size to parse the string directly into the union.
             if (json_obj_get_string(jctx, processor.jsonValStr, target_buf, target_size) == OS_SUCCESS) {
                 printf("%s%s: %s\n", print_prefix, processor.jsonValStr, target_buf);
                 return true;
@@ -371,7 +373,7 @@ private:
         case VAL_TYP_BOOL:
             if (json_obj_get_bool(jctx, processor.jsonValStr, &bool_val) == OS_SUCCESS) {
                 printf("%s%s: %s\n", print_prefix, processor.jsonValStr, bool_val ? "true" : "false");
-                if (result) result->value.b = bool_val;
+                result->b = bool_val;
                 return true;
             }
             break;
@@ -387,8 +389,8 @@ private:
     void parse_global_options(jparse_ctx_t* jctx) {
         printf("\n===== Global Options =====\n");
         for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
-            ValueResult result;
-            if (parse_and_print_field(jctx, gOptsValProcessors[i], "", &result)) {
+            parsedValue result;
+            if (parseJSONval(jctx, gOptsValProcessors[i], "", &result)) {
                 // TODO: Populate m_alarm.globalOptions using the result and patchCallBack
             }
         }
@@ -398,18 +400,15 @@ private:
      * @brief Parses the "zones" array from the JSON.
      */
     void parse_zone(jparse_ctx_t* jctx) {
-        ValueResult result;
+        parsedValue result;
         ALARM_ZONE tempZone = {0}; // Create a temporary local variable
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
-                if(parse_and_print_field(jctx, zoneValProcessors[j], "  ", &result)) {
+                if(parseJSONval(jctx, zoneValProcessors[j], "  ", &result)) {
                 // TODO: Populate tempZone using the result and patchCallBack
                 //m_alarm.zonesDB[i] = tempZone; // Copy the fully parsed zone
                 }
         }
-
-   
-
     }
 
     /**
