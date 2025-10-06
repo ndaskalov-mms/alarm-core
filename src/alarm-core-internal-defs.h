@@ -12,6 +12,13 @@ const char FALSE_t[] = "false";
 #define NAME_LEN				32
 #define MAX_KEYSW_CNT			32
 
+// A union to hold the different possible value types from the JSON.
+union parsedValue {
+	int i;
+	bool b;
+	char s[NAME_LEN]; // Use a character array to store string data safely
+};
+
 enum timeoutOper {
 	TIMER_SET = 1,
 	TIMER_GET = 2,

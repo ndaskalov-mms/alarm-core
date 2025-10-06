@@ -72,7 +72,7 @@ public:
 
     // Global options methods
     void        setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions);
-    bool        setGlobalOptions(const char* opt_name, const char* opt_val);
+    bool        setGlobalOptions(const char* opt_name, const parsedValue* opt_val);
     bool        isRestrictionActive(int restrictionType) const;
     int         getGlobalOptionsCnt() const;
     const char* getGlobalOptionKeyStr(int idx) const;
@@ -367,7 +367,7 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
     printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
 //
-bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
+bool Alarm::setGlobalOptions(const char* opt_name, const parsedValue* opt_val) {
     // Loop through the gOptsTags array to find the matching option name
     for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
         if (strncmp(opt_name, gOptsValProcessors[i].jsonValStr, NAME_LEN) == 0) {
@@ -378,7 +378,7 @@ bool Alarm::setGlobalOptions(const char* opt_name, const char* opt_val) {
 
             // Call the patchCallBack function to set the value
             if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
-                ErrWrite(LOG_ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val);
+                ErrWrite(LOG_ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val->s);
                 return TRUE;
             }
             else {

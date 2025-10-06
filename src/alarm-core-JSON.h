@@ -322,17 +322,11 @@ public:
     }
 
 private:
-    // A union to hold the different possible value types from the JSON.
-    union parsedValue {
-        int i;
-        bool b;
-        char s[128]; // Use a character array to store string data safely
-    };
-
-    // A tagged union to store the result, indicating which type is valid.
-    //struct ValueResult {
-    //    field_type_t type;
-    //    ParsedValue value;
+    //// A union to hold the different possible value types from the JSON.
+    //union parsedValue {
+    //    int i;
+    //    bool b;
+    //    char s[128]; // Use a character array to store string data safely
     //};
 
     // Reference to the Alarm instance we are populating
@@ -347,7 +341,7 @@ private:
             return false;
       
         // Use a local buffer for parsing and printing.
-        char str_val[128];
+        char str_val[NAME_LEN];
         int int_val;
         bool bool_val;
 
@@ -399,16 +393,39 @@ private:
     /**
      * @brief Parses the "zones" array from the JSON.
      */
-    void parse_zone(jparse_ctx_t* jctx) {
+    bool parse_zone(jparse_ctx_t* jctx) {
         parsedValue result;
         ALARM_ZONE tempZone = {0}; // Create a temporary local variable
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
-                if(parseJSONval(jctx, zoneValProcessors[j], "  ", &result)) {
-                // TODO: Populate tempZone using the result and patchCallBack
-                //m_alarm.zonesDB[i] = tempZone; // Copy the fully parsed zone
+            // Pass the address of the 'result' union to parseJSONval
+            if(parseJSONval(jctx, zoneValProcessors[j], "  ", &result)) {
+                if (zoneValProcessors[j].patchCallBack) {
+                    // Get the processor for context
+                    const auto& processor = zoneValProcessors[j];
+                    
+                    // Call the patch function, passing a pointer to the entire 'result' union
+                    // and the fieldType to provide context.
+                    processor.patchCallBack(
+                        (byte*)&tempZone, 
+                        processor.patchOffset, 
+                        processor.patchLen, 
+                        &result // Pass the address of the union
+                        );
+
                 }
+            }
+            else {
+                // Consider adding an error log here
+                printf("Failed to parse zone JSON value: %s\n", zoneValProcessors[j].jsonValStr);
+                return false;
+            }
+
         }
+        m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
+        // After the loop, you would add the fully populated tempZone to your alarm database
+        // For example: m_alarm.addZone(tempZone);
+        return true;
     }
 
     /**

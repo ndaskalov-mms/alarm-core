@@ -70,9 +70,11 @@ static struct valStr2int lineErrStr2int[] = {
  * @param token     String to be written
  * @return          Always true
 */
-static int pokeString(byte* basePtr, int offset, int len, const char* token) {
+static int pokeString(byte* basePtr, int offset, int len, const parsedValue* token) {
     //strncpy((&((char*)basePtr)[offset]), token, len);
-    snprintf((char*)basePtr + offset, len, "%s", token);
+    if(len > NAME_LEN - 1)  // to avoid overflow of the target field
+		len = NAME_LEN - 1;
+    snprintf((char*)basePtr + offset, len, "%s", token->s);
     return true;
 }
 
@@ -97,8 +99,9 @@ static byte* peekString(byte* basePtr, int offset, int len) {
  * @param token     shall be "true" or "false"
  * @return          Always true
 */
-static int pokeBool(byte* basePtr, int offset, int len, const char* token) {
-    (basePtr[offset] = !_stricmp(token, "true"));
+static int pokeBool(byte* basePtr, int offset, int len, const parsedValue* token) {
+    //(basePtr[offset] = !_stricmp(token, "true"));
+    (basePtr[offset] = token->b);
     return true;
 }
 
@@ -121,8 +124,9 @@ static byte* peekBool(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to unsigned byte before write
  * @return          Always true
 */
-static int pokeByte(byte* basePtr, int offset, int len, const char* token) {
-    unsigned res  = (unsigned int)atoi(token);
+static int pokeByte(byte* basePtr, int offset, int len, const parsedValue* token) {
+    //unsigned res  = (unsigned int)atoi(token);
+	int res = token->i;
     if (res > 255) {
         // TODO (ERR_WARNING, "Byte value larger than 255. Truncated");
         res = 255;
@@ -168,9 +172,9 @@ static byte* peekPrtnNo(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-static int pokePrtNo(byte* basePtr, int offset, int len, const char* token) {
+static int pokePrtNo(byte* basePtr, int offset, int len, const parsedValue* token) {
     int tmp;
-    tmp = (unsigned int)atoi(token);
+    tmp = (unsigned int)token->i;
     tmp--;                                                          // input partitions range starts at 1, but internally starts from 0
     if (tmp < 0 || tmp >= MAX_PARTITION) {
         LOG_CRITICAL("Follows: Partition number %d out of range\n", tmp);
@@ -237,17 +241,17 @@ static byte* peekZoneType(byte* basePtr, int offset, int len) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-static int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
+static int pokeLineErr(byte* basePtr, int offset, int len, const parsedValue* token) {
     int i;
     for (i = 0; i < ERRORS_TITLE_CNT; i++) {
-        if (!_stricmp(token, lineErrStr2int[i].valStr)) {
+        if (!_stricmp(token->s, lineErrStr2int[i].valStr)) {
             basePtr[offset] = lineErrStr2int[i].val;
             //lprintf("Line err set to %s\n", errKeys[i].title);
             break;
         }
     }
     if (i == ERRORS_TITLE_CNT) {
-        lprintf(" Invalid Line error opts: %s\n", token);
+        printf(" Invalid Line error opts: %s\n", token->s);
         return false;
     }
     return true;
@@ -261,17 +265,17 @@ static int pokeLineErr(byte* basePtr, int offset, int len, const char* token) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-static int pokeZoneType(byte* basePtr, int offset, int len, const char* token) {
+static int pokeZoneType(byte* basePtr, int offset, int len, const parsedValue* token) {
     int i;
     for (i = 0; i < ZONE_TYPES_CNT; i++) {
-        if (!_stricmp(token, zoneTypeInt2Str[i].valStr)) {
+        if (!_stricmp(token->s, zoneTypeInt2Str[i].valStr)) {
             basePtr[offset] = zoneTypeInt2Str[i].val;
             //lprintf("Zone type set to %s\n", zoneCfgKeys[i].title);
             break;
         }
     }
     if (i == ZONE_TYPES_CNT) {
-        lprintf(" Invalid Zone type: %s\n", token);
+        printf(" Invalid Zone type: %s\n", token->s);
         return false;
     }
     return true;
@@ -285,17 +289,17 @@ static int pokeZoneType(byte* basePtr, int offset, int len, const char* token) {
  * @param token     ASCII string to be converted to partition number before write
  * @return          Always true
 */
-static int pokeAlarmType(byte* basePtr, int offset, int len, const char* token) {
+static int pokeAlarmType(byte* basePtr, int offset, int len, const parsedValue* token) {
     int i;
     for (i = 0; i < ALARMS_TITLE_CNT; i++) {
-        if (!_stricmp(token, alarmTypeStr2int[i].valStr)) {
+        if (!_stricmp(token->s, alarmTypeStr2int[i].valStr)) {
             basePtr[offset] = alarmTypeStr2int[i].val;
             //lprintf("Alarm type set to %s\n", alarmTitles[i].title);
             break;
         }
     }
     if (i == ALARMS_TITLE_CNT) {
-        lprintf(" Invalid Alarm type: %s\n", token);
+        printf( "Invalid Alarm type : % s\n", token->s);
         return false;
     }
     return true;
@@ -339,8 +343,8 @@ struct jsonValProcessor {
     int     pos;                                                        // param position in header line (column) in CSV file
     byte    patchOffset;                                                // offset in corresponding DB (zoneDB, partionDB, etc) where we have to put the data read from CSV
     byte    patchLen;                                                   // offset is relativ to beginning of the struct which forms correspondin entr
-    int     (*patchCallBack)  (byte* basePtr, int  offset, int len, const char* token);   // callback function to patch the value read from condig file
-    byte* (*unpatchCallBack)(byte* basePtr, int  offset, int len);                      // callback function to get string representation of the value read from config struct
+    int     (*patchCallBack)  (byte* basePtr, int  offset, int len, const parsedValue* src);// callback function to patch the value read from condig file
+    byte*   (*unpatchCallBack)(byte* basePtr, int  offset, int len);                        // callback function to get string representation of the value read from config struct
     size_t  keyStrLen;                                                  // used for pretty printing only
     byte    printClass;                                                 // used to select what to print 
     field_type_t fieldType;                                             // type of field (int, string, bool, etc.)
