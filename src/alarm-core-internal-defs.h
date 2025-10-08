@@ -28,17 +28,17 @@ enum timeoutOper {
 //#define PGM_STATES_LEN			1							// contains bitmap of PGM states (PGM1->bit 0, PGM2->bit1) 
 //#define SZONERES_LEN			(SLAVE_ZONES_CNT/2 + SLAVE_ZONES_CNT%2) // 
 //#define POLL_RES_PAYLD_LEN		SZONERES_LEN+PGM_STATES_LEN	// poll payload is 4bits per zone  + one byte for PGMs states
-//#define PGM_STATES_OFFSET		SZONERES_LEN				// PGMs states are stord in the last byte of the POLL payload                                          
+//#define PGM_STATES_OFFSET		SZONERES_LEN					// PGMs states are stord in the last byte of the POLL payload                                          
 
 //#define MAX_MQTT_TOPIC			256
 //#define MAX_MQTT_PAYLOAD		32700
 
-#define SW_VERSION			100				// UPDATE ON EVERY CHANGE OF ZONEs, PGMs, etc
+#define SW_VERSION			100									// UPDATE ON EVERY CHANGE OF ZONEs, PGMs, etc
 //
 // --------------- error codes -----------------//
 enum {
 	ERR_NO_ERR			=	 0,
-	ERR_IDX_NOT_FND		=	-1,    // Error code for when a timer index is not found
+	ERR_IDX_NOT_FND		=	-1,									// Error code for when a db index is not found or no space left
 };
 //
 //

@@ -314,7 +314,7 @@ int Alarm::addZone(const ALARM_ZONE& newZone) {
             return i;               // Return the index of the entry
         }
     }
-    return -1; // Return -1 if no unused entry is found
+    return ERR_IDX_NOT_FND; // Return -1 if no unused entry is found
 }
 //
 int Alarm::addPartition(const ALARM_PARTITION_t& newPartition) {
@@ -328,7 +328,7 @@ int Alarm::addPartition(const ALARM_PARTITION_t& newPartition) {
             return i; // Return the index of the entry
         }
     }
-    return -1; // Return -1 if no unused entry is found
+    return ERR_IDX_NOT_FND; // Return -1 if no unused entry is found
 }
 //
 int Alarm::addPgm(const ALARM_PGM& newPgm) {
@@ -339,7 +339,7 @@ int Alarm::addPgm(const ALARM_PGM& newPgm) {
             return i;              // Return the index of the entry
         }
     }
-    return -1; // Return -1 if no unused entry is found
+    return ERR_IDX_NOT_FND; // Return -1 if no unused entry is found
 }
 //
 int Alarm::isPartitionValid(int idx) const {
@@ -433,7 +433,7 @@ int Alarm::getZoneIndex(const char* name) const {
             return i; // Found the zone, return its index
         }
     }
-    return -1; // Zone not found
+    return ERR_IDX_NOT_FND; // Zone not found
 }
 
 int Alarm::getPartitionIndex(const char* name) const {
@@ -445,7 +445,7 @@ int Alarm::getPartitionIndex(const char* name) const {
             return i; // Found the partition, return its index
         }
     }
-    return -1; // Partition not found
+    return 	ERR_IDX_NOT_FND        ; // Partition not found
 }
 
 int Alarm::getPgmIndex(const char* name) const {
@@ -457,7 +457,7 @@ int Alarm::getPgmIndex(const char* name) const {
             return i; // Found the PGM, return its index
         }
     }
-    return -1; // PGM not found
+    return ERR_IDX_NOT_FND; // PGM not found
 }
 
 int Alarm::getZoneCount() const {

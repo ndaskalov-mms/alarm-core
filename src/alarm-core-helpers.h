@@ -31,7 +31,7 @@ void Alarm::printConfigData(struct jsonValProcessor targetKeys[], int numEntries
 void Alarm::printConfigHeader(struct jsonValProcessor targetKeys[], int numEntries) {
     for (int i = 0; i < numEntries; i++) {
         lprintf("%s ", targetKeys[i].jsonValStr);
-        for (size_t j = strlen(targetKeys[i].jsonValStr); j < (int)targetKeys[i].jsonValStr; j++)
+        for (size_t j = strlen(targetKeys[i].jsonValStr); j < (int)targetKeys[i].keyStrLen; j++)
             lprintf("%c", ' ');
     }
     lprintf("\n");

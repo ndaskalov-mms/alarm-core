@@ -394,8 +394,10 @@ private:
      * @brief Parses the "zones" array from the JSON.
      */
     bool parse_zone(jparse_ctx_t* jctx) {
+		int ret = 0;                            // to track if any error occurs during the conversion of JSON values
+		int zoneIdx = -1;                       // to hold the index of the zone if it exists
         parsedValue result;
-        ALARM_ZONE tempZone = {0}; // Create a temporary local variable
+        ALARM_ZONE tempZone = {0};              // Create a temporary local variable
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
             // Pass the address of the 'result' union to parseJSONval
@@ -405,26 +407,34 @@ private:
                     const auto& processor = zoneValProcessors[j];
                     
                     // Call the patch function, passing a pointer to the entire 'result' union
-                    // and the fieldType to provide context.
-                    processor.patchCallBack(
-                        (byte*)&tempZone, 
-                        processor.patchOffset, 
-                        processor.patchLen, 
-                        &result // Pass the address of the union
-                        );
-
+                    if(!processor.patchCallBack((byte*)&tempZone, processor.patchOffset, processor.patchLen, &result))
+                        ret++;
                 }
             }
-            else {
-                // Consider adding an error log here
+            else {                              // Consider adding an error log here
                 printf("Failed to parse zone JSON value: %s\n", zoneValProcessors[j].jsonValStr);
                 return false;
             }
-
         }
-        m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
-        // After the loop, you would add the fully populated tempZone to your alarm database
-        // For example: m_alarm.addZone(tempZone);
+        if (ret) {                               // If any error occurred during patching, return false
+            printf("Failed to parse zone completely. Errors occurred during patching.\n");
+            return false;
+		}
+        // print temp zone          
+        // m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
+
+		// first check if we have zone name already in DB and add it if not exists, else overwtite it
+		// we use zone name as unique identifier of the zone
+        if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
+			if (zoneIdx=m_alarm.addZone(tempZone) >= 0)
+                printf("Zone with name '%s' added successfully.\n", tempZone.zoneName);
+            else {
+                printf("Failed to add zone with name '%s'.\n", tempZone.zoneName);
+                return false;
+            }
+        }
+		m_alarm.zonesDB[zoneIdx] = tempZone; // Mark the zone as valid
+		m_alarm.printAlarmZones(zoneIdx, zoneIdx+1); // Print the newly added or updated zone
         return true;
     }
 
