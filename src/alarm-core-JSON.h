@@ -5,203 +5,6 @@
 #include "alarm-core-internal-defs.h" // Include the internal definitions
 #include "..\..\esp-json-parser\include\json_parser-code.h"
 
-#define alarm_config_json "{\n\
-  \"zones\": [\n\
-    {\n\
-      \"zName\": \"Front Door\",\n\
-      \"zBRD\": 0,\n\
-      \"zID\": 0,\n\
-      \"zType\": \"ENTRY_DELAY1\",\n\
-      \"zPartn\": 1,\n\
-      \"zAlarmT\": \"STEADY_ALARM\",\n\
-      \"zShdnEn\": false,\n\
-      \"zBypEn\": true,\n\
-      \"zStayZ\": true,\n\
-      \"zFrceEn\": true,\n\
-      \"zIntelZ\": false,\n\
-      \"zDlyTRM\": false,\n\
-      \"zTmprGlb\": true,\n\
-      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-      \"zAmskGlb\": true,\n\
-      \"zAmskOpt\": \"DISABLE\"\n\
-    },\n\
-    {\n\
-      \"zName\": \"Back Door\",\n\
-      \"zBRD\": 0,\n\
-      \"zID\": 1,\n\
-      \"zType\": \"ENTRY_DELAY2\",\n\
-      \"zPartn\": 1,\n\
-      \"zAlarmT\": \"PULSED_ALARM\",\n\
-      \"zShdnEn\": false,\n\
-      \"zBypEn\": true,\n\
-      \"zStayZ\": true,\n\
-      \"zFrceEn\": true,\n\
-      \"zIntelZ\": false,\n\
-      \"zDlyTRM\": false,\n\
-      \"zTmprGlb\": true,\n\
-      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-      \"zAmskGlb\": true,\n\
-      \"zAmskOpt\": \"DISABLE\"\n\
-    },\n\
-    {\n\
-      \"zName\": \"Motion Sensor Living Room\",\n\
-      \"zBRD\": 0,\n\
-      \"zID\": 2,\n\
-      \"zType\": \"FOLLOW\",\n\
-      \"zPartn\": 1,\n\
-      \"zAlarmT\": \"STEADY_ALARM\",\n\
-      \"zShdnEn\": false,\n\
-      \"zBypEn\": true,\n\
-      \"zStayZ\": false,\n\
-      \"zFrceEn\": true,\n\
-      \"zIntelZ\": true,\n\
-      \"zDlyTRM\": false,\n\
-      \"zTmprGlb\": true,\n\
-      \"zTmprOPT\": \"ALARM\",\n\
-      \"zAmskGlb\": true,\n\
-      \"zAmskOpt\": \"ALARM_WHEN_ARMED\"\n\
-    },\n\
-    {\n\
-      \"zName\": \"Window Sensor Bedroom\",\n\
-      \"zBRD\": 0,\n\
-      \"zID\": 3,\n\
-      \"zType\": \"INSTANT\",\n\
-      \"zPartn\": 2,\n\
-      \"zAlarmT\": \"SILENT_ALARM\",\n\
-      \"zShdnEn\": false,\n\
-      \"zBypEn\": true,\n\
-      \"zStayZ\": false,\n\
-      \"zFrceEn\": true,\n\
-      \"zIntelZ\": false,\n\
-      \"zDlyTRM\": false,\n\
-      \"zTmprGlb\": false,\n\
-      \"zTmprOPT\": \"DISABLE\",\n\
-      \"zAmskGlb\": false,\n\
-      \"zAmskOpt\": \"DISABLE\"\n\
-    },\n\
-    {\n\
-      \"zName\": \"Smoke Detector\",\n\
-      \"zBRD\": 0,\n\
-      \"zID\": 4,\n\
-      \"zType\": \"H24_FIRE_STANDARD\",\n\
-      \"zPartn\": 2,\n\
-      \"zAlarmT\": \"STEADY_ALARM\",\n\
-      \"zShdnEn\": false,\n\
-      \"zBypEn\": false,\n\
-      \"zStayZ\": false,\n\
-      \"zFrceEn\": false,\n\
-      \"zIntelZ\": false,\n\
-      \"zDlyTRM\": false,\n\
-      \"zTmprGlb\": true,\n\
-      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-      \"zAmskGlb\": true,\n\
-      \"zAmskOpt\": \"TROUBLE_ONLY\"\n\
-    }\n\
-  ],\n\
-  \"partitions\": [\n\
-    {\n\
-      \"pName\": \"Main Floor\",\n\
-      \"pIdx\": 1,\n\
-      \"pValid\": true,\n\
-      \"pFrceOnRegArm\": true,\n\
-      \"pFrceOnStayArm\": true,\n\
-      \"pED2znFollow\": true,\n\
-      \"pAlrmOutEn\": true,\n\
-      \"pAlrmTime\": 120,\n\
-      \"pNoCutOnFire\": true,\n\
-      \"pAlrmRecTime\": 30,\n\
-      \"pED1Intvl\": 30,\n\
-      \"pED2Intvl\": 45,\n\
-      \"pExitDly\": 60,\n\
-      \"pFollow1\": 1,\n\
-      \"pFollow2\": 0,\n\
-      \"pFollow3\": 0,\n\
-      \"pFollow4\": 0,\n\
-      \"pFollow5\": 0,\n\
-      \"pFollow6\": 0,\n\
-      \"pFollow7\": 0,\n\
-      \"pFollow8\": 0\n\
-    },\n\
-    {\n\
-      \"pName\": \"Upper Floor\",\n\
-      \"pIdx\": 2,\n\
-      \"pValid\": true,\n\
-      \"pFrceOnRegArm\": true,\n\
-      \"pFrceOnStayArm\": false,\n\
-      \"pED2znFollow\": true,\n\
-      \"pAlrmOutEn\": true,\n\
-      \"pAlrmTime\": 120,\n\
-      \"pNoCutOnFire\": true,\n\
-      \"pAlrmRecTime\": 30,\n\
-      \"pED1Intvl\": 30,\n\
-      \"pED2Intvl\": 45,\n\
-      \"pExitDly\": 60,\n\
-      \"pFollow1\": 0,\n\
-      \"pFollow2\": 0,\n\
-      \"pFollow3\": 0,\n\
-      \"pFollow4\": 0,\n\
-      \"pFollow5\": 0,\n\
-      \"pFollow6\": 0,\n\
-      \"pFollow7\": 0,\n\
-      \"pFollow8\": 0\n\
-    }\n\
-  ],\n\
-  \"globalOptions\": {\n\
-    \"MaxSlaves\": 2,\n\
-    \"RestrSprvsL\": true,\n\
-    \"RestrTamper\": true,\n\
-    \"RestrACfail\": false,\n\
-    \"RestrBatFail\": true,\n\
-    \"RestrOnBell\": false,\n\
-    \"RestrOnBrdFail\": true,\n\
-    \"RestrOnAmask\": false,\n\
-    \"TroubleLatch\": true,\n\
-    \"TamperBpsOpt\": false,\n\
-    \"TamperOpts\": \"TROUBLE_ONLY\",\n\
-    \"AntiMaskOpt\": \"ALARM_WHEN_ARMED\",\n\
-    \"RfSprvsOpt\": \"ALARM\",\n\
-    \"SprvsLoss\": 0,\n\
-    \"ACfail\": 0,\n\
-    \"BatFail\": 0,\n\
-    \"BellFail\": 0,\n\
-    \"BrdFail\": 0\n\
-  },\n\
-  \"pgms\": [\n\
-    {\n\
-      \"pgmName\": \"External Siren\",\n\
-      \"pgmBrd\": 0,\n\
-      \"pgmID\": 0,\n\
-      \"pgmPulseLen\": 5,\n\
-      \"pgmValid\": true\n\
-    },\n\
-    {\n\
-      \"pgmName\": \"Garage Door\",\n\
-      \"pgmBrd\": 0,\n\
-      \"pgmID\": 1,\n\
-      \"pgmPulseLen\": 3,\n\
-      \"pgmValid\": true\n\
-    },\n\
-    {\n\
-      \"pgmName\": \"Entrance Light\",\n\
-      \"pgmBrd\": 0,\n\
-      \"pgmID\": 2,\n\
-      \"pgmPulseLen\": 0,\n\
-      \"pgmValid\": true\n\
-    }\n\
-  ],\n\
-  \"keyswitches\": [\n\
-    {\n\
-      \"kswName\": \"Front Door Keyswitch\",\n\
-      \"partition\": 0,\n\
-      \"type\": \"MAINTAINED\",\n\
-      \"action\": \"REGULAR_ARM_ONLY\",\n\
-      \"boardID\": 0,\n\
-      \"zoneID\": 5\n\
-    }\n\
-  ]\n\
-}"
-
-
 class alarmJSON {
 public:
     /**
@@ -216,19 +19,17 @@ public:
      * @return 0 on success, -1 on failure.
      */
 
-    int parseJSON()
+    int parseConfigJSON(char* jsonBuffer)
     {
-        jparse_ctx_t jctx, tmp_jctx;
+		jparse_ctx_t jctx, tmp_jctx;    // JSON parsing context
+		int num_elem; 				    // number of elements in arrays     
 
-        int ret = json_parse_start(&jctx, alarm_config_json, strlen(alarm_config_json));
+        // Initialize JSON parser
+		int ret = json_parse_start(&jctx, jsonBuffer, strlen(jsonBuffer)); 
         if (ret != OS_SUCCESS) {
             printf("Parser failed\n");
             return -1;
         }
-
-        char str_val[128];
-        int int_val, num_elem;
-        bool bool_val;
 
         // Parse and display global options
         if (json_obj_get_object(&jctx, "globalOptions") == OS_SUCCESS) {
@@ -278,14 +79,14 @@ public:
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nPGM %d:\n", i + 1);
 
-                    if (json_obj_get_string(&jctx, "pgmName", str_val, sizeof(str_val)) == OS_SUCCESS)
-                        printf("  Name: %s\n", str_val);
+                    //if (json_obj_get_string(&jctx, "pgmName", str_val, sizeof(str_val)) == OS_SUCCESS)
+                    //    printf("  Name: %s\n", str_val);
 
-                    if (json_obj_get_int(&jctx, "pgmID", &int_val) == OS_SUCCESS)
-                        printf("  ID: %d\n", int_val);
+                    //if (json_obj_get_int(&jctx, "pgmID", &int_val) == OS_SUCCESS)
+                    //    printf("  ID: %d\n", int_val);
 
-                    if (json_obj_get_int(&jctx, "pgmPulseLen", &int_val) == OS_SUCCESS)
-                        printf("  Pulse Length: %d seconds\n", int_val);
+                    //if (json_obj_get_int(&jctx, "pgmPulseLen", &int_val) == OS_SUCCESS)
+                    //    printf("  Pulse Length: %d seconds\n", int_val);
 
                     json_obj_leave_object(&jctx);
                 }
@@ -302,14 +103,14 @@ public:
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nKeyswitch %d:\n", i + 1);
 
-                    if (json_obj_get_string(&jctx, "kswName", str_val, sizeof(str_val)) == OS_SUCCESS)
-                        printf("  Name: %s\n", str_val);
+                    //if (json_obj_get_string(&jctx, "kswName", str_val, sizeof(str_val)) == OS_SUCCESS)
+                    //    printf("  Name: %s\n", str_val);
 
-                    if (json_obj_get_string(&jctx, "type", str_val, sizeof(str_val)) == OS_SUCCESS)
-                        printf("  Type: %s\n", str_val);
+                    //if (json_obj_get_string(&jctx, "type", str_val, sizeof(str_val)) == OS_SUCCESS)
+                    //    printf("  Type: %s\n", str_val);
 
-                    if (json_obj_get_string(&jctx, "action", str_val, sizeof(str_val)) == OS_SUCCESS)
-                        printf("  Action: %s\n", str_val);
+                    //if (json_obj_get_string(&jctx, "action", str_val, sizeof(str_val)) == OS_SUCCESS)
+                    //    printf("  Action: %s\n", str_val);
 
                     json_obj_leave_object(&jctx);
                 }
@@ -322,30 +123,26 @@ public:
     }
 
 private:
-    //// A union to hold the different possible value types from the JSON.
-    //union parsedValue {
-    //    int i;
-    //    bool b;
-    //    char s[128]; // Use a character array to store string data safely
-    //};
-
     // Reference to the Alarm instance we are populating
     Alarm& m_alarm;
 
     /**
-     * @brief Parses a single field from the JSON object based on the processor definition.
+     * @brief Parses a single field (STRING, INT, BOOL) from the JSON object based on
+      expected from the current JSON processor. JSON processor is selected based on particular JSON key.
+	  For example, for zoneName key, we expect string value, for zoneType - int value, etc.
+	  jsonValProcessor struct and all processors are defined in alarm-core-json-val-parsers.h
      */
     bool parseJSONval(jparse_ctx_t* jctx, const jsonValProcessor& processor, const char* print_prefix, parsedValue* result) {
 
-        if (!result) 
+        // Use a local buffer for parsing and printing.
+		char str_val[NAME_LEN];                 // Temporary buffer for string values
+		int int_val;                            // Temporary variable for integer values
+		bool bool_val;                          // Temporary variable for boolean values 
+
+		if (!result)                            // Sanity check
             return false;
       
-        // Use a local buffer for parsing and printing.
-        char str_val[NAME_LEN];
-        int int_val;
-        bool bool_val;
-
-        // Correctly get the address of the char array within the union.
+        // Correctly get the address and size of the char array within the union to store the string values.
         char* target_buf = result->s;
         size_t target_size = sizeof(result->s);
 
@@ -397,7 +194,7 @@ private:
 		int ret = 0;                            // to track if any error occurs during the conversion of JSON values
 		int zoneIdx = -1;                       // to hold the index of the zone if it exists
         parsedValue result;
-        ALARM_ZONE tempZone = {0};              // Create a temporary local variable
+        ALARM_ZONE tempZone = {-1};              // Create a temporary local variable
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
             // Pass the address of the 'result' union to parseJSONval
@@ -516,3 +313,199 @@ private:
         //}
     }
 };
+
+//#define alarm_config_json "{\n\
+//  \"zones\": [\n\
+//    {\n\
+//      \"zName\": \"Front Door\",\n\
+//      \"zBRD\": 0,\n\
+//      \"zID\": 0,\n\
+//      \"zType\": \"ENTRY_DELAY1\",\n\
+//      \"zPartn\": 1,\n\
+//      \"zAlarmT\": \"STEADY_ALARM\",\n\
+//      \"zShdnEn\": false,\n\
+//      \"zBypEn\": true,\n\
+//      \"zStayZ\": true,\n\
+//      \"zFrceEn\": true,\n\
+//      \"zIntelZ\": false,\n\
+//      \"zDlyTRM\": false,\n\
+//      \"zTmprGlb\": true,\n\
+//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+//      \"zAmskGlb\": true,\n\
+//      \"zAmskOpt\": \"DISABLE\"\n\
+//    },\n\
+//    {\n\
+//      \"zName\": \"Back Door\",\n\
+//      \"zBRD\": 0,\n\
+//      \"zID\": 1,\n\
+//      \"zType\": \"ENTRY_DELAY2\",\n\
+//      \"zPartn\": 1,\n\
+//      \"zAlarmT\": \"PULSED_ALARM\",\n\
+//      \"zShdnEn\": false,\n\
+//      \"zBypEn\": true,\n\
+//      \"zStayZ\": true,\n\
+//      \"zFrceEn\": true,\n\
+//      \"zIntelZ\": false,\n\
+//      \"zDlyTRM\": false,\n\
+//      \"zTmprGlb\": true,\n\
+//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+//      \"zAmskGlb\": true,\n\
+//      \"zAmskOpt\": \"DISABLE\"\n\
+//    },\n\
+//    {\n\
+//      \"zName\": \"Motion Sensor Living Room\",\n\
+//      \"zBRD\": 0,\n\
+//      \"zID\": 2,\n\
+//      \"zType\": \"FOLLOW\",\n\
+//      \"zPartn\": 1,\n\
+//      \"zAlarmT\": \"STEADY_ALARM\",\n\
+//      \"zShdnEn\": false,\n\
+//      \"zBypEn\": true,\n\
+//      \"zStayZ\": false,\n\
+//      \"zFrceEn\": true,\n\
+//      \"zIntelZ\": true,\n\
+//      \"zDlyTRM\": false,\n\
+//      \"zTmprGlb\": true,\n\
+//      \"zTmprOPT\": \"ALARM\",\n\
+//      \"zAmskGlb\": true,\n\
+//      \"zAmskOpt\": \"ALARM_WHEN_ARMED\"\n\
+//    },\n\
+//    {\n\
+//      \"zName\": \"Window Sensor Bedroom\",\n\
+//      \"zBRD\": 0,\n\
+//      \"zID\": 3,\n\
+//      \"zType\": \"INSTANT\",\n\
+//      \"zPartn\": 2,\n\
+//      \"zAlarmT\": \"SILENT_ALARM\",\n\
+//      \"zShdnEn\": false,\n\
+//      \"zBypEn\": true,\n\
+//      \"zStayZ\": false,\n\
+//      \"zFrceEn\": true,\n\
+//      \"zIntelZ\": false,\n\
+//      \"zDlyTRM\": false,\n\
+//      \"zTmprGlb\": false,\n\
+//      \"zTmprOPT\": \"DISABLE\",\n\
+//      \"zAmskGlb\": false,\n\
+//      \"zAmskOpt\": \"DISABLE\"\n\
+//    },\n\
+//    {\n\
+//      \"zName\": \"Smoke Detector\",\n\
+//      \"zBRD\": 0,\n\
+//      \"zID\": 4,\n\
+//      \"zType\": \"H24_FIRE_STANDARD\",\n\
+//      \"zPartn\": 2,\n\
+//      \"zAlarmT\": \"STEADY_ALARM\",\n\
+//      \"zShdnEn\": false,\n\
+//      \"zBypEn\": false,\n\
+//      \"zStayZ\": false,\n\
+//      \"zFrceEn\": false,\n\
+//      \"zIntelZ\": false,\n\
+//      \"zDlyTRM\": false,\n\
+//      \"zTmprGlb\": true,\n\
+//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+//      \"zAmskGlb\": true,\n\
+//      \"zAmskOpt\": \"TROUBLE_ONLY\"\n\
+//    }\n\
+//  ],\n\
+//  \"partitions\": [\n\
+//    {\n\
+//      \"pName\": \"Main Floor\",\n\
+//      \"pIdx\": 1,\n\
+//      \"pValid\": true,\n\
+//      \"pFrceOnRegArm\": true,\n\
+//      \"pFrceOnStayArm\": true,\n\
+//      \"pED2znFollow\": true,\n\
+//      \"pAlrmOutEn\": true,\n\
+//      \"pAlrmTime\": 120,\n\
+//      \"pNoCutOnFire\": true,\n\
+//      \"pAlrmRecTime\": 30,\n\
+//      \"pED1Intvl\": 30,\n\
+//      \"pED2Intvl\": 45,\n\
+//      \"pExitDly\": 60,\n\
+//      \"pFollow1\": 1,\n\
+//      \"pFollow2\": 0,\n\
+//      \"pFollow3\": 0,\n\
+//      \"pFollow4\": 0,\n\
+//      \"pFollow5\": 0,\n\
+//      \"pFollow6\": 0,\n\
+//      \"pFollow7\": 0,\n\
+//      \"pFollow8\": 0\n\
+//    },\n\
+//    {\n\
+//      \"pName\": \"Upper Floor\",\n\
+//      \"pIdx\": 2,\n\
+//      \"pValid\": true,\n\
+//      \"pFrceOnRegArm\": true,\n\
+//      \"pFrceOnStayArm\": false,\n\
+//      \"pED2znFollow\": true,\n\
+//      \"pAlrmOutEn\": true,\n\
+//      \"pAlrmTime\": 120,\n\
+//      \"pNoCutOnFire\": true,\n\
+//      \"pAlrmRecTime\": 30,\n\
+//      \"pED1Intvl\": 30,\n\
+//      \"pED2Intvl\": 45,\n\
+//      \"pExitDly\": 60,\n\
+//      \"pFollow1\": 0,\n\
+//      \"pFollow2\": 0,\n\
+//      \"pFollow3\": 0,\n\
+//      \"pFollow4\": 0,\n\
+//      \"pFollow5\": 0,\n\
+//      \"pFollow6\": 0,\n\
+//      \"pFollow7\": 0,\n\
+//      \"pFollow8\": 0\n\
+//    }\n\
+//  ],\n\
+//  \"globalOptions\": {\n\
+//    \"MaxSlaves\": 2,\n\
+//    \"RestrSprvsL\": true,\n\
+//    \"RestrTamper\": true,\n\
+//    \"RestrACfail\": false,\n\
+//    \"RestrBatFail\": true,\n\
+//    \"RestrOnBell\": false,\n\
+//    \"RestrOnBrdFail\": true,\n\
+//    \"RestrOnAmask\": false,\n\
+//    \"TroubleLatch\": true,\n\
+//    \"TamperBpsOpt\": false,\n\
+//    \"TamperOpts\": \"TROUBLE_ONLY\",\n\
+//    \"AntiMaskOpt\": \"ALARM_WHEN_ARMED\",\n\
+//    \"RfSprvsOpt\": \"ALARM\",\n\
+//    \"SprvsLoss\": 0,\n\
+//    \"ACfail\": 0,\n\
+//    \"BatFail\": 0,\n\
+//    \"BellFail\": 0,\n\
+//    \"BrdFail\": 0\n\
+//  },\n\
+//  \"pgms\": [\n\
+//    {\n\
+//      \"pgmName\": \"External Siren\",\n\
+//      \"pgmBrd\": 0,\n\
+//      \"pgmID\": 0,\n\
+//      \"pgmPulseLen\": 5,\n\
+//      \"pgmValid\": true\n\
+//    },\n\
+//    {\n\
+//      \"pgmName\": \"Garage Door\",\n\
+//      \"pgmBrd\": 0,\n\
+//      \"pgmID\": 1,\n\
+//      \"pgmPulseLen\": 3,\n\
+//      \"pgmValid\": true\n\
+//    },\n\
+//    {\n\
+//      \"pgmName\": \"Entrance Light\",\n\
+//      \"pgmBrd\": 0,\n\
+//      \"pgmID\": 2,\n\
+//      \"pgmPulseLen\": 0,\n\
+//      \"pgmValid\": true\n\
+//    }\n\
+//  ],\n\
+//  \"keyswitches\": [\n\
+//    {\n\
+//      \"kswName\": \"Front Door Keyswitch\",\n\
+//      \"partition\": 0,\n\
+//      \"type\": \"MAINTAINED\",\n\
+//      \"action\": \"REGULAR_ARM_ONLY\",\n\
+//      \"boardID\": 0,\n\
+//      \"zoneID\": 5\n\
+//    }\n\
+//  ]\n\
+//}"
