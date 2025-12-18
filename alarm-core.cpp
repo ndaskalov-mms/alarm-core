@@ -37,8 +37,8 @@ int main() {
     alarm.debugCallback(LOG_ERR_OK, "test\n");
 
     storageSetup();
-
-    IOptr configFile = alarmFileOpen(jsonConfigFname, "r");
+            
+    IOptr configFile = alarmFileOpen(jsonConfigFname, "rb");
     if (configFile) {
         int fileSize = alarmFileSize(configFile);
         char* jsonBuffer = (char*)malloc(fileSize + 1);

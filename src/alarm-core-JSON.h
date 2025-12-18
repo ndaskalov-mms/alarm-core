@@ -223,8 +223,8 @@ private:
 		// first check if we have zone name already in DB and add it if not exists, else overwtite it
 		// we use zone name as unique identifier of the zone
         if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
-			if (zoneIdx=m_alarm.addZone(tempZone) >= 0)
-                printf("Zone with name '%s' added successfully.\n", tempZone.zoneName);
+			if ((zoneIdx=m_alarm.addZone(tempZone)) >= 0)
+                printf("Zone with name '%s' added successfully at index %d.\n", tempZone.zoneName, zoneIdx);
             else {
                 printf("Failed to add zone with name '%s'.\n", tempZone.zoneName);
                 return false;
