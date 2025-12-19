@@ -340,7 +340,7 @@ typedef enum {
 */
 struct jsonValProcessor {
     const   char jsonValStr[NAME_LEN];                                  // param name e.g. zone name, partition name zone type, etc
-    int     pos;                                                        // param position in header line (column) in CSV file
+    int     pos;                                                        // param present in JSON or position in header line (column) in CSV file
     byte    patchOffset;                                                // offset in corresponding DB (zoneDB, partionDB, etc) where we have to put the data read from CSV
     byte    patchLen;                                                   // offset is relativ to beginning of the struct which forms correspondin entr
     int     (*patchCallBack)  (byte* basePtr, int  offset, int len, const parsedValue* src);// callback function to patch the value read from condig file

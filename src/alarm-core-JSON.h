@@ -197,15 +197,17 @@ private:
         ALARM_ZONE tempZone = {-1};              // Create a temporary local variable
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
+			zoneValProcessors[j].pos = 0;        // Reset presence flag before parsing
             // Pass the address of the 'result' union to parseJSONval
             if(parseJSONval(jctx, zoneValProcessors[j], "  ", &result)) {
                 if (zoneValProcessors[j].patchCallBack) {
                     // Get the processor for context
-                    const auto& processor = zoneValProcessors[j];
-                    
+                    auto& processor = zoneValProcessors[j];
                     // Call the patch function, passing a pointer to the entire 'result' union
                     if(!processor.patchCallBack((byte*)&tempZone, processor.patchOffset, processor.patchLen, &result))
                         ret++;
+                    else
+					    processor.pos = 1;      // Mark as present
                 }
             }
             else {                              // Consider adding an error log here
@@ -223,14 +225,22 @@ private:
 		// first check if we have zone name already in DB and add it if not exists, else overwtite it
 		// we use zone name as unique identifier of the zone
         if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
-			if ((zoneIdx=m_alarm.addZone(tempZone)) >= 0)
+			printf("Zone with name '%s' not found. Adding new zone.\n", tempZone.zoneName);
+            if ((zoneIdx=m_alarm.addZone(tempZone)) >= 0)
                 printf("Zone with name '%s' added successfully at index %d.\n", tempZone.zoneName, zoneIdx);
             else {
                 printf("Failed to add zone with name '%s'.\n", tempZone.zoneName);
                 return false;
             }
         }
-		m_alarm.zonesDB[zoneIdx] = tempZone; // Mark the zone as valid
+		// Copy only the members that were present in the JSON to the target zone
+		for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
+			if (zoneValProcessors[j].pos != 0) {
+				byte* dest = (byte*)&m_alarm.zonesDB[zoneIdx] + zoneValProcessors[j].patchOffset;
+				byte* src = (byte*)&tempZone + zoneValProcessors[j].patchOffset;
+				memcpy(dest, src, zoneValProcessors[j].patchLen);
+			}
+		}
 		m_alarm.printAlarmZones(zoneIdx, zoneIdx+1); // Print the newly added or updated zone
         return true;
     }
@@ -341,7 +351,7 @@ private:
 //      \"zType\": \"ENTRY_DELAY2\",\n\
 //      \"zPartn\": 1,\n\
 //      \"zAlarmT\": \"PULSED_ALARM\",\n\
-//      \"zShdnEn\": false,\n\
+      \"zShdnEn\": false,\n\
 //      \"zBypEn\": true,\n\
 //      \"zStayZ\": true,\n\
 //      \"zFrceEn\": true,\n\
@@ -419,7 +429,7 @@ private:
 //      \"pAlrmTime\": 120,\n\
 //      \"pNoCutOnFire\": true,\n\
 //      \"pAlrmRecTime\": 30,\n\
-//      \"pED1Intvl\": 30,\n\
+//     \"pED1Intvl\": 30,\n\
 //      \"pED2Intvl\": 45,\n\
 //      \"pExitDly\": 60,\n\
 //      \"pFollow1\": 1,\n\
