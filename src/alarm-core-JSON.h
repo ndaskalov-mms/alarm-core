@@ -175,6 +175,22 @@ private:
     }
 
     /**
+ * @brief Copies only the members that were present in the JSON from a temporary source object to a destination object.
+ * @param dest_item Pointer to the destination object (e.g., in the database).
+ * @param src_item Pointer to the source temporary object.
+ * @param processors The array of value processors for this item type.
+ * @param processor_count The number of processors in the array.
+ */
+    void patch_db_item(void* dest_item, const void* src_item, const jsonValProcessor* processors, size_t processor_count) {
+        for (size_t i = 0; i < processor_count; ++i) {
+            if (processors[i].pos != 0) { // Check if the value was present in the JSON
+                byte* dest = (byte*)dest_item + processors[i].patchOffset;
+                const byte* src = (const byte*)src_item + processors[i].patchOffset;
+                memcpy(dest, src, processors[i].patchLen);
+            }
+        }
+    }
+    /**
      * @brief Parses the "globalOptions" object from the JSON.
      */
     void parse_global_options(jparse_ctx_t* jctx) {
@@ -234,13 +250,7 @@ private:
             }
         }
 		// Copy only the members that were present in the JSON to the target zone
-		for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
-			if (zoneValProcessors[j].pos != 0) {
-				byte* dest = (byte*)&m_alarm.zonesDB[zoneIdx] + zoneValProcessors[j].patchOffset;
-				byte* src = (byte*)&tempZone + zoneValProcessors[j].patchOffset;
-				memcpy(dest, src, zoneValProcessors[j].patchLen);
-			}
-		}
+		patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneValProcessors, ZONE_KEYS_CNT);
 		m_alarm.printAlarmZones(zoneIdx, zoneIdx+1); // Print the newly added or updated zone
         return true;
     }
@@ -324,198 +334,198 @@ private:
     }
 };
 
-//#define alarm_config_json "{\n\
-//  \"zones\": [\n\
-//    {\n\
-//      \"zName\": \"Front Door\",\n\
-//      \"zBRD\": 0,\n\
-//      \"zID\": 0,\n\
-//      \"zType\": \"ENTRY_DELAY1\",\n\
-//      \"zPartn\": 1,\n\
-//      \"zAlarmT\": \"STEADY_ALARM\",\n\
-//      \"zShdnEn\": false,\n\
-//      \"zBypEn\": true,\n\
-//      \"zStayZ\": true,\n\
-//      \"zFrceEn\": true,\n\
-//      \"zIntelZ\": false,\n\
-//      \"zDlyTRM\": false,\n\
-//      \"zTmprGlb\": true,\n\
-//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-//      \"zAmskGlb\": true,\n\
-//      \"zAmskOpt\": \"DISABLE\"\n\
-//    },\n\
-//    {\n\
-//      \"zName\": \"Back Door\",\n\
-//      \"zBRD\": 0,\n\
-//      \"zID\": 1,\n\
-//      \"zType\": \"ENTRY_DELAY2\",\n\
-//      \"zPartn\": 1,\n\
-//      \"zAlarmT\": \"PULSED_ALARM\",\n\
+#define alarm_config_json "{\n\
+  \"zones\": [\n\
+    {\n\
+      \"zName\": \"Front Door\",\n\
+      \"zBRD\": 0,\n\
+      \"zID\": 0,\n\
+      \"zType\": \"ENTRY_DELAY1\",\n\
+      \"zPartn\": 1,\n\
+      \"zAlarmT\": \"STEADY_ALARM\",\n\
       \"zShdnEn\": false,\n\
-//      \"zBypEn\": true,\n\
-//      \"zStayZ\": true,\n\
-//      \"zFrceEn\": true,\n\
-//      \"zIntelZ\": false,\n\
-//      \"zDlyTRM\": false,\n\
-//      \"zTmprGlb\": true,\n\
-//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-//      \"zAmskGlb\": true,\n\
-//      \"zAmskOpt\": \"DISABLE\"\n\
-//    },\n\
-//    {\n\
-//      \"zName\": \"Motion Sensor Living Room\",\n\
-//      \"zBRD\": 0,\n\
-//      \"zID\": 2,\n\
-//      \"zType\": \"FOLLOW\",\n\
-//      \"zPartn\": 1,\n\
-//      \"zAlarmT\": \"STEADY_ALARM\",\n\
-//      \"zShdnEn\": false,\n\
-//      \"zBypEn\": true,\n\
-//      \"zStayZ\": false,\n\
-//      \"zFrceEn\": true,\n\
-//      \"zIntelZ\": true,\n\
-//      \"zDlyTRM\": false,\n\
-//      \"zTmprGlb\": true,\n\
-//      \"zTmprOPT\": \"ALARM\",\n\
-//      \"zAmskGlb\": true,\n\
-//      \"zAmskOpt\": \"ALARM_WHEN_ARMED\"\n\
-//    },\n\
-//    {\n\
-//      \"zName\": \"Window Sensor Bedroom\",\n\
-//      \"zBRD\": 0,\n\
-//      \"zID\": 3,\n\
-//      \"zType\": \"INSTANT\",\n\
-//      \"zPartn\": 2,\n\
-//      \"zAlarmT\": \"SILENT_ALARM\",\n\
-//      \"zShdnEn\": false,\n\
-//      \"zBypEn\": true,\n\
-//      \"zStayZ\": false,\n\
-//      \"zFrceEn\": true,\n\
-//      \"zIntelZ\": false,\n\
-//      \"zDlyTRM\": false,\n\
-//      \"zTmprGlb\": false,\n\
-//      \"zTmprOPT\": \"DISABLE\",\n\
-//      \"zAmskGlb\": false,\n\
-//      \"zAmskOpt\": \"DISABLE\"\n\
-//    },\n\
-//    {\n\
-//      \"zName\": \"Smoke Detector\",\n\
-//      \"zBRD\": 0,\n\
-//      \"zID\": 4,\n\
-//      \"zType\": \"H24_FIRE_STANDARD\",\n\
-//      \"zPartn\": 2,\n\
-//      \"zAlarmT\": \"STEADY_ALARM\",\n\
-//      \"zShdnEn\": false,\n\
-//      \"zBypEn\": false,\n\
-//      \"zStayZ\": false,\n\
-//      \"zFrceEn\": false,\n\
-//      \"zIntelZ\": false,\n\
-//      \"zDlyTRM\": false,\n\
-//      \"zTmprGlb\": true,\n\
-//      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
-//      \"zAmskGlb\": true,\n\
-//      \"zAmskOpt\": \"TROUBLE_ONLY\"\n\
-//    }\n\
-//  ],\n\
-//  \"partitions\": [\n\
-//    {\n\
-//      \"pName\": \"Main Floor\",\n\
-//      \"pIdx\": 1,\n\
-//      \"pValid\": true,\n\
-//      \"pFrceOnRegArm\": true,\n\
-//      \"pFrceOnStayArm\": true,\n\
-//      \"pED2znFollow\": true,\n\
-//      \"pAlrmOutEn\": true,\n\
-//      \"pAlrmTime\": 120,\n\
-//      \"pNoCutOnFire\": true,\n\
-//      \"pAlrmRecTime\": 30,\n\
-//     \"pED1Intvl\": 30,\n\
-//      \"pED2Intvl\": 45,\n\
-//      \"pExitDly\": 60,\n\
-//      \"pFollow1\": 1,\n\
-//      \"pFollow2\": 0,\n\
-//      \"pFollow3\": 0,\n\
-//      \"pFollow4\": 0,\n\
-//      \"pFollow5\": 0,\n\
-//      \"pFollow6\": 0,\n\
-//      \"pFollow7\": 0,\n\
-//      \"pFollow8\": 0\n\
-//    },\n\
-//    {\n\
-//      \"pName\": \"Upper Floor\",\n\
-//      \"pIdx\": 2,\n\
-//      \"pValid\": true,\n\
-//      \"pFrceOnRegArm\": true,\n\
-//      \"pFrceOnStayArm\": false,\n\
-//      \"pED2znFollow\": true,\n\
-//      \"pAlrmOutEn\": true,\n\
-//      \"pAlrmTime\": 120,\n\
-//      \"pNoCutOnFire\": true,\n\
-//      \"pAlrmRecTime\": 30,\n\
-//      \"pED1Intvl\": 30,\n\
-//      \"pED2Intvl\": 45,\n\
-//      \"pExitDly\": 60,\n\
-//      \"pFollow1\": 0,\n\
-//      \"pFollow2\": 0,\n\
-//      \"pFollow3\": 0,\n\
-//      \"pFollow4\": 0,\n\
-//      \"pFollow5\": 0,\n\
-//      \"pFollow6\": 0,\n\
-//      \"pFollow7\": 0,\n\
-//      \"pFollow8\": 0\n\
-//    }\n\
-//  ],\n\
-//  \"globalOptions\": {\n\
-//    \"MaxSlaves\": 2,\n\
-//    \"RestrSprvsL\": true,\n\
-//    \"RestrTamper\": true,\n\
-//    \"RestrACfail\": false,\n\
-//    \"RestrBatFail\": true,\n\
-//    \"RestrOnBell\": false,\n\
-//    \"RestrOnBrdFail\": true,\n\
-//    \"RestrOnAmask\": false,\n\
-//    \"TroubleLatch\": true,\n\
-//    \"TamperBpsOpt\": false,\n\
-//    \"TamperOpts\": \"TROUBLE_ONLY\",\n\
-//    \"AntiMaskOpt\": \"ALARM_WHEN_ARMED\",\n\
-//    \"RfSprvsOpt\": \"ALARM\",\n\
-//    \"SprvsLoss\": 0,\n\
-//    \"ACfail\": 0,\n\
-//    \"BatFail\": 0,\n\
-//    \"BellFail\": 0,\n\
-//    \"BrdFail\": 0\n\
-//  },\n\
-//  \"pgms\": [\n\
-//    {\n\
-//      \"pgmName\": \"External Siren\",\n\
-//      \"pgmBrd\": 0,\n\
-//      \"pgmID\": 0,\n\
-//      \"pgmPulseLen\": 5,\n\
-//      \"pgmValid\": true\n\
-//    },\n\
-//    {\n\
-//      \"pgmName\": \"Garage Door\",\n\
-//      \"pgmBrd\": 0,\n\
-//      \"pgmID\": 1,\n\
-//      \"pgmPulseLen\": 3,\n\
-//      \"pgmValid\": true\n\
-//    },\n\
-//    {\n\
-//      \"pgmName\": \"Entrance Light\",\n\
-//      \"pgmBrd\": 0,\n\
-//      \"pgmID\": 2,\n\
-//      \"pgmPulseLen\": 0,\n\
-//      \"pgmValid\": true\n\
-//    }\n\
-//  ],\n\
-//  \"keyswitches\": [\n\
-//    {\n\
-//      \"kswName\": \"Front Door Keyswitch\",\n\
-//      \"partition\": 0,\n\
-//      \"type\": \"MAINTAINED\",\n\
-//      \"action\": \"REGULAR_ARM_ONLY\",\n\
-//      \"boardID\": 0,\n\
-//      \"zoneID\": 5\n\
-//    }\n\
-//  ]\n\
-//}"
+      \"zBypEn\": true,\n\
+      \"zStayZ\": true,\n\
+      \"zFrceEn\": true,\n\
+      \"zIntelZ\": false,\n\
+      \"zDlyTRM\": false,\n\
+      \"zTmprGlb\": true,\n\
+      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+      \"zAmskGlb\": true,\n\
+      \"zAmskOpt\": \"DISABLE\"\n\
+    },\n\
+    {\n\
+      \"zName\": \"Back Door\",\n\
+      \"zBRD\": 0,\n\
+      \"zID\": 1,\n\
+      \"zType\": \"ENTRY_DELAY2\",\n\
+      \"zPartn\": 1,\n\
+      \"zAlarmT\": \"PULSED_ALARM\",\n\
+      \"zShdnEn\": false,\n\
+      \"zBypEn\": true,\n\
+      \"zStayZ\": true,\n\
+      \"zFrceEn\": true,\n\
+      \"zIntelZ\": false,\n\
+      \"zDlyTRM\": false,\n\
+      \"zTmprGlb\": true,\n\
+      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+      \"zAmskGlb\": true,\n\
+      \"zAmskOpt\": \"DISABLE\"\n\
+    },\n\
+    {\n\
+      \"zName\": \"Motion Sensor Living Room\",\n\
+      \"zBRD\": 0,\n\
+      \"zID\": 2,\n\
+      \"zType\": \"FOLLOW\",\n\
+      \"zPartn\": 1,\n\
+      \"zAlarmT\": \"STEADY_ALARM\",\n\
+      \"zShdnEn\": false,\n\
+      \"zBypEn\": true,\n\
+      \"zStayZ\": false,\n\
+      \"zFrceEn\": true,\n\
+      \"zIntelZ\": true,\n\
+      \"zDlyTRM\": false,\n\
+      \"zTmprGlb\": true,\n\
+      \"zTmprOPT\": \"ALARM\",\n\
+      \"zAmskGlb\": true,\n\
+      \"zAmskOpt\": \"ALARM_WHEN_ARMED\"\n\
+    },\n\
+    {\n\
+      \"zName\": \"Window Sensor Bedroom\",\n\
+      \"zBRD\": 0,\n\
+      \"zID\": 3,\n\
+      \"zType\": \"INSTANT\",\n\
+      \"zPartn\": 2,\n\
+      \"zAlarmT\": \"SILENT_ALARM\",\n\
+      \"zShdnEn\": false,\n\
+      \"zBypEn\": true,\n\
+      \"zStayZ\": false,\n\
+      \"zFrceEn\": true,\n\
+      \"zIntelZ\": false,\n\
+      \"zDlyTRM\": false,\n\
+      \"zTmprGlb\": false,\n\
+      \"zTmprOPT\": \"DISABLE\",\n\
+      \"zAmskGlb\": false,\n\
+      \"zAmskOpt\": \"DISABLE\"\n\
+    },\n\
+    {\n\
+      \"zName\": \"Smoke Detector\",\n\
+      \"zBRD\": 0,\n\
+      \"zID\": 4,\n\
+      \"zType\": \"H24_FIRE_STANDARD\",\n\
+      \"zPartn\": 2,\n\
+      \"zAlarmT\": \"STEADY_ALARM\",\n\
+      \"zShdnEn\": false,\n\
+      \"zBypEn\": false,\n\
+      \"zStayZ\": false,\n\
+      \"zFrceEn\": false,\n\
+      \"zIntelZ\": false,\n\
+      \"zDlyTRM\": false,\n\
+      \"zTmprGlb\": true,\n\
+      \"zTmprOPT\": \"TROUBLE_ONLY\",\n\
+      \"zAmskGlb\": true,\n\
+      \"zAmskOpt\": \"TROUBLE_ONLY\"\n\
+    }\n\
+  ],\n\
+  \"partitions\": [\n\
+    {\n\
+      \"pName\": \"Main Floor\",\n\
+      \"pIdx\": 1,\n\
+      \"pValid\": true,\n\
+      \"pFrceOnRegArm\": true,\n\
+      \"pFrceOnStayArm\": true,\n\
+      \"pED2znFollow\": true,\n\
+      \"pAlrmOutEn\": true,\n\
+      \"pAlrmTime\": 120,\n\
+      \"pNoCutOnFire\": true,\n\
+      \"pAlrmRecTime\": 30,\n\
+     \"pED1Intvl\": 30,\n\
+      \"pED2Intvl\": 45,\n\
+      \"pExitDly\": 60,\n\
+      \"pFollow1\": 1,\n\
+      \"pFollow2\": 0,\n\
+      \"pFollow3\": 0,\n\
+      \"pFollow4\": 0,\n\
+      \"pFollow5\": 0,\n\
+      \"pFollow6\": 0,\n\
+      \"pFollow7\": 0,\n\
+      \"pFollow8\": 0\n\
+    },\n\
+    {\n\
+      \"pName\": \"Upper Floor\",\n\
+      \"pIdx\": 2,\n\
+      \"pValid\": true,\n\
+      \"pFrceOnRegArm\": true,\n\
+      \"pFrceOnStayArm\": false,\n\
+      \"pED2znFollow\": true,\n\
+      \"pAlrmOutEn\": true,\n\
+      \"pAlrmTime\": 120,\n\
+      \"pNoCutOnFire\": true,\n\
+      \"pAlrmRecTime\": 30,\n\
+      \"pED1Intvl\": 30,\n\
+      \"pED2Intvl\": 45,\n\
+      \"pExitDly\": 60,\n\
+      \"pFollow1\": 0,\n\
+      \"pFollow2\": 0,\n\
+      \"pFollow3\": 0,\n\
+      \"pFollow4\": 0,\n\
+      \"pFollow5\": 0,\n\
+      \"pFollow6\": 0,\n\
+      \"pFollow7\": 0,\n\
+      \"pFollow8\": 0\n\
+    }\n\
+  ],\n\
+  \"globalOptions\": {\n\
+    \"MaxSlaves\": 2,\n\
+    \"RestrSprvsL\": true,\n\
+    \"RestrTamper\": true,\n\
+    \"RestrACfail\": false,\n\
+    \"RestrBatFail\": true,\n\
+    \"RestrOnBell\": false,\n\
+    \"RestrOnBrdFail\": true,\n\
+    \"RestrOnAmask\": false,\n\
+    \"TroubleLatch\": true,\n\
+    \"TamperBpsOpt\": false,\n\
+    \"TamperOpts\": \"TROUBLE_ONLY\",\n\
+    \"AntiMaskOpt\": \"ALARM_WHEN_ARMED\",\n\
+    \"RfSprvsOpt\": \"ALARM\",\n\
+    \"SprvsLoss\": 0,\n\
+    \"ACfail\": 0,\n\
+    \"BatFail\": 0,\n\
+    \"BellFail\": 0,\n\
+    \"BrdFail\": 0\n\
+  },\n\
+  \"pgms\": [\n\
+    {\n\
+      \"pgmName\": \"External Siren\",\n\
+      \"pgmBrd\": 0,\n\
+      \"pgmID\": 0,\n\
+      \"pgmPulseLen\": 5,\n\
+      \"pgmValid\": true\n\
+    },\n\
+    {\n\
+      \"pgmName\": \"Garage Door\",\n\
+      \"pgmBrd\": 0,\n\
+      \"pgmID\": 1,\n\
+      \"pgmPulseLen\": 3,\n\
+      \"pgmValid\": true\n\
+    },\n\
+    {\n\
+      \"pgmName\": \"Entrance Light\",\n\
+      \"pgmBrd\": 0,\n\
+      \"pgmID\": 2,\n\
+      \"pgmPulseLen\": 0,\n\
+      \"pgmValid\": true\n\
+    }\n\
+  ],\n\
+  \"keyswitches\": [\n\
+    {\n\
+      \"kswName\": \"Front Door Keyswitch\",\n\
+      \"partition\": 0,\n\
+      \"type\": \"MAINTAINED\",\n\
+      \"action\": \"REGULAR_ARM_ONLY\",\n\
+      \"boardID\": 0,\n\
+      \"zoneID\": 5\n\
+    }\n\
+  ]\n\
+}"

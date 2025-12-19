@@ -57,7 +57,7 @@ void Alarm::printAlarmZones(int startZn, int endZn) {
     lprintf("\nZone(s)\n");
     printConfigHeader(zoneValProcessors, ZONE_KEYS_CNT);
     for (int i = startZn; i < endZn; i++) {             // for each board' zone
-        if (zonesDB[i].zoneType)                        // 0 means disable zone
+        if (zonesDB[i].valid)                        // 0 means disable zone
             printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
     }
     lprintf("\n");
