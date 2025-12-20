@@ -64,7 +64,7 @@ void Alarm::printAlarmZones(int startZn, int endZn) {
 }
 //
 // print Alarm Global options
-//
+// 
 void Alarm::printAlarmOpts(byte* optsPtr) {
     lprintf("\nGlobal options\n");
     printConfigHeader(gOptsValProcessors, GOPTS_KEYS_CNT);

@@ -30,6 +30,8 @@ public:
             printf("Parser failed\n");
             return -1;
         }
+        //parse_global_options(&jctx);
+
 
         // Parse and display global options
         if (json_obj_get_object(&jctx, "globalOptions") == OS_SUCCESS) {
@@ -193,14 +195,37 @@ private:
     /**
      * @brief Parses the "globalOptions" object from the JSON.
      */
-    void parse_global_options(jparse_ctx_t* jctx) {
-        printf("\n===== Global Options =====\n");
+    bool parse_global_options(jparse_ctx_t* jctx) {
+        int ret = 0;                            // to track if any error occurs during the conversion of JSON values
+        parsedValue result;
+		ALARM_GLOBAL_OPTS_t temp_gOpts = { -1 }; // Create a temporary local variable
+
         for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
-            parsedValue result;
+			gOptsValProcessors[i].pos = 0;      // Reset presence flag before parsing
             if (parseJSONval(jctx, gOptsValProcessors[i], "", &result)) {
                 // TODO: Populate m_alarm.globalOptions using the result and patchCallBack
+                if (gOptsValProcessors[i].patchCallBack) {
+                    // Get the processor for context
+                    auto& processor = gOptsValProcessors[i];
+                    // Call the patch function, passing a pointer to the entire 'result' union
+                    if (!processor.patchCallBack((byte*)&temp_gOpts, processor.patchOffset, processor.patchLen, &result))
+                        ret++;
+                    else
+                        processor.pos = 1;      // Mark as present
+                }
+            }
+            else {                              // Consider adding an error log here
+                printf("Failed to parse global options JSON value: %s\n", gOptsValProcessors[i].jsonValStr);
+                return false;
             }
         }
+        // print temp gOpts          
+        // m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
+
+        // Copy only the members that were present in the JSON to the target zone
+        patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsValProcessors, GOPTS_KEYS_CNT);
+        m_alarm.printAlarmOpts((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
+        return true;
     }
 
     /**
