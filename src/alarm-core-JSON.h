@@ -258,40 +258,57 @@ private:
     /**
      * @brief Parses the "partitions" array from the JSON.
      */
-    void parse_partition(jparse_ctx_t* jctx) {
-        int num_elem;
-        //if (json_obj_get_array(jctx, "partitions", &num_elem) == OS_SUCCESS) {
-        //    printf("\n===== Partitions (%d) =====\n", num_elem);
-        //    jparse_ctx_t tmp_jctx = *jctx;
-        //    m_alarm.partitionCount = (num_elem < MAX_PARTITION) ? num_elem : MAX_PARTITION;
+    bool parse_partition(jparse_ctx_t* jctx) {
+        int ret = 0;
+        int partitionIdx = -1;
+        parsedValue result;
+        ALARM_PARTITION_t tempPartition = { -1 };
 
-        //    for (int i = 0; i < m_alarm.partitionCount; i++) {
-        //        *jctx = tmp_jctx;
-        //        if (json_arr_get_object(jctx, i) == OS_SUCCESS) {
-        //            printf("\nPartition %d:\n", i + 1);
-        //            for (size_t j = 0; j < PARTITION_KEYS_CNT; ++j) {
-        //                ValueResult result;
-        //                if(parse_and_print_field(jctx, partitionValProcessors[j], "  ", &result)) {
-        //                    // TODO: Populate m_alarm.partitionsDB[i] using the result
-        //                }
-        //            }
-        //            json_obj_leave_object(jctx);
-        //        }
-        //    }
-        //    *jctx = tmp_jctx;
-        //    json_obj_leave_array(jctx);
-        //}
+        for (size_t j = 0; j < PARTITION_KEYS_CNT; ++j) {
+            partitionValProcessors[j].pos = 0; // Reset presence flag
+            if (parseJSONval(jctx, partitionValProcessors[j], "  ", &result)) {
+                if (partitionValProcessors[j].patchCallBack) {
+                    auto& processor = partitionValProcessors[j];
+                    if (!processor.patchCallBack((byte*)&tempPartition, processor.patchOffset, processor.patchLen, &result))
+                        ret++;
+                    else
+                        processor.pos = 1; // Mark as present
+                }
+            }
+            else {
+                printf("Failed to parse Partition JSON value: %s\n", partitionValProcessors[j].jsonValStr);
+                return false;
+            }
+        }
+
+        if (ret) {
+            printf("Failed to parse Partition completely. Errors occurred during patching.\n");
+            return false;
+        }
+
+        if ((partitionIdx = m_alarm.getPartitionIndex(tempPartition.partitionName)) == ERR_IDX_NOT_FND) {
+            printf("Partition with name '%s' not found. Adding new Partition.\n", tempPartition.partitionName);
+            if ((partitionIdx = m_alarm.addPartition(tempPartition)) >= 0)
+                printf("Partition with name '%s' added successfully at index %d.\n", tempPartition.partitionName, partitionIdx);
+            else {
+                printf("Failed to add Partition with name '%s'.\n", tempPartition.partitionName);
+                return false;
+            }
+        }
+
+        patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionValProcessors, PARTITION_KEYS_CNT);
+        m_alarm.printAlarmPartition(partitionIdx, partitionIdx + 1);
+        return true;
     }
 
     /**
      * @brief Parses the "pgms" array from the JSON.
      */
-    void parse_pgm(jparse_ctx_t* jctx) {
-        int num_elem;
-        //if (json_obj_get_array(jctx, "pgms", &num_elem) == OS_SUCCESS) {
-        //    printf("\n===== PGMs (%d) =====\n", num_elem);
-        //    jparse_ctx_t tmp_jctx = *jctx;
-        //    m_alarm.pgmCount = (num_elem < MAX_PGM) ? num_elem : MAX_PGM;
+    bool parse_pgm(jparse_ctx_t* jctx) {
+        int ret = 0;
+        int pgmIdx = -1;
+        parsedValue result;
+        ALARM_PGM tempPgm = { -1 };
 
         //    for (int i = 0; i < m_alarm.pgmCount; i++) {
         //        *jctx = tmp_jctx;

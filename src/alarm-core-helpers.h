@@ -39,10 +39,10 @@ void Alarm::printConfigHeader(struct jsonValProcessor targetKeys[], int numEntri
 //
 // print config partition data
 //
-void Alarm::printAlarmPartCfg(void) {
+void Alarm::printAlarmPartition(int startPt, int endPt) {
     lprintf("Partition(s)\n");
     printConfigHeader(partitionValProcessors, PARTITION_KEYS_CNT);
-    for (int j = 0; j < MAX_PARTITION; j++) {
+    for (int j = startPt; j < endPt; j++) {
         if (!partitionDB[j].valid)
             continue;
         printConfigData(partitionValProcessors, PARTITION_KEYS_CNT, (byte*)&partitionDB[j], PRTCLASS_ALL);

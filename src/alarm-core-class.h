@@ -89,7 +89,7 @@ public:
 	//
     static void printConfigData(struct jsonValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
     void        printConfigHeader(struct jsonValProcessor targetKeys[], int numEntries);
-    void        printAlarmPartCfg(void);
+    void        printAlarmPartition(int startPt, int endPt);
     void        printAlarmZones(int startZn, int endZn);
     void        printAlarmOpts(byte* optsPtr);
     void        printAlarmPgms(void);
