@@ -1,4 +1,146 @@
 {
+  "partitions": [
+    {
+      "pName": "Main Floor",
+      "pIdx": 1,
+      "pValid": true,
+      "pFrceOnRegArm": true,
+      "pFrceOnStayArm": true,
+      "pED2znFollow": true,
+      "pAlrmOutEn": true,
+      "pAlrmTime": 120,
+      "pNoCutOnFire": true,
+      "pAlrmRecTime": 30,
+      "pED1Intvl": 30,
+      "pED2Intvl": 45,
+      "pExitDly": 60,
+      "pFollow1": 1,
+      "pFollow2": 0,
+      "pFollow3": 0,
+      "pFollow4": 0,
+      "pFollow5": 0,
+      "pFollow6": 0,
+      "pFollow7": 0,
+      "pFollow8": 0
+    },
+    {
+      "pName": "Upper Floor",
+      "pIdx": 2,
+      "pValid": true,
+      "pFrceOnRegArm": true,
+      "pFrceOnStayArm": false,
+      "pED2znFollow": true,
+      "pAlrmOutEn": true,
+      "pAlrmTime": 120,
+      "pNoCutOnFire": true,
+      "pAlrmRecTime": 30,
+      "pED1Intvl": 30,
+      "pED2Intvl": 45,
+      "pExitDly": 60,
+      "pFollow1": 0,
+      "pFollow2": 0,
+      "pFollow3": 0,
+      "pFollow4": 0,
+      "pFollow5": 0,
+      "pFollow6": 0,
+      "pFollow7": 0,
+      "pFollow8": 0
+    }
+  ],
+  "zones": [
+    {
+      "zName": "Front Door",
+      "zBRD": 0,
+      "zID": 0,
+      "zType": "ENTRY_DELAY1",
+      "zPartn": 1,
+      "zAlarmT": "STEADY_ALARM",
+      "zShdnEn": false,
+      "zBypEn": true,
+      "zStayZ": true,
+      "zFrceEn": true,
+      "zIntelZ": false,
+      "zDlyTRM": false,
+      "zTmprGlb": true,
+      "zTmprOPT": "TROUBLE_ONLY",
+      "zAmskGlb": true,
+      "zAmskOpt": "DISABLE"
+    },
+    {
+      "zName": "Back Door",
+      "zBRD": 0,
+      "zID": 1,
+      "zType": "ENTRY_DELAY2",
+      "zPartn": 1,
+      "zAlarmT": "PULSED_ALARM",
+      "zShdnEn": false,
+      "zBypEn": true,
+      "zStayZ": true,
+      "zFrceEn": true,
+      "zIntelZ": false,
+      "zDlyTRM": false,
+      "zTmprGlb": true,
+      "zTmprOPT": "TROUBLE_ONLY",
+      "zAmskGlb": true,
+      "zAmskOpt": "DISABLE"
+    },
+    {
+      "zName": "Motion Sensor Living Room",
+      "zBRD": 0,
+      "zID": 2,
+      "zType": "FOLLOW",
+      "zPartn": 1,
+      "zAlarmT": "STEADY_ALARM",
+      "zShdnEn": false,
+      "zBypEn": true,
+      "zStayZ": false,
+      "zFrceEn": true,
+      "zIntelZ": true,
+      "zDlyTRM": false,
+      "zTmprGlb": true,
+      "zTmprOPT": "ALARM",
+      "zAmskGlb": true,
+      "zAmskOpt": "ALARM_WHEN_ARMED"
+    },
+    {
+      "zName": "Window Sensor Bedroom",
+      "zBRD": 0,
+      "zID": 3,
+      "zType": "INSTANT",
+      "zPartn": 2,
+      "zAlarmT": "SILENT_ALARM",
+      "zShdnEn": false,
+      "zBypEn": true,
+      "zStayZ": false,
+      "zFrceEn": true,
+      "zIntelZ": false,
+      "zDlyTRM": false,
+      "zTmprGlb": false,
+      "zTmprOPT": "DISABLE",
+      "zAmskGlb": false,
+      "zAmskOpt": "DISABLE"
+    },
+    {
+      "zName": "Smoke Detector",
+      "zBRD": 0,
+      "zID": 4,
+      "zType": "H24_FIRE_STANDARD",
+      "zPartn": 2,
+      "zAlarmT": "STEADY_ALARM",
+      "zShdnEn": false,
+      "zBypEn": false,
+      "zStayZ": false,
+      "zFrceEn": false,
+      "zIntelZ": false,
+      "zDlyTRM": false,
+      "zTmprGlb": true,
+      "zTmprOPT": "TROUBLE_ONLY",
+      "zAmskGlb": true,
+      "zAmskOpt": "TROUBLE_ONLY"
+    }
+  ],
+
+  "globalOptions": {
     "MaxSlaves": 2,
     "RestrSprvsL": true,
     "RestrTamper": true,
@@ -17,4 +159,38 @@
     "BatFail": 0,
     "BellFail": 0,
     "BrdFail": 0
+  },
+  "pgms": [
+    {
+      "pgmName": "External Siren",
+      "pgmBrd": 0,
+      "pgmID": 0,
+      "pgmPulseLen": 5,
+      "pgmValid": true
+    },
+    {
+      "pgmName": "Garage Door",
+      "pgmBrd": 0,
+      "pgmID": 1,
+      "pgmPulseLen": 3,
+      "pgmValid": true
+    },
+    {
+      "pgmName": "Entrance Light",
+      "pgmBrd": 0,
+      "pgmID": 2,
+      "pgmPulseLen": 0,
+      "pgmValid": true
+    }
+  ],
+  "keyswitches": [
+    {
+      "kswName": "Front Door Keyswitch",
+      "partition": 0,
+      "type": "MAINTAINED",
+      "action": "REGULAR_ARM_ONLY",
+      "boardID": 0,
+      "zoneID": 5
+    }
+  ]
 }

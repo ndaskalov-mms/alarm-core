@@ -6,6 +6,8 @@
 #include "..\..\esp-json-parser\include\json_parser-code.h"
 
 class alarmJSON {
+    // Reference to the Alarm instance we are populating
+    Alarm& m_alarm;
 public:
     /**
      * @brief Constructor that takes a reference to the Alarm instance to be populated.
@@ -13,6 +15,41 @@ public:
      */
     alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
 
+    // Define the JSON processor functions (payload handlers)
+    bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+        printf("processGlobalOptionsJson() - NOT IMPLEMENTED\n");
+        return false;
+    }
+    bool processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+        printf("processPgmJson() - NOT IMPLEMENTED\n");
+        return false;
+    }
+
+    bool processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+        printf("processPartitionJson() - NOT IMPLEMENTED\n");
+        return false;
+    }
+    bool processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+
+        printf("processZoneJson() - NOT IMPLEMENTED\n");
+        //printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
+
+        unsigned int action = 0;
+        //if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
+        //else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
+        //else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
+        //else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
+        //else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
+        //else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
+        //else {
+        //    printf("Unknown zone action: %s\n", value);
+        //    return false;
+        //}
+
+        // Call the zone modification function with the appropriate action
+        //alarm.modifyZn(&zoneIndex, &action, nullptr);
+        return false;// Define the JSON
+    }
     /**
      * @brief Parses the provided JSON configuration string and populates the Alarm object.
      * @param jsonString The null-terminated string containing the JSON configuration.
@@ -25,7 +62,7 @@ public:
 		int num_elem; 				    // number of elements in arrays     
 
         // Initialize JSON parser
-		int ret = json_parse_start(&jctx, jsonBuffer, strlen(jsonBuffer)); 
+		int ret = json_parse_start(&jctx, jsonBuffer, (int)strlen(jsonBuffer)); 
         if (ret != OS_SUCCESS) {
             printf("Parser failed\n");
             return -1;
@@ -80,7 +117,7 @@ public:
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nPGM %d:\n", i + 1);
-
+                    parse_pgm(&jctx);
                     //if (json_obj_get_string(&jctx, "pgmName", str_val, sizeof(str_val)) == OS_SUCCESS)
                     //    printf("  Name: %s\n", str_val);
 
@@ -104,7 +141,7 @@ public:
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nKeyswitch %d:\n", i + 1);
-
+                    parse_keyswitch(&jctx);
                     //if (json_obj_get_string(&jctx, "kswName", str_val, sizeof(str_val)) == OS_SUCCESS)
                     //    printf("  Name: %s\n", str_val);
 
@@ -125,8 +162,6 @@ public:
     }
 
 private:
-    // Reference to the Alarm instance we are populating
-    Alarm& m_alarm;
 
     /**
      * @brief Parses a single field (STRING, INT, BOOL) from the JSON object based on
@@ -137,7 +172,7 @@ private:
     bool parseJSONval(jparse_ctx_t* jctx, const jsonValProcessor& processor, const char* print_prefix, parsedValue* result) {
 
         // Use a local buffer for parsing and printing.
-		char str_val[NAME_LEN];                 // Temporary buffer for string values
+		// char str_val[NAME_LEN];                 // Temporary buffer for string values - UNUSED
 		int int_val;                            // Temporary variable for integer values
 		bool bool_val;                          // Temporary variable for boolean values 
 
@@ -158,7 +193,7 @@ private:
             break;
         case VAL_TYP_STR:
             // Use target_buf and target_size to parse the string directly into the union.
-            if (json_obj_get_string(jctx, processor.jsonValStr, target_buf, target_size) == OS_SUCCESS) {
+            if (json_obj_get_string(jctx, processor.jsonValStr, target_buf, (int)target_size) == OS_SUCCESS) {
                 printf("%s%s: %s\n", print_prefix, processor.jsonValStr, target_buf);
                 return true;
             }
@@ -198,7 +233,8 @@ private:
     bool parse_global_options(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         parsedValue result;
-		ALARM_GLOBAL_OPTS_t temp_gOpts = { -1 }; // Create a temporary local variable
+		ALARM_GLOBAL_OPTS_t temp_gOpts; // Create a temporary local variable
+        memset(&temp_gOpts, -1, sizeof(temp_gOpts));
 
         for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
 			gOptsValProcessors[i].pos = 0;      // Reset presence flag before parsing
@@ -235,7 +271,8 @@ private:
 		int ret = 0;                            // to track if any error occurs during the conversion of JSON values
 		int zoneIdx = -1;                       // to hold the index of the zone if it exists
         parsedValue result;
-        ALARM_ZONE tempZone = {-1};              // Create a temporary local variable
+        ALARM_ZONE tempZone;              // Create a temporary local variable
+        memset(&tempZone, -1, sizeof(tempZone));
      
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
 			zoneValProcessors[j].pos = 0;        // Reset presence flag before parsing
@@ -287,7 +324,8 @@ private:
         int ret = 0;
         int partitionIdx = -1;
         parsedValue result;
-        ALARM_PARTITION_t tempPartition = { -1 };
+        ALARM_PARTITION_t tempPartition;
+        memset(&tempPartition, -1, sizeof(tempPartition));
 
         for (size_t j = 0; j < PARTITION_KEYS_CNT; ++j) {
             partitionValProcessors[j].pos = 0; // Reset presence flag
@@ -332,8 +370,9 @@ private:
     bool parse_pgm(jparse_ctx_t* jctx) {
         int ret = 0;
         int pgmIdx = -1;
-        parsedValue result;
-        ALARM_PGM tempPgm = { -1 };
+        // parsedValue result; // UNUSED
+        ALARM_PGM tempPgm;
+        memset(&tempPgm, -1, sizeof(tempPgm));
 
         //    for (int i = 0; i < m_alarm.pgmCount; i++) {
         //        *jctx = tmp_jctx;
@@ -351,13 +390,14 @@ private:
         //    *jctx = tmp_jctx;
         //    json_obj_leave_array(jctx);
         //}
+        return true; // Added return
     }
 
     /**
      * @brief Parses the "keyswitches" array from the JSON.
      */
     void parse_keyswitch(jparse_ctx_t* jctx) {
-        int num_elem;
+        // int num_elem; // UNUSED
         //if (json_obj_get_array(jctx, "keyswitches", &num_elem) == OS_SUCCESS) {
         //    printf("\n===== Keyswitches (%d) =====\n", num_elem);
         //    jparse_ctx_t tmp_jctx = *jctx;

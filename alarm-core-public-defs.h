@@ -1,12 +1,12 @@
 #pragma once
 // MQTT topics defs
-#define MQTT_PARTITIONS_CONTROL_TOPIC		"/pdox/partitions/control"
-#define MQTT_PARTITIONS_STATES_TOPIC		"/pdox/partitions/states"
-#define MQTT_ZONES_CONTROL_TOPIC	        "/pdox/zones/control"
-#define MQTT_ZONES_STATES_TOPIC             "/pdox/zones/states"
-#define MQTT_OUTPUTS_CONTROL_TOPIC			"/pdox/outputs/control"
-#define MQTT_OUTPUTS_STATES_TOPIC			"/pdox/outputs/states"
-#define MQTT_GLOBAL_OPT_CONTROL_TOPIC		"/pdox/global_options/control"
+#define MQTT_PARTITIONS_CONTROL_TOPIC		"/alarm/partitions/control"
+#define MQTT_PARTITIONS_STATES_TOPIC		"/alarm/partitions/states"
+#define MQTT_ZONES_CONTROL_TOPIC	        "/alarm/zones/control"
+#define MQTT_ZONES_STATES_TOPIC             "/alarm/zones/states"
+#define MQTT_OUTPUTS_CONTROL_TOPIC			"/alarm/outputs/control"
+#define MQTT_OUTPUTS_STATES_TOPIC			"/alarm/outputs/states"
+#define MQTT_GLOBAL_OPT_CONTROL_TOPIC		"/alarm/global_options/control"
 
 // JSON sections
 #define JSON_SECTION_ZONES				"zones"

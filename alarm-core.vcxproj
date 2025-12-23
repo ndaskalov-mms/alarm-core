@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClInclude Include="alarm-core-config.h" />
     <ClInclude Include="alarm-core-mqtt-defs.h" />
+    <ClInclude Include="alarm-core-mqtt.h" />
     <ClInclude Include="alarm-core-public-defs.h" />
     <ClInclude Include="alarm-core-timers-new.h" />
     <ClInclude Include="alarm-core.h" />

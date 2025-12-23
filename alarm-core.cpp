@@ -21,6 +21,8 @@ char prnBuf[1024];
 char token[256];
 //TimerManager alarmTimerManager;
 
+void runJsonMQTTTests(Alarm& alarm);
+
 
 void debugPrinter(const char* message, size_t length) {
     printf("[DEBUG] %.*s\n", (int)length, message);
@@ -28,6 +30,10 @@ void debugPrinter(const char* message, size_t length) {
 
 // instance of the Alarm class
 Alarm alarm;
+alarmJSON parser(alarm);
+// 3. Create the MqttProcessor, "injecting" the dependencies (myAlarm and myJsonParser).
+#include "alarm-core-mqtt.h"
+MqttProcessor myMqttProcessor(alarm, parser);
 
 int main() {
     // Print a welcome message
@@ -47,7 +53,7 @@ int main() {
             size_t bytesRead = alarmFileRead((byte*)jsonBuffer, fileSize, configFile);
             if (bytesRead == fileSize) {
                 jsonBuffer[fileSize] = '\0'; // Null-terminate the buffer
-                alarmJSON parser(alarm);
+                //alarmJSON parser(alarm);
                 parser.parseConfigJSON(jsonBuffer);
             }
             else {
@@ -66,7 +72,7 @@ int main() {
 
     storageClose();
 
-    //runJsonMQTTTests(alarm);
+    runJsonMQTTTests(alarm);
     return 0;
 }
 //
@@ -312,37 +318,37 @@ JsonMQTTTestVector jsonTestVectors[] = {
  *
  * @param alarm Reference to the Alarm class instance
  */
- //void runJsonMQTTTests(Alarm& alarm) {
- //    printf("\n=================== STARTING JSON MQTT TESTS ===================\n");
- //
- //    int passCount = 0;
- //    int totalTests = sizeof(jsonTestVectors) / sizeof(jsonTestVectors[0]);
- //
- //    for (int i = 0; i < totalTests; i++) {
- //        const auto& test = jsonTestVectors[i];
- //        printf("\n--------------------- Test #%d ----------------------\n", i + 1);
- //        printf("Description: %s\n", test.description);
- //        printf("Topic: %s\n", test.topic);
- //        printf("Payload: %s\n", test.payload);
- //
- //        // Process the JSON message
- //        bool result = alarm.processMqttMessage(
- //            test.topic,
- //            (byte*)test.payload,
- //            strlen(test.payload)
- //        );
- //
- //        printf("Result: %s\n", result ? "SUCCESS" : "FAILED");
- //        if (result) passCount++;
- //
- //        printf("------------------------------------------------------------\n");
- //
- //        // Optionally call alarm_loop to process any changes
- //        //alarm.alarm_loop();
- //    }
- //
- //    printf("\n=================== JSON MQTT TEST SUMMARY ===================\n");
- //    printf("Tests passed: %d / %d (%.1f%%)\n",
- //        passCount, totalTests, (float)passCount / totalTests * 100);
- //    printf("============================================================\n\n");
- //}
+ void runJsonMQTTTests(Alarm& alarm) {
+     printf("\n=================== STARTING JSON MQTT TESTS ===================\n");
+ 
+     int passCount = 0;
+     int totalTests = sizeof(jsonTestVectors) / sizeof(jsonTestVectors[0]);
+ 
+     for (int i = 0; i < totalTests; i++) {
+         const auto& test = jsonTestVectors[i];
+         printf("\n--------------------- Test #%d ----------------------\n", i + 1);
+         printf("Description: %s\n", test.description);
+         printf("Topic: %s\n", test.topic);
+         printf("Payload: %s\n", test.payload);
+ 
+         // Process the JSON message
+         bool result = myMqttProcessor.processMessage(
+             test.topic,
+             (const char *)test.payload,
+             strlen(test.payload)
+         );
+ 
+         printf("Result: %s\n", result ? "SUCCESS" : "FAILED");
+         if (result) passCount++;
+ 
+         printf("------------------------------------------------------------\n");
+ 
+         // Optionally call alarm_loop to process any changes
+         //alarm.alarm_loop();
+     }
+ 
+     printf("\n=================== JSON MQTT TEST SUMMARY ===================\n");
+     printf("Tests passed: %d / %d (%.1f%%)\n",
+         passCount, totalTests, (float)passCount / totalTests * 100);
+     printf("============================================================\n\n");
+ }
