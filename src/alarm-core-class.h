@@ -19,8 +19,11 @@ enum LogLevel_t {
 #include "..\alarm-core-public-defs.h"
 #include "alarm-core-internal-defs.h"
 
+// A C-style function pointer type for the debug callback
 //typedef void (*DebugCallbackFunc)(const char* message, size_t length);
 typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
+// A C-style function pointer type for the MQTT callback
+typedef void (*MqttPublishCallback)(void* context, const char* topic, const char* payload);
 
 class Alarm {
 
@@ -39,6 +42,7 @@ public:
     // These methods don't provide direct access to underlying arrays
     void        alarm_loop(void);
     void        setDebugCallback(DebugCallbackFunc callback);
+    void        setPublisher(MqttPublishCallback func, void* context);
 
     // Zone-related methods
     int         getZoneIndex(const char* name) const; 
@@ -153,6 +157,10 @@ private:
     static const int MQTT_TOPIC_HANDLER_COUNT;
 #endif //INTERNAL_JSON_HANDLERS
 
+    // MQTT publish callback
+    MqttPublishCallback m_publish_func = nullptr;
+    void* m_publish_context = nullptr;
+
     // Private static arrays for alarm data
     // zoneDB - database with all zones CONFIG info. 
     // zonesRT = all run time zone related data. 
@@ -172,6 +180,9 @@ private:
     uint16_t	swVersion = SW_VERSION;							// software version
 
     // functions 
+    // public:
+    // ... other public members
+
     // Timer management
     void resetAllPartitionTimers(int partitionIndex);
     int partitionTimer(int tmr, int oper, int prt);
@@ -213,6 +224,11 @@ private:
     void checkEntryDelayTimers(int partitionIndex);
     void checkExitDelayTimer(int partitionIndex);
     void resetPartitionTimers(int partitionIndex);
+    // end of private
+
+protected:
+    void publish(const char* topic, const char* payload);
+
 
 };  // end of class Alarm
 
@@ -221,6 +237,21 @@ private:
 #include "alarm-core-json-val-parsers.h"
 #include "alarm-core-helpers.h"
 
+/**
+    * @brief Registers a C-style callback for publishing.
+    * @param func The function pointer.
+    * @param context A pointer to the object needed by the function (e.g., the MQTT client).
+    */
+void Alarm::setPublisher(MqttPublishCallback func, void* context) {
+    m_publish_func = func;
+    m_publish_context = context;
+}
+void Alarm::publish(const char* topic, const char* payload) {
+    if (m_publish_func) {
+        // Call the function, passing its context back to it
+        m_publish_func(m_publish_context, topic, payload);
+    }
+}
 
 void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)
 {

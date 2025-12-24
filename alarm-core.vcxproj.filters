@@ -23,13 +23,7 @@
     <None Include="alarm-config.json">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="iterators.bak">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="alarm_core_test.ino\alarm_core_test.ino.ino">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="alarm-config.csv">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -55,9 +49,6 @@
     <ClInclude Include="alarm-core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alarm-core-mqtt-defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="alarm-FS-wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,9 +56,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="alarm-core-config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="alarm-core-timers-new.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\alarm-core-JSON.h">

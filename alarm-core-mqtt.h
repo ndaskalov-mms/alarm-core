@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "alarm-core.h"
-#include "src/alarm-core-JSON.h"
 
 
 //// Structure to define a topic and its JSON handlers

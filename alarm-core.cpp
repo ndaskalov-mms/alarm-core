@@ -30,17 +30,30 @@ void debugPrinter(const char* message, size_t length) {
 
 // instance of the Alarm class
 Alarm alarm;
+// instance of the JSON parser class
 alarmJSON parser(alarm);
-// 3. Create the MqttProcessor, "injecting" the dependencies (myAlarm and myJsonParser).
+// Create the MqttProcessor, "injecting" the dependencies (myAlarm and myJsonParser).
 #include "alarm-core-mqtt.h"
 MqttProcessor myMqttProcessor(alarm, parser);
 
+// MQTT publish wrapper function
+// Dummy MQTT client object
+struct DummyMqttClient {};
+DummyMqttClient mqttClient;
+// Add dummy definitions for mqttPublishWrapper and mqttClient if not already defined
+static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
+    // Example implementation: just print the topic and payload
+    printf("[MQTT] Topic: %s, Payload: %s\n", topic, payload);
+}
+
+
 int main() {
-    // Print a welcome message
-    //std::cout << "Windows Console Application: ALARM JSON Example\n";
 
     alarm.setDebugCallback(GlobalDebugLogger);
     alarm.debugCallback(LOG_ERR_OK, "test\n");
+
+    // You pass TWO things to the Alarm class: static wrapper function (mqttPublishWrapper) and memory address of your client object (&mqttClient)
+    alarm.setPublisher(mqttPublishWrapper, &mqttClient);
 
     storageSetup();
             
