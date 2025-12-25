@@ -50,10 +50,10 @@
   "zones": [
     {
       "zName": "Front Door",
-      "zBRD": 0,
-      "zID": 0,
       "zType": "ENTRY_DELAY1",
       "zPartn": 1,
+      "zBRD": 0,
+      "zID": 0,
       "zAlarmT": "STEADY_ALARM",
       "zShdnEn": false,
       "zBypEn": true,

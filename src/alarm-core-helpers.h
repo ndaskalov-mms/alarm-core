@@ -6,7 +6,7 @@
 //  params: (pointer)to ALARM_ZONE  
 //          printClass - 0 prints all, !0 prints only what is selected
 //
-void Alarm::printConfigData(struct jsonValProcessor targetKeys[], int numEntries, byte *targetPtr, int printClass) {
+void Alarm::printConfigData(struct jsonKeyValProcessor targetKeys[], int numEntries, byte *targetPtr, int printClass) {
     const char * titlePtr = NULL;
     for (int i = 0; i < numEntries; i++) {
         if (printClass && (printClass != targetKeys[i].printClass))           // printClass == 0 (PRTCLS_ALL) means print all
@@ -28,10 +28,10 @@ void Alarm::printConfigData(struct jsonValProcessor targetKeys[], int numEntries
     lprintf("\n");
 }
 //
-void Alarm::printConfigHeader(struct jsonValProcessor targetKeys[], int numEntries) {
+void Alarm::printConfigHeader(struct jsonKeyValProcessor targetKeys[], int numEntries) {
     for (int i = 0; i < numEntries; i++) {
-        lprintf("%s ", targetKeys[i].jsonValStr);
-        for (size_t j = strlen(targetKeys[i].jsonValStr); j < (int)targetKeys[i].keyStrLen; j++)
+        lprintf("%s ", targetKeys[i].jsonKeyStr);
+        for (size_t j = strlen(targetKeys[i].jsonKeyStr); j < (int)targetKeys[i].keyStrLen; j++)
             lprintf("%c", ' ');
     }
     lprintf("\n");
@@ -41,11 +41,11 @@ void Alarm::printConfigHeader(struct jsonValProcessor targetKeys[], int numEntri
 //
 void Alarm::printAlarmPartition(int startPt, int endPt) {
     lprintf("Partition(s)\n");
-    printConfigHeader(partitionValProcessors, PARTITION_KEYS_CNT);
+    printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
     for (int j = startPt; j < endPt; j++) {
         if (!partitionDB[j].valid)
             continue;
-        printConfigData(partitionValProcessors, PARTITION_KEYS_CNT, (byte*)&partitionDB[j], PRTCLASS_ALL);
+        printConfigData(partitionKeyValProcessors, PARTITION_KEYS_CNT, (byte*)&partitionDB[j], PRTCLASS_ALL);
     }
     lprintf("\n");
 }
@@ -55,10 +55,10 @@ void Alarm::printAlarmPartition(int startPt, int endPt) {
 //
 void Alarm::printAlarmZones(int startZn, int endZn) {
     lprintf("\nZone(s)\n");
-    printConfigHeader(zoneValProcessors, ZONE_KEYS_CNT);
+    printConfigHeader(zoneKeyValProcessors, ZONE_KEYS_CNT);
     for (int i = startZn; i < endZn; i++) {             // for each board' zone
         if (zonesDB[i].valid)                        // 0 means disable zone
-            printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
+            printConfigData(zoneKeyValProcessors, ZONE_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
     }
     lprintf("\n");
 }
@@ -67,8 +67,8 @@ void Alarm::printAlarmZones(int startZn, int endZn) {
 // 
 void Alarm::printAlarmOpts(byte* optsPtr) {
     lprintf("\nGlobal options\n");
-    printConfigHeader(gOptsValProcessors, GOPTS_KEYS_CNT);
-    printConfigData(gOptsValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
+    printConfigHeader(gOptsKeyValProcessors, GOPTS_KEYS_CNT);
+    printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
     lprintf("\n");
 }
 //
@@ -79,11 +79,11 @@ void Alarm::printAlarmPgms(void) {
     //alarmPgmArr_t *pgmArr = (alarmPgmArr_t *)pgmArrPtr;
     //lprintf("       boardID pgmID tval cval pulseLen pgmName\n");
     lprintf("\nPGM(s)\n");
-    printConfigHeader(pgmValProcessors, PGM_KEYS_CNT);
+    printConfigHeader(pgmKeyValProcessors, PGM_KEYS_CNT);
     for (int i = 0; i < MAX_ALARM_PGM; i++) {                        // iterate
         if (!pgmsDB[i].valid)
             continue;
-        printConfigData(pgmValProcessors, PGM_KEYS_CNT,(byte*)&pgmsDB[i], PRTCLASS_ALL);
+        printConfigData(pgmKeyValProcessors, PGM_KEYS_CNT,(byte*)&pgmsDB[i], PRTCLASS_ALL);
         //printOneAlarmPgm((struct ALARM_PGM*) &(*pgmArrPtr)[i]);
     }
     lprintf("\n");

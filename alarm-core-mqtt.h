@@ -4,31 +4,39 @@
 #include <string.h>
 #include "alarm-core.h"
 
+// Forward-declare the global alarmJSON instance from alarm-core.cpp
+extern alarmJSON parser;
 
-//// Structure to define a topic and its JSON handlers
-//struct JsonTopicHandler {
-//    const char* topic;              // MQTT topic to subscribe to
-//    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
-//    bool (*processor)(alarmJSON& jsonParser, const char* jsonPayload, size_t length); // Function to process the entire JSON
-//    const char* description;        // Description of topic purpose
-//};
-//
-//// Define the JSON topic handlers array as a static member of the  class
-//const JsonTopicHandler mqttTopicHandlers[] = {
-//    {MQTT_ZONES_CONTROL_TOPIC,      JSON_SECTION_ZONES,         &alarmJSON::processZoneJsonPayload,
-//     "Control zones (bypass, tamper, etc.)"},
-//
-//    {MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &alarmJSON::processPartitionJsonPayload,
-//     "Control partitions (arm, disarm, etc.)"},
-//
-//    {MQTT_OUTPUTS_CONTROL_TOPIC,    JSON_SECTION_PGMS,          &alarmJSON::processPgmJsonPayload,
-//     "Control PGMs (on, off, pulse)"},
-//
-//    {MQTT_GLOBAL_OPT_CONTROL_TOPIC, JSON_SECTION_GLOBAL_OPTIONS, &alarmJSON::processGlobalOptionsJsonPayload,
-//     "Set global alarm options"}
-//};
-//
-//const int MQTT_TOPIC_HANDLER_COUNT = sizeof(mqttTopicHandlers) / sizeof(mqttTopicHandlers[0]);
+// Wrapper function to call the member function from a C-style function pointer
+static bool wrapProcessZoneJsonPayload(const char* jsonPayload, size_t length) {
+    // Delegate the call to the processZoneJsonPayload method of the global 'parser' instance
+    return parser.processZoneJsonPayload(jsonPayload, length);
+}
+
+// Structure to define a topic and its JSON handlers
+struct JsonTopicHandler {
+    const char* topic;              // MQTT topic to subscribe to
+    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
+    bool (*processor)(const char* jsonPayload, size_t length); // Function to process the entire JSON
+    const char* description;        // Description of topic purpose
+};
+
+// Define the JSON topic handlers array as a static member of the  class
+const JsonTopicHandler mqttTopicHandlers[] = {
+    {MQTT_ZONES_CONTROL_TOPIC,      JSON_SECTION_ZONES,         &wrapProcessZoneJsonPayload,
+     "Control zones (bypass, tamper, etc.)"},
+
+    //{MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &wrapProcessPartitionJsonPayload,
+    // "Control partitions (arm, disarm, etc.)"},
+
+    //{MQTT_OUTPUTS_CONTROL_TOPIC,    JSON_SECTION_PGMS,          &wrapProcessPgmJsonPayload,
+    // "Control PGMs (on, off, pulse)"},
+
+    //{MQTT_GLOBAL_OPT_CONTROL_TOPIC, JSON_SECTION_GLOBAL_OPTIONS, &wrapProcessGlobalOptionsJsonPayload,
+    // "Set global alarm options"}
+};
+
+const int MQTT_TOPIC_HANDLER_COUNT = sizeof(mqttTopicHandlers) / sizeof(mqttTopicHandlers[0]);
 class MqttProcessor {
 public:
     /**
@@ -36,9 +44,12 @@ public:
      * @param alarm The core Alarm object.
      * @param jsonParser An existing instance of the alarmJSON parser.
      */
-    MqttProcessor(Alarm& alarm, alarmJSON& jsonParser)
+    //MqttProcessor(Alarm& alarm, alarmJSON& jsonParser)
+    //    // Store references to the objects provided by the caller.
+    //    : m_alarm(alarm), m_jsonParser(jsonParser)
+    MqttProcessor(alarmJSON& jsonParser)
         // Store references to the objects provided by the caller.
-        : m_alarm(alarm), m_jsonParser(jsonParser)
+        : m_jsonParser(jsonParser)
     {
         printf("MqttProcessor initialized with an existing parser.\n");
     }
@@ -49,7 +60,7 @@ public:
      * @param payload The message content.
      * @param length The length of the payload.
      */
-    bool processMessage(const char* topic, const char* payload, unsigned int length) {
+    bool processConfigMessage(const char* topic, const char* payload, unsigned int length) {
         printf("MqttProcessor received message on topic: %s\n", topic);
 
         // This part remains the same, but it now uses the external parser
@@ -79,9 +90,19 @@ public:
 
         }
 
-
-
         delete[] jsonBuffer;
+    }
+
+    bool processMessage(const char* topic, const char* payload, size_t length) {
+        for (int i = 0; i < MQTT_TOPIC_HANDLER_COUNT; ++i) {
+            if (strcmp(topic, mqttTopicHandlers[i].topic) == 0) {
+                // Found the handler, call its processor function
+                return mqttTopicHandlers[i].processor(payload, length);
+            }
+        }
+        // No handler found for this topic
+        printf("No handler found for topic: %s\n", topic);
+        return false;
     }
 
     //// Process a JSON message by finding the matching topic handler
@@ -106,7 +127,7 @@ public:
     //}
 
 private:
-    Alarm& m_alarm;
+    //Alarm& m_alarm;
     alarmJSON& m_jsonParser; // This is now a reference, not an owned instance.
 };
 

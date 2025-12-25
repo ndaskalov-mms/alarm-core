@@ -64,5 +64,8 @@
     <ClInclude Include="alarm-core-mqtt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="jsonTestVectors.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

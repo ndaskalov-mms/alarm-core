@@ -338,8 +338,8 @@ typedef enum {
 /**
  * @brief   Describes how to access specific parameter for zone, partition, pgm, etc
 */
-struct jsonValProcessor {
-    const   char jsonValStr[NAME_LEN];                                  // param name e.g. zone name, partition name zone type, etc
+struct jsonKeyValProcessor {
+    const   char jsonKeyStr[NAME_LEN];                                  // param name e.g. zone name, partition name zone type, etc
     int     pos;                                                        // param present in JSON or position in header line (column) in CSV file
     byte    patchOffset;                                                // offset in corresponding DB (zoneDB, partionDB, etc) where we have to put the data read from CSV
     byte    patchLen;                                                   // offset is relativ to beginning of the struct which forms correspondin entr
@@ -352,7 +352,7 @@ struct jsonValProcessor {
 /**
  * @brief Zone tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_ZONE. Used to modify tag values direct in memory.
 */
-struct jsonValProcessor zoneValProcessors[] = {
+struct jsonKeyValProcessor zoneKeyValProcessors[] = {
 {ZN_NAME_KEY_STR,     -1, offsetof(struct ALARM_ZONE, zoneName),         sizeof(((struct ALARM_ZONE*)0)->zoneName),        &pokeString   , &peekString    , 16                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
 {ZN_ID_KEY_STR,       -1, offsetof(struct ALARM_ZONE, zoneID),           sizeof(((struct ALARM_ZONE*)0)->zoneID),          &pokeByte     , &peekByte      , strlen(ZN_ID_KEY_STR)      , PRTCLASS_GENERAL  , VAL_TYP_INT  },
 {ZN_TYPE_KEY_STR,     -1, offsetof(struct ALARM_ZONE, zoneType),         sizeof(((struct ALARM_ZONE*)0)->zoneType),        &pokeZoneType , &peekZoneType  , 12                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
@@ -369,12 +369,12 @@ struct jsonValProcessor zoneValProcessors[] = {
 {ZN_AMSK_GLB_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneAmaskFpanel),  sizeof(((struct ALARM_ZONE*)0)->zoneAmaskFpanel), &pokeBool     , &peekBool      , strlen(ZN_AMSK_GLB_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_BOOL },
 {ZN_AMSK_OPT_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneAmaskOpts),    sizeof(((struct ALARM_ZONE*)0)->zoneAmaskOpts),   &pokeLineErr  , &peekLineErr   , strlen(ZN_AMSK_OPT_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_STR  },
 }; 
-#define ZONE_KEYS_CNT (sizeof(zoneValProcessors)/sizeof(struct jsonValProcessor))
+#define ZONE_KEYS_CNT (sizeof(zoneKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
 /**
  * @brief Partition tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_PARTITION_t. Used to modify tag values direct in memory.
 */
-struct jsonValProcessor partitionValProcessors[] = {
+struct jsonKeyValProcessor partitionKeyValProcessors[] = {
 {PT_NAME_KEY_STR			    , -1, offsetof(struct ALARM_PARTITION_t, partitionName)     ,   sizeof(((struct ALARM_PARTITION_t*)0)->partitionName)       ,   &pokeString, &peekString  , 16                                  , PRTCLASS_GENERAL , VAL_TYP_STR    },
 {PT_IDX_KEY_STR					, -1, offsetof(struct ALARM_PARTITION_t, partIdx)           ,   sizeof(((struct ALARM_PARTITION_t*)0)->partIdx)             ,   &pokePrtNo,  &peekPrtnNo  , strlen(PT_IDX_KEY_STR)              , PRTCLASS_GENERAL , VAL_TYP_INT    },
 {PT_FORCE_ON_REG_ARM_KEY_STR	, -1, offsetof(struct ALARM_PARTITION_t, forceOnRegularArm) ,   sizeof(((struct ALARM_PARTITION_t*)0)->forceOnRegularArm)   ,   &pokeBool,   &peekBool    , strlen(PT_FORCE_ON_REG_ARM_KEY_STR) , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
@@ -397,12 +397,12 @@ struct jsonValProcessor partitionValProcessors[] = {
 {PT_FOLLOW_7_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 6       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_7_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
 {PT_FOLLOW_8_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 7       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_8_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
 };
-#define PARTITION_KEYS_CNT (sizeof(partitionValProcessors)/sizeof(partitionValProcessors[0]))
+#define PARTITION_KEYS_CNT (sizeof(partitionKeyValProcessors)/sizeof(partitionKeyValProcessors[0]))
 
 /**
  * @brief Global options tags Contains tag as a string and corresponding offset from beginnig of struct ALARM_GLOBAL_OPTS_t. Used to modify tag values direct in memory.
 */
-struct jsonValProcessor gOptsValProcessors[] = {
+struct jsonKeyValProcessor gOptsKeyValProcessors[] = {
 {GO_MAX_SLAVES_KEY_STR,		 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, maxSlaveBrds),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->maxSlaveBrds),     &pokeByte,    &peekByte   , strlen(GO_MAX_SLAVES_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_INT},
 {GO_RESTR_SPRVS_LOSS_KEY_STR,-1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnSprvsLoss),  sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnSprvsLoss), &pokeBool,    &peekBool   , strlen(GO_RESTR_SPRVS_LOSS_KEY_STR),  PRTCLASS_GENERAL , VAL_TYP_BOOL},
 {GO_RESTR_TAMPER_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnTamper),     sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnTamper),    &pokeBool,    &peekBool   , strlen(GO_RESTR_TAMPER_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
@@ -417,19 +417,19 @@ struct jsonValProcessor gOptsValProcessors[] = {
 {GO_AMASK_OPTS_KEY_STR,		 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, antiMaskOpt),       sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->antiMaskOpt),      &pokeLineErr, &peekLineErr, strlen(GO_AMASK_OPTS_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_STR},
 {GO_RF_SPRVS_OPT_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, rfSprvsOpt),        sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->rfSprvsOpt),       &pokeLineErr, &peekLineErr, strlen(GO_RF_SPRVS_OPT_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_STR},
 };
-#define GOPTS_KEYS_CNT (sizeof(gOptsValProcessors)/sizeof(struct jsonValProcessor))
+#define GOPTS_KEYS_CNT (sizeof(gOptsKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
 /**
  * @brief PGM tags. Contains tag as a string and corresponding offset from beginnig of struct ALARM_PGM. Used to modify tag values direct in memory.
 */
-struct jsonValProcessor pgmValProcessors[] = {
+struct jsonKeyValProcessor pgmKeyValProcessors[] = {
   {PGM_NAME_KEY_STR,     -1, offsetof(struct ALARM_PGM, pgmName) ,  sizeof(((struct ALARM_PGM*)0)->pgmName) ,   &pokeString,  &peekString,  16                              ,   PRTCLASS_GENERAL , VAL_TYP_STR},
   {PGM_BRD_ID_KEY_STR,   -1, offsetof(struct ALARM_PGM, boardID) ,  sizeof(((struct ALARM_PGM*)0)->boardID) ,   &pokeByte,    &peekByte,    strlen(PGM_BRD_ID_KEY_STR)      ,   PRTCLASS_GENERAL , VAL_TYP_INT},
   {PGM_ID_KEY_STR,       -1, offsetof(struct ALARM_PGM, pgmID)   ,  sizeof(((struct ALARM_PGM*)0)->pgmID)   ,   &pokeByte,    &peekByte,    strlen(PGM_ID_KEY_STR)          ,   PRTCLASS_GENERAL , VAL_TYP_INT},
   {PGM_PULSE_LEN_KEY_STR,-1, offsetof(struct ALARM_PGM, pulseLen),  sizeof(((struct ALARM_PGM*)0)->pulseLen),   &pokeByte,    &peekByte,    strlen(PGM_PULSE_LEN_KEY_STR)   ,   PRTCLASS_GENERAL , VAL_TYP_INT},
   {PGM_VALID_KEY_STR,    -1, offsetof(struct ALARM_PGM, valid)   ,  sizeof(((struct ALARM_PGM*)0)->valid)   ,   &pokeByte,    &peekByte,    strlen(PGM_VALID_KEY_STR)       ,   PRTCLASS_GENERAL , VAL_TYP_INT},
 };
-#define PGM_KEYS_CNT (sizeof(pgmValProcessors)/sizeof(struct jsonValProcessor))
+#define PGM_KEYS_CNT (sizeof(pgmKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
 
 /**

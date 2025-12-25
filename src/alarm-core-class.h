@@ -91,8 +91,8 @@ public:
 
     // printing methods - defined in alarm-core-helpers.h
 	//
-    static void printConfigData(struct jsonValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
-    void        printConfigHeader(struct jsonValProcessor targetKeys[], int numEntries);
+    static void printConfigData(struct jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
+    void        printConfigHeader(struct jsonKeyValProcessor targetKeys[], int numEntries);
     void        printAlarmPartition(int startPt, int endPt);
     void        printAlarmZones(int startZn, int endZn);
     void        printAlarmOpts(byte* optsPtr);
@@ -401,11 +401,11 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 bool Alarm::setGlobalOptions(const char* opt_name, const parsedValue* opt_val) {
     // Loop through the gOptsTags array to find the matching option name
     for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
-        if (strncmp(opt_name, gOptsValProcessors[i].jsonValStr, NAME_LEN) == 0) {
+        if (strncmp(opt_name, gOptsKeyValProcessors[i].jsonKeyStr, NAME_LEN) == 0) {
             // Found the matching option name
-            const int offset = gOptsValProcessors[i].patchOffset;
-            const int length = gOptsValProcessors[i].patchLen;
-            auto patchCallback = gOptsValProcessors[i].patchCallBack;
+            const int offset = gOptsKeyValProcessors[i].patchOffset;
+            const int length = gOptsKeyValProcessors[i].patchLen;
+            auto patchCallback = gOptsKeyValProcessors[i].patchCallBack;
 
             // Call the patchCallBack function to set the value
             if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
@@ -432,7 +432,7 @@ int Alarm::getGlobalOptionsCnt() const {
 const char* Alarm::getGlobalOptionKeyStr(int idx) const {
     if (idx < 0 || idx >= GOPTS_KEYS_CNT)
         return nullptr;
-    return gOptsValProcessors[idx].jsonValStr;
+    return gOptsKeyValProcessors[idx].jsonKeyStr;
 }
 //
  void Alarm::synchPGMstates() {

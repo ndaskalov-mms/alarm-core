@@ -16,40 +16,34 @@ public:
     alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
 
     // Define the JSON processor functions (payload handlers)
-    bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    bool processGlobalOptionsJsonPayload(const char* jsonPayload, size_t length) {
         printf("processGlobalOptionsJson() - NOT IMPLEMENTED\n");
         return false;
     }
-    bool processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    bool processPgmJsonPayload(const char* jsonPayload, size_t length) {
         printf("processPgmJson() - NOT IMPLEMENTED\n");
         return false;
     }
 
-    bool processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    bool processPartitionJsonPayload(const char* jsonPayload, size_t length) {
         printf("processPartitionJson() - NOT IMPLEMENTED\n");
         return false;
     }
-    bool processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
+    bool processZoneJsonPayload(const char* jsonBuffer, size_t length) {
 
-        printf("processZoneJson() - NOT IMPLEMENTED\n");
         //printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
+        jparse_ctx_t jctx;    // JSON parsing context
+        int ret = json_parse_start(&jctx, jsonBuffer, length);
+        if (ret != OS_SUCCESS) {
+            printf("Parser failed\n");
+            return false;
+        }
+        parse_zone(&jctx);
 
-        unsigned int action = 0;
-        //if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
-        //else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
-        //else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
-        //else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
-        //else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
-        //else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
-        //else {
-        //    printf("Unknown zone action: %s\n", value);
-        //    return false;
-        //}
-
-        // Call the zone modification function with the appropriate action
-        //alarm.modifyZn(&zoneIndex, &action, nullptr);
-        return false;// Define the JSON
+        json_parse_end(&jctx);
+        return 0;
     }
+
     /**
      * @brief Parses the provided JSON configuration string and populates the Alarm object.
      * @param jsonString The null-terminated string containing the JSON configuration.
@@ -118,15 +112,6 @@ public:
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nPGM %d:\n", i + 1);
                     parse_pgm(&jctx);
-                    //if (json_obj_get_string(&jctx, "pgmName", str_val, sizeof(str_val)) == OS_SUCCESS)
-                    //    printf("  Name: %s\n", str_val);
-
-                    //if (json_obj_get_int(&jctx, "pgmID", &int_val) == OS_SUCCESS)
-                    //    printf("  ID: %d\n", int_val);
-
-                    //if (json_obj_get_int(&jctx, "pgmPulseLen", &int_val) == OS_SUCCESS)
-                    //    printf("  Pulse Length: %d seconds\n", int_val);
-
                     json_obj_leave_object(&jctx);
                 }
             }
@@ -142,15 +127,6 @@ public:
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nKeyswitch %d:\n", i + 1);
                     parse_keyswitch(&jctx);
-                    //if (json_obj_get_string(&jctx, "kswName", str_val, sizeof(str_val)) == OS_SUCCESS)
-                    //    printf("  Name: %s\n", str_val);
-
-                    //if (json_obj_get_string(&jctx, "type", str_val, sizeof(str_val)) == OS_SUCCESS)
-                    //    printf("  Type: %s\n", str_val);
-
-                    //if (json_obj_get_string(&jctx, "action", str_val, sizeof(str_val)) == OS_SUCCESS)
-                    //    printf("  Action: %s\n", str_val);
-
                     json_obj_leave_object(&jctx);
                 }
             }
@@ -169,7 +145,7 @@ private:
 	  For example, for zoneName key, we expect string value, for zoneType - int value, etc.
 	  jsonValProcessor struct and all processors are defined in alarm-core-json-val-parsers.h
      */
-    bool parseJSONval(jparse_ctx_t* jctx, const jsonValProcessor& processor, const char* print_prefix, parsedValue* result) {
+    bool parseJSONval(jparse_ctx_t* jctx, const jsonKeyValProcessor& processor, parsedValue* result) {
 
         // Use a local buffer for parsing and printing.
 		// char str_val[NAME_LEN];                 // Temporary buffer for string values - UNUSED
@@ -185,29 +161,29 @@ private:
 
         switch (processor.fieldType) {
         case VAL_TYP_INT:
-            if (json_obj_get_int(jctx, processor.jsonValStr, &int_val) == OS_SUCCESS) {
-                printf("%s%s: %d\n", print_prefix, processor.jsonValStr, int_val);
+            if (json_obj_get_int(jctx, processor.jsonKeyStr, &int_val) == OS_SUCCESS) {
+                //printf("%s: %d\n", processor.jsonKeyStr, int_val);
                 result->i = int_val;
                 return true;
             }
             break;
         case VAL_TYP_STR:
             // Use target_buf and target_size to parse the string directly into the union.
-            if (json_obj_get_string(jctx, processor.jsonValStr, target_buf, (int)target_size) == OS_SUCCESS) {
-                printf("%s%s: %s\n", print_prefix, processor.jsonValStr, target_buf);
+            if (json_obj_get_string(jctx, processor.jsonKeyStr, target_buf, (int)target_size) == OS_SUCCESS) {
+                //printf("%s: %s\n", processor.jsonKeyStr, target_buf);
                 return true;
             }
             break;
         case VAL_TYP_BOOL:
-            if (json_obj_get_bool(jctx, processor.jsonValStr, &bool_val) == OS_SUCCESS) {
-                printf("%s%s: %s\n", print_prefix, processor.jsonValStr, bool_val ? "true" : "false");
+            if (json_obj_get_bool(jctx, processor.jsonKeyStr, &bool_val) == OS_SUCCESS) {
+                //printf("%s: %s\n", processor.jsonKeyStr, bool_val ? "true" : "false");
                 result->b = bool_val;
                 return true;
             }
             break;
         }
         // If we reach here, parsing failed.
-        printf("Invalid or missing JSON value for: %s%s\n", print_prefix, processor.jsonValStr);
+        //printf("Invalid or missing JSON value for KEY : %s\n", processor.jsonKeyStr);
         return false;
     }
 
@@ -218,7 +194,7 @@ private:
  * @param processors The array of value processors for this item type.
  * @param processor_count The number of processors in the array.
  */
-    void patch_db_item(void* dest_item, const void* src_item, const jsonValProcessor* processors, size_t processor_count) {
+    void patch_db_item(void* dest_item, const void* src_item, const jsonKeyValProcessor* processors, size_t processor_count) {
         for (size_t i = 0; i < processor_count; ++i) {
             if (processors[i].pos != 0) { // Check if the value was present in the JSON
                 byte* dest = (byte*)dest_item + processors[i].patchOffset;
@@ -236,30 +212,39 @@ private:
 		ALARM_GLOBAL_OPTS_t temp_gOpts; // Create a temporary local variable
         memset(&temp_gOpts, -1, sizeof(temp_gOpts));
 
-        for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
-			gOptsValProcessors[i].pos = 0;      // Reset presence flag before parsing
-            if (parseJSONval(jctx, gOptsValProcessors[i], "", &result)) {
-                // TODO: Populate m_alarm.globalOptions using the result and patchCallBack
-                if (gOptsValProcessors[i].patchCallBack) {
+        for (size_t j = 0; j < GOPTS_KEYS_CNT; ++j) {
+			gOptsKeyValProcessors[j].pos = 0;      // Reset presence flag before parsing
+            // try get the JSON val for the key stored in zoneKeyValProcessors[j].jsonKeyStr
+            // Pass the address of the 'result' union to parseJSONval
+            printf("Looking for %s key: ", gOptsKeyValProcessors[j]);
+            if (parseJSONval(jctx, gOptsKeyValProcessors[j], &result)) {
+                // found key, the val is stored in result
+                printf("Found\n");
+                if (gOptsKeyValProcessors[j].patchCallBack) {
                     // Get the processor for context
-                    auto& processor = gOptsValProcessors[i];
+                    auto& processor = gOptsKeyValProcessors[j];
                     // Call the patch function, passing a pointer to the entire 'result' union
-                    if (!processor.patchCallBack((byte*)&temp_gOpts, processor.patchOffset, processor.patchLen, &result))
+                    if (!processor.patchCallBack((byte*)&temp_gOpts, processor.patchOffset, processor.patchLen, &result)) {
+                        printf("Failed to process VAL for global options json KEY: %s\n", gOptsKeyValProcessors[j].jsonKeyStr);
                         ret++;
+                    }   
                     else
                         processor.pos = 1;      // Mark as present
                 }
             }
             else {                              // Consider adding an error log here
-                printf("Failed to parse global options JSON value: %s\n", gOptsValProcessors[i].jsonValStr);
-                return false;
+                printf("Not found\n");
             }
         }
-        // print temp gOpts          
-        // m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
+        if (ret) {                               // If any error occurred during patching, return false
+            printf("Failed to parse global options completely. Errors occurred during parsing/patching.\n");
+            return false;
+        }
+        // print temp gOpts
+        // m_alarm.printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, (byte*)&temp_gOpts, PRTCLASS_ALL);
 
         // Copy only the members that were present in the JSON to the target zone
-        patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsValProcessors, GOPTS_KEYS_CNT);
+        patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsKeyValProcessors, GOPTS_KEYS_CNT);
         m_alarm.printAlarmOpts((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
         return true;
     }
@@ -273,28 +258,36 @@ private:
         parsedValue result;
         ALARM_ZONE tempZone;              // Create a temporary local variable
         memset(&tempZone, -1, sizeof(tempZone));
-     
+
+        // iterate over all zone JSON key:val pairs defined in zoneKeyValProcessors[]
         for (size_t j = 0; j < ZONE_KEYS_CNT; ++j) {
-			zoneValProcessors[j].pos = 0;        // Reset presence flag before parsing
+			zoneKeyValProcessors[j].pos = 0;        // Reset presence flag before parsing
+            // try get the JSON val for the key stored in zoneKeyValProcessors[j].jsonKeyStr
             // Pass the address of the 'result' union to parseJSONval
-            if(parseJSONval(jctx, zoneValProcessors[j], "  ", &result)) {
-                if (zoneValProcessors[j].patchCallBack) {
+            printf("Looking for %s key: ", zoneKeyValProcessors[j]);
+            if(parseJSONval(jctx, zoneKeyValProcessors[j], &result)) {
+                // found key, the val is stored in result
+				printf("Found\n");
+                if (zoneKeyValProcessors[j].patchCallBack) {
                     // Get the processor for context
-                    auto& processor = zoneValProcessors[j];
+                    auto& processor = zoneKeyValProcessors[j];
                     // Call the patch function, passing a pointer to the entire 'result' union
-                    if(!processor.patchCallBack((byte*)&tempZone, processor.patchOffset, processor.patchLen, &result))
-                        ret++;
-                    else
-					    processor.pos = 1;      // Mark as present
+                    if (!processor.patchCallBack((byte*)&tempZone, processor.patchOffset, processor.patchLen, &result)) {
+                        printf("Failed to process VAL for zone json KEY: %s\n", zoneKeyValProcessors[j].jsonKeyStr);
+                        ret++;                  // Increment error count if patching fails and go to next key:val
+                    }
+                    else {
+                        processor.pos = 1;      // Mark as present and converted successfully
+                    }
                 }
             }
-            else {                              // Consider adding an error log here
-                printf("Failed to parse zone JSON value: %s\n", zoneValProcessors[j].jsonValStr);
-                return false;
+            else {       
+                printf("Not found\n");              
+                //printf("Failed to find zone json KEY: %s\n", zoneKeyValProcessors[j].jsonKeyStr);
             }
         }
         if (ret) {                               // If any error occurred during patching, return false
-            printf("Failed to parse zone completely. Errors occurred during patching.\n");
+            printf("Failed to parse zone completely. Errors occurred during parsing/patching.\n");
             return false;
 		}
         // print temp zone          
@@ -312,7 +305,7 @@ private:
             }
         }
 		// Copy only the members that were present in the JSON to the target zone
-		patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneValProcessors, ZONE_KEYS_CNT);
+		patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneKeyValProcessors, ZONE_KEYS_CNT);
 		m_alarm.printAlarmZones(zoneIdx, zoneIdx+1); // Print the newly added or updated zone
         return true;
     }
@@ -321,46 +314,60 @@ private:
      * @brief Parses the "partitions" array from the JSON.
      */
     bool parse_partition(jparse_ctx_t* jctx) {
-        int ret = 0;
-        int partitionIdx = -1;
+        int ret = 0;                            // to track if any error occurs during the conversion of JSON values
+        int partitionIdx = -1;                  // to hold the index of the partition if it exists
         parsedValue result;
-        ALARM_PARTITION_t tempPartition;
+        ALARM_PARTITION_t tempPartition;        // Create a temporary local variable
         memset(&tempPartition, -1, sizeof(tempPartition));
 
+        // iterate over all partition JSON key:val pairs defined in partitionKeyValProcessors[]
         for (size_t j = 0; j < PARTITION_KEYS_CNT; ++j) {
-            partitionValProcessors[j].pos = 0; // Reset presence flag
-            if (parseJSONval(jctx, partitionValProcessors[j], "  ", &result)) {
-                if (partitionValProcessors[j].patchCallBack) {
-                    auto& processor = partitionValProcessors[j];
-                    if (!processor.patchCallBack((byte*)&tempPartition, processor.patchOffset, processor.patchLen, &result))
-                        ret++;
-                    else
-                        processor.pos = 1; // Mark as present
+            partitionKeyValProcessors[j].pos = 0; // Reset presence flag before parsing
+            // try get the JSON val for the key stored in partitionKeyValProcessors[j].jsonKeyStr
+            // Pass the address of the 'result' union to parseJSONval
+            printf("Looking for %s key: ", partitionKeyValProcessors[j]);
+            if (parseJSONval(jctx, partitionKeyValProcessors[j], &result)) {
+                // found key, the val is stored in result
+                printf("Found\n");
+                if (partitionKeyValProcessors[j].patchCallBack) {
+                    // Get the processor for context
+                    auto& processor = partitionKeyValProcessors[j];
+                    // Call the patch function, passing a pointer to the entire 'result' union
+                    if (!processor.patchCallBack((byte*)&tempPartition, processor.patchOffset, processor.patchLen, &result)) {
+                        printf("Failed to process VAL for partition json KEY: %s\n", partitionKeyValProcessors[j].jsonKeyStr);
+                        ret++;                  // Increment error count if patching fails and go to next key:val
+                    }
+                    else {
+                        processor.pos = 1;      // Mark as present and converted successfully
+                    }
                 }
             }
             else {
-                printf("Failed to parse Partition JSON value: %s\n", partitionValProcessors[j].jsonValStr);
-                return false;
+                printf("Not found\n");
+                // This key was not found in the JSON object, which is fine. Continue to the next key.
             }
         }
 
-        if (ret) {
-            printf("Failed to parse Partition completely. Errors occurred during patching.\n");
+        if (ret) {                               // If any error occurred during patching, return false
+            printf("Failed to parse partition completely. Errors occurred during parsing/patching.\n");
             return false;
         }
 
-        if ((partitionIdx = m_alarm.getPartitionIndex(tempPartition.partitionName)) == ERR_IDX_NOT_FND) {
-            printf("Partition with name '%s' not found. Adding new Partition.\n", tempPartition.partitionName);
+        // first check if we have partition name already in DB and add it if not exists, else overwrite it
+        // we use partition name as unique identifier of the partition
+        if ((partitionIdx = m_alarm.getPartitionIndex(tempPartition.partitionName)) == ERR_IDX_NOT_FND) { // partition name not found, we can add it
+            printf("Partition with name '%s' not found. Adding new partition.\n", tempPartition.partitionName);
             if ((partitionIdx = m_alarm.addPartition(tempPartition)) >= 0)
                 printf("Partition with name '%s' added successfully at index %d.\n", tempPartition.partitionName, partitionIdx);
             else {
-                printf("Failed to add Partition with name '%s'.\n", tempPartition.partitionName);
+                printf("Failed to add partition with name '%s'.\n", tempPartition.partitionName);
                 return false;
             }
         }
 
-        patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionValProcessors, PARTITION_KEYS_CNT);
-        m_alarm.printAlarmPartition(partitionIdx, partitionIdx + 1);
+        // Copy only the members that were present in the JSON to the target partition
+        patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionKeyValProcessors, PARTITION_KEYS_CNT);
+        m_alarm.printAlarmPartition(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
         return true;
     }
 

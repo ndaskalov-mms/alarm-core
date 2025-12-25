@@ -141,6 +141,7 @@
     <ClInclude Include="alarm-core-public-defs.h" />
     <ClInclude Include="alarm-core.h" />
     <ClInclude Include="alarm-FS-wrapper.h" />
+    <ClInclude Include="jsonTestVectors.h" />
     <ClInclude Include="src\alarm-core-internal-defs.h" />
     <ClInclude Include="src\alarm-core-class.h" />
     <ClInclude Include="src\alarm-core-helpers.h" />
