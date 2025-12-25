@@ -8,22 +8,22 @@
 extern alarmJSON parser;
 
 // Wrapper function to call the member function from a C-style function pointer
-static bool wrapProcessZoneJsonPayload(const char* jsonPayload, size_t length) {
+static bool wrapProcessJsonPayload(const char* jsonPayload, size_t length, ALARM_DOMAINS_t domain) {
     // Delegate the call to the processZoneJsonPayload method of the global 'parser' instance
-    return parser.processZoneJsonPayload(jsonPayload, length);
+    return parser.processJsonPayload(jsonPayload, length, domain);
 }
 
 // Structure to define a topic and its JSON handlers
 struct JsonTopicHandler {
     const char* topic;              // MQTT topic to subscribe to
-    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
-    bool (*processor)(const char* jsonPayload, size_t length); // Function to process the entire JSON
+    ALARM_DOMAINS_t domain;            // JSON key that identifies the item (zone, partition, etc.)
+    bool (*processor)(const char* jsonPayload, size_t length, ALARM_DOMAINS_t domain); // Function to process the entire JSON
     const char* description;        // Description of topic purpose
 };
 
 // Define the JSON topic handlers array as a static member of the  class
 const JsonTopicHandler mqttTopicHandlers[] = {
-    {MQTT_ZONES_CONTROL_TOPIC,      JSON_SECTION_ZONES,         &wrapProcessZoneJsonPayload,
+    {MQTT_ZONES_CONTROL_TOPIC,      ZONES,         &wrapProcessJsonPayload,
      "Control zones (bypass, tamper, etc.)"},
 
     //{MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &wrapProcessPartitionJsonPayload,
@@ -97,7 +97,7 @@ public:
         for (int i = 0; i < MQTT_TOPIC_HANDLER_COUNT; ++i) {
             if (strcmp(topic, mqttTopicHandlers[i].topic) == 0) {
                 // Found the handler, call its processor function
-                return mqttTopicHandlers[i].processor(payload, length);
+                return mqttTopicHandlers[i].processor(payload, length, mqttTopicHandlers[i].domain);
             }
         }
         // No handler found for this topic
