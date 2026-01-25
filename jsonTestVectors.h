@@ -8,8 +8,12 @@ JsonMQTTTestVector jsonTestVectors[] = {
 
      // Zone control tests
      {"/alarm/zones/control",
-      "{\"zName\":\"Front Door\",\"bypass\":true}",
-      "Bypass Front Door zone"},
+        "{\"zName\":\"Front Door\",\"bypass\":true}",
+        "Bypass Front Door zone"},
+
+     {"/alarm/partitions/control",
+        "{\"pName\":\"Upper Floor\",\"arm_method\":\"arm_stay\"}",
+        "Stay arm Garage partition"},
 
      //{"/alarm/zones/control",
      // "{\"zone\":\"Back Door\",\"action\":\"clear_bypass\"}",

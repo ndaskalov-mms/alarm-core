@@ -390,26 +390,33 @@ struct jsonKeyValProcessor zoneCfgKeyValProcessors[] = {
 }; 
 #define ZONE_CFG_KEYS_CNT (sizeof(zoneCfgKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
-struct ALARM_ZONE_CMD {
+struct ALARM_ZONE_CMD_t {
     char    zoneName[NAME_LEN];  // param name e.g. zone name, partition name  etc
     short   bypass, tamper, antiMask, open;
     };
 
-//// Wrapper function to call the member function from a C-style function pointer
-//static bool wrapModifyZn(const char* jsonPayload, size_t length, ALARM_DOMAINS_t domain) {
-//    // Delegate the call to the processZoneJsonPayload method of the global 'parser' instance
-//    return parser.processJsonPayload(jsonPayload, length, domain);
-//}
+
 
 // Zone control (ZN_CONTROL_KEY_STR) supported JSON values (commands)
 struct jsonKeyValProcessor zoneCmdKeyValProcessors[] = {
-{ZN_NAME_KEY_STR,       0, offsetof(struct ALARM_ZONE_CMD, zoneName),  sizeof(((struct ALARM_ZONE_CMD*)0)->zoneName),  &pokeString, &peekString, 16, PRTCLASS_GENERAL, VAL_TYP_STR },
-{ZONE_BYPASS_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD, bypass),    sizeof(((struct ALARM_ZONE_CMD*)0)->bypass),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
-{ZONE_TAMPER_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD, tamper),    sizeof(((struct ALARM_ZONE_CMD*)0)->tamper),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
-{ZONE_ANTI_MSK_VAL_STR, 0, offsetof(struct ALARM_ZONE_CMD, antiMask),  sizeof(((struct ALARM_ZONE_CMD*)0)->antiMask),  &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
-{ZONE_OPEN_VAL_STR,     0, offsetof(struct ALARM_ZONE_CMD, open),      sizeof(((struct ALARM_ZONE_CMD*)0)->open),      &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZN_NAME_KEY_STR,       0, offsetof(struct ALARM_ZONE_CMD_t, zoneName),  sizeof(((struct ALARM_ZONE_CMD_t*)0)->zoneName),  &pokeString, &peekString, 16, PRTCLASS_GENERAL, VAL_TYP_STR },
+{ZONE_BYPASS_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD_t, bypass),    sizeof(((struct ALARM_ZONE_CMD_t*)0)->bypass),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_TAMPER_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD_t, tamper),    sizeof(((struct ALARM_ZONE_CMD_t*)0)->tamper),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_ANTI_MSK_VAL_STR, 0, offsetof(struct ALARM_ZONE_CMD_t, antiMask),  sizeof(((struct ALARM_ZONE_CMD_t*)0)->antiMask),  &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_OPEN_VAL_STR,     0, offsetof(struct ALARM_ZONE_CMD_t, open),      sizeof(((struct ALARM_ZONE_CMD_t*)0)->open),      &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
 };
-#define ZONE_CMD_KEYS_CNT (sizeof(zoneCmdKeyValProcessors)/sizeof(struct jsonKeyValProcessor))                                                               
+#define ZONE_CMD_KEYS_CNT (sizeof(zoneCmdKeyValProcessors)/sizeof(struct jsonKeyValProcessor))   
+
+struct ALARM_PARTITION_CMD_t {
+    char    partitionName[NAME_LEN];  // param name e.g. zone name, partition name  etc
+    char    armMethod[NAME_LEN];
+};
+// Partition control supported JSON values (commands)
+struct jsonKeyValProcessor partitionCmdKeyValProcessors[] = {
+{PT_NAME_KEY_STR,       0, offsetof(struct ALARM_PARTITION_CMD_t, partitionName),   sizeof(((struct ALARM_PARTITION_CMD_t *)0)->partitionName), &pokeString, &peekString, 16, PRTCLASS_GENERAL, VAL_TYP_STR },
+{PT_ARM_METHOD_KEY_STR, 0, offsetof(struct ALARM_PARTITION_CMD_t, armMethod),       sizeof(((struct ALARM_PARTITION_CMD_t *)0)->armMethod),     &pokeString, &peekString, 16, PRTCLASS_GENERAL, VAL_TYP_STR },
+};
+#define PARTITION_CMD_KEYS_CNT (sizeof(partitionCmdKeyValProcessors)/sizeof(struct jsonKeyValProcessor))  
 
 /**
  * @brief Partition tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_PARTITION_t. Used to modify tag values direct in memory.
@@ -438,6 +445,7 @@ struct jsonKeyValProcessor partitionKeyValProcessors[] = {
 {PT_FOLLOW_8_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 7       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_8_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
 };
 #define PARTITION_KEYS_CNT (sizeof(partitionKeyValProcessors)/sizeof(partitionKeyValProcessors[0]))
+
 
 /**
  * @brief Global options tags Contains tag as a string and corresponding offset from beginnig of struct ALARM_GLOBAL_OPTS_t. Used to modify tag values direct in memory.

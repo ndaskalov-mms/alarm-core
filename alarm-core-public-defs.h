@@ -115,11 +115,12 @@
 //
 // Partition control supported JSON values (commands)
 // TODO: some PAI command are not implemented - arm_sleep, arm_stay_stayd, arm_sleep_stay 
-#define	DISARM_VAL_STR					"disarm"
-#define	REGULAR_ARM_VAL_STR				"arm"
-#define	FORCE_ARM_VAL_STR				"arm_force"
-#define	STAY_ARM_VAL_STR				"arm_stay"
-#define	INSTANT_ARM_VAL_STR				"arm_instant"
+#define	PT_ARM_METHOD_KEY_STR			"arm_method"
+#define	PT_DISARM_VAL_STR				"disarm"
+#define	PT_REG_ARM_VAL_STR				"arm"
+#define	PT_FORCE_ARM_VAL_STR			"arm_force"
+#define	PT_STAY_ARM_VAL_STR				"arm_stay"
+#define	PT_INSTANT_ARM_VAL_STR			"arm_instant"
 //#define	ARM_SLEEP_VAL_STR			"arm_sleep"
 //#define	ARM_STAY_STAYD_VAL_STR		"arm_stay_stayd"
 //#define	ARM_SLEEP_STAY_VAL_STR		"arm_sleep_stay"
@@ -166,7 +167,7 @@ enum ALARM_DOMAINS_t {
 	ZONES_CFG = 0x10,
 	ZONES_CMD = 0x11,
 	PARTITIONS_CFG = 0x20,
-	PARTITIONS_CND = 0x21,
+	PARTITIONS_CMD = 0x21,
 	PGMS_CFG = 0x40,
 	PGMS_CMD = 0x41,
 	KEYSW_CFG = 0x80,
@@ -208,3 +209,16 @@ enum  ARM_METHODS_t {
 	STAY_ARM = 0x8,
 };
 
+////
+//// zone commands definitions
+////
+//enum PARTITION_CMDS_t {
+//	RESERVED = 0,
+//	PRT_DISARM_CMD = 1,    // keep BYPASS and UNBYPASS cmds as power of 2 as they can be bitwise or-ed in 
+//	PRT_REG_ARM_CMD = 2,
+//	PRT_FORSE_ARM_CMD = 3,
+//	PRT_INSTANT_ARM_CMD = 4,
+//	PRT_STAY_ARM_CMD = 5,
+//	PRT_RESERVED_CMD = 0xFF, // used to determine if new command was received
+//};
+////

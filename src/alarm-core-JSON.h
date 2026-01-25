@@ -38,6 +38,9 @@ public:
             case PARTITIONS_CFG:
                 ret = parsePartitionCfg(&jctx);
                 break;
+            case PARTITIONS_CMD:
+                ret = parsePartitionCmd(&jctx);
+                break;
             case PGMS_CFG:
                 //ret = parsePgmCfg(&jctx);
                 break;
@@ -305,7 +308,7 @@ private:
     bool parseZoneCmd(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         int zoneIdx = -1;                       // to hold the index of the zone if it exists
-        ALARM_ZONE_CMD tempZone;
+        ALARM_ZONE_CMD_t tempZone;
         tempZone.open = tempZone.bypass = tempZone.tamper = tempZone.antiMask = ZONE_RESERVED_CMD ; 
 		tempZone.zoneName[0] = '\0';           // initialize zone name to empty string
         int res;
@@ -314,7 +317,7 @@ private:
             return false;
 
         if (tempZone.zoneName[0] == '\0') {
-            LOG_ERROR("Zone name must be provided in zone command!\n", tempZone.zoneName);
+            LOG_ERROR("Zone name must be provided in zone command!\n");
             return false;
         }
         if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
@@ -339,9 +342,55 @@ private:
         }
         return true;
     }
+
+    /**
+    * @brief Parses the zone command JSON
+    */
+    bool parsePartitionCmd(jparse_ctx_t* jctx) {
+        int ret = 0;                            // to track if any error occurs during the conversion of JSON values
+        int partitionIdx = -1;                  // to hold the index of the zone if it exists
+        ALARM_PARTITION_CMD_t tempPartition;
+        tempPartition.partitionName[0] = '\0';  // initialize zone name to empty string
+		tempPartition.armMethod[0] = '\0';      // initialize arm method to empty string
+        int res;
+
+        if (!parse_object(jctx, partitionCmdKeyValProcessors, PARTITION_CMD_KEYS_CNT, (byte*)&tempPartition))
+            return false;
+
+        if (tempPartition.partitionName[0] == '\0') {
+            LOG_ERROR("Partition name must be provided in partition command!\n");
+            return false;
+        }
+        if ((partitionIdx = m_alarm.getPartitionIndex(tempPartition.partitionName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
+            LOG_ERROR("No partition with name %s exists.\n", tempPartition.partitionName);
+            return false;
+        }
+        if (strcmp(tempPartition.armMethod, PT_DISARM_VAL_STR) == 0) {
+            // Handle Disarm
+        }
+        else if (strcmp(tempPartition.armMethod, PT_REG_ARM_VAL_STR) == 0) {
+            // Handle Regular Arming
+        }
+        else if (strcmp(tempPartition.armMethod, PT_FORCE_ARM_VAL_STR) == 0) {
+            // Handle Force Arming
+        }
+        else if (strcmp(tempPartition.armMethod, PT_STAY_ARM_VAL_STR) == 0) {
+            // Handle Stay Arming
+        }
+        else if (strcmp(tempPartition.armMethod, PT_INSTANT_ARM_VAL_STR) == 0) {
+            // Handle Instant Arming
+        }
+        else {
+            // Handle unknown method (optional)
+            LOG_ERROR("Unknown arm method: %s\n", tempPartition.armMethod);
+            return false;
+        }
+
+        return true;
+    }
     /**
      * @brief Parses the "partitions" array from the JSON.
-     */
+    */
     bool parsePartitionCfg(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         int partitionIdx = -1;                  // to hold the index of the partition if it exists

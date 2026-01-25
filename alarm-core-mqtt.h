@@ -26,8 +26,8 @@ const JsonTopicHandler mqttTopicHandlers[] = {
     {MQTT_ZONES_CONTROL_TOPIC,      ZONES_CMD,         &wrapProcessJsonPayload,
      "Control zones (bypass, tamper, etc.)"},
 
-    //{MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &wrapProcessPartitionJsonPayload,
-    // "Control partitions (arm, disarm, etc.)"},
+    {MQTT_PARTITIONS_CONTROL_TOPIC, 	PARTITIONS_CMD,    &wrapProcessJsonPayload,
+     "Control partitions (arm, disarm, etc.)"},
 
     //{MQTT_OUTPUTS_CONTROL_TOPIC,    JSON_SECTION_PGMS,          &wrapProcessPgmJsonPayload,
     // "Control PGMs (on, off, pulse)"},

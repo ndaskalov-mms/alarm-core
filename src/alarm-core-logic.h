@@ -332,7 +332,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 			//newZonesDataAvailable |= NEW_DATA_BIT;							// force alarm loop to execute		
 			break;
 		case ZONE_UNBYPASS_CMD:
-			clearBypass(zn, ZONE_BYP ASSED);
+			clearBypass(zn, ZONE_BYPASSED);
 			break;
 		}
 		zonesRT[zn].changed |= ZONE_USR_BYPASS_CHANGED;							// mark that zone changed on user request
