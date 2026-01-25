@@ -79,7 +79,7 @@ void Alarm::resetAllPartitionTimers(int prt) {
 //
 void Alarm::clearBypass(byte zn, int bypassType) {
 	if (!(zonesRT[zn].bypassed & bypassType))										// check if cleared already
-		return;																		// zone is already bypassed/unbypassed
+		return;																		// zone is already bypass/unbypassed
 	zonesRT[zn].bypassed &= ~bypassType;											// bypass
 	zonesRT[zn].changed |= ZONE_BYPASS_CHANGED;										// mark zone as changed
 	partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;				// and partition too
@@ -91,7 +91,7 @@ void Alarm::clearBypassAllZones(int partIxd) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == partIxd) {
 			if (zonesRT[zn].bypassed == ZONE_NO_BYPASS)								// check if cleared already
-				continue;															// zone is already bypassed/unbypassed
+				continue;															// zone is already bypass/unbypassed
 			zonesRT[zn].bypassed = 0;												// clears all bypasses 
 			zonesRT[zn].changed |= ZONE_BYPASS_CHANGED;								// mark zone as changed
 			partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;		// and partition too
@@ -107,7 +107,7 @@ void Alarm::clearBypassAllZones(int partIxd) {
 //
 inline void Alarm::bypassZone(byte zn, int bypassType) {
 	if (!((zonesRT[zn].bypassed & bypassType ) ^ bypassType))						// check if the same bypasses are already in place
-		return;																		// zone is already bypassed/unbypassed
+		return;																		// zone is already bypass/unbypassed
 	zonesRT[zn].bypassed |= bypassType;												// reflect the change
 	zonesRT[zn].changed |= ZONE_BYPASS_CHANGED;										// mark zone as changed
 	partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;				// and partition too
@@ -119,7 +119,7 @@ inline void Alarm::bypassZone(byte zn, int bypassType) {
 void Alarm::bypassAllForceZones(int prtId) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
 		if (zonesDB[zn].zonePartition == prtId) {
-			if (!zonesRT[zn].bypassed) {											// if zone is not bypassed already
+			if (!zonesRT[zn].bypassed) {											// if zone is not bypass already
 				if (zonesRT[zn].zoneStat & ZONE_OPEN) {								// and is open
 					if (zonesDB[zn].zoneForceEn) {									// and can be forced
 						bypassZone(zn, ZONE_FORCED);
@@ -191,7 +191,7 @@ void Alarm::processPartitionTimers(int prt) {
 				ErrWrite(LOG_ERR_DEBUG, "Partition EXIT/ENTRY delay timer expired\n");
 				partitionRT[prt].partitionTimers[tmr].timerFSM = DONE;							// TIMER expired
 				partitionRT[prt].changed |= partitionRT[prt].partitionTimers[tmr].changedMask;	// force MQTT report
-				// unbypass all zones bypassed at ENTRY DELAY start
+				// unbypass all zones bypass at ENTRY DELAY start
 				bulkBypassZones(prt, partitionRT[prt].partitionTimers[tmr].bypassWhat, partitionRT[prt].partitionTimers[tmr].bypassMask, CLEAR_BYPASS);
 			}
 		}
@@ -213,7 +213,7 @@ int res=0;
 	return res;
 }	
 //
-// return all zones which will prevent arm - open zone which ae not bypassed
+// return all zones which will prevent arm - open zone which ae not bypass
 //
 int Alarm::check4openUnbypassedZones(int prt) {
 	int res = 0;
@@ -265,15 +265,17 @@ int Alarm::check4openUnbypassedZones(int prt) {
 //	//}
 //}
 //
-// action = ZONE_OPEN_CMD, ZONE_AMASK_CMD, ZONE_CLOSE_CMD, ZONE_TAMPER_CMD, ZONE_BYPASS_CMD
+// action = enum ZONE_CMDS_t
+// ZONE_OPEN_CMD, ZONE_AMASK_ON_CMD, ZONE_AMASK_OFF_CMD,  ZONE_CLOSE_CMD,
+// ZONE_TAMPER_ON_CMD, ZONE_TAMPER_OFF_CMD, ZONE_BYPASS_CMD
 //
 void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 	//byte newStat;
-	const int zn = *(int*)param1;								// index in zonesD
-	const int action = *(int*)param2;								// command - defined in enum ZONE_CMDS_t
-	const char* payldPtr = (const char*)param3;
-	if (payldPtr)
-		ErrWrite(LOG_ERR_WARNING, "modifyZn: WARNING - garbage found after modify zone command %s\n", payldPtr);
+	const int zn = *(int*)param1;								// param1 = index in zonesD
+	const int action = *(int*)param2;							// param2 = command (defined in enum ZONE_CMDS_t)
+	//const char* payldPtr = (const char*)param3;
+	//if (payldPtr)
+	//	ErrWrite(LOG_ERR_WARNING, "modifyZn: WARNING - garbage found after modify zone command %s\n", payldPtr);
 	//lprintf("modifyZn: ZONE action %d\n", action);
 	//
 	if (!zonesDB[zn].zoneType)												// zoneType == 0 means disabled
@@ -283,26 +285,32 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 		return;
 	}
 	// handle zone status change commands
-	if (action == ZONE_OPEN_CMD || action == ZONE_CLOSE_CMD || action == ZONE_TAMPER_CMD || action == ZONE_AMASK_CMD) {
+	if (action == ZONE_OPEN_CMD || action == ZONE_CLOSE_CMD || action == ZONE_TAMPER_ON_CMD || action == ZONE_AMASK_ON_CMD || action == ZONE_TAMPER_OFF_CMD || action == ZONE_AMASK_OFF_CMD) {
 		// set result according to action selected 
 		switch (action) {
 		case ZONE_OPEN_CMD:
 			zonesRT[zn].zoneStat = ZONE_OPEN;
 			break;
 		case ZONE_CLOSE_CMD:
-			clearBypass(zn, ZONE_FORCED);										// if closed now it shall start acting as if it was not forced
-			zonesRT[zn].in_alarm = NO_ALARM;									// when zone close, alarm/trouble goes off clear zone alarm flag
-			zonesRT[zn].in_trouble = NO_TROUBLE;								// clear zone alarm/trouble flag
-			zonesRT[zn].ignorredTamper = false;									// clear zone ignorred tamper flag
-			zonesRT[zn].ignorredAmask = false;									// clear zone ignorred anti mask flag
-			zonesRT[zn].openEDSD1zone = zonesRT[zn].openEDSD2zone = false;		// clear open EDx/SDx zone in EDx interval
+			clearBypass(zn, ZONE_FORCED);									// if closed now it shall start acting as if it was not forced
+			zonesRT[zn].in_alarm = NO_ALARM;								// when zone close, alarm/trouble goes off clear zone alarm flag
+			zonesRT[zn].in_trouble = NO_TROUBLE;							// clear zone alarm/trouble flag
+			zonesRT[zn].ignorredTamper = false;								// clear zone ignorred tamper flag
+			zonesRT[zn].ignorredAmask = false;								// clear zone ignorred anti mask flag
+			zonesRT[zn].openEDSD1zone = zonesRT[zn].openEDSD2zone = false;	// clear open EDx/SDx zone in EDx interval
 			zonesRT[zn].zoneStat = ZONE_CLOSE;
 			break;
-		case ZONE_TAMPER_CMD:
+		case ZONE_TAMPER_ON_CMD:
 			zonesRT[zn].zoneStat = ZONE_TAMPER;
 			break;
-		case ZONE_AMASK_CMD:
+		case ZONE_TAMPER_OFF_CMD:
+			//zonesRT[zn].zoneStat = ZONE_TAMPER;			// TODO
+			break;
+		case ZONE_AMASK_ON_CMD:
 			zonesRT[zn].zoneStat = ZONE_AMASK;
+			break;
+		case ZONE_AMASK_OFF_CMD:
+			//zonesRT[zn].zoneStat = ZONE_AMASK;			// TODO
 			break;
 		}
 		zonesRT[zn].changed |= ZONE_STATE_CHANGED;								// mark zone as changed
@@ -314,7 +322,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 			// Do some checks if zone bypass is allowed and return if not
 			if (zonesDB[zn].zoneType & SPECIAL_ZONES) {
 				ErrWrite(LOG_ERR_WARNING, "Attempt to bypass special zone  (like 24H FIRE)  %s\n", zonesDB[zn].zoneName);
-				break;															// fire zones cannot be bypassed, forced, ...
+				break;															// fire zones cannot be bypass, forced, ...
 			}
 			if (!(zonesDB[zn].zoneBypassEn)) {									// allowed to bypass on user request?
 				ErrWrite(LOG_ERR_DEBUG, "Zone %s,  bypass disabled\n", zonesDB[zn].zoneName);
@@ -324,7 +332,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 			//newZonesDataAvailable |= NEW_DATA_BIT;							// force alarm loop to execute		
 			break;
 		case ZONE_UNBYPASS_CMD:
-			clearBypass(zn, ZONE_BYPASSED);
+			clearBypass(zn, ZONE_BYP ASSED);
 			break;
 		}
 		zonesRT[zn].changed |= ZONE_USR_BYPASS_CHANGED;							// mark that zone changed on user request
@@ -523,22 +531,22 @@ void Alarm::processLineErrors(int zn, int opts) {
 }
 //
 // process zone error, generates trouble or alarm
-// if alarmGlobalOpts.tamperBpsOpt == true - if zone is bypassed ignore tamper;
+// if alarmGlobalOpts.tamperBpsOpt == true - if zone is bypass ignore tamper;
 //									  false - follow global or local tamper settings
 // zone global tamper options:	alarmGlobalOpts.tamperOpts, bitmask, same as local - see #define ZONE_TAMPER_OPT_XXXXXX
 // Tamper Bypass Options
 // (default = enabled) When enabled in section[3034] [Tamper Recognition Options] , the control panel will
 // ignore the zone’s bypass definition and will follow the option set in section (page 25) (enum ZONE_TAMPER_OPT_t) if a tamper or wire
-// fault occurs on a bypassed zone.
+// fault occurs on a bypass zone.
 // When disabled, Tamper Recognition follows the zone’s bypass definition.This means that the control panel will not perform 
-// any action if a tamper or wire fault occurs on a bypassed zone.
-// My understanding is: if tamper occurs in bypassed zone and tamper recognition is OFF, we have to ignore if the zone is bypassed.
+// any action if a tamper or wire fault occurs on a bypass zone.
+// My understanding is: if tamper occurs in bypass zone and tamper recognition is OFF, we have to ignore if the zone is bypass.
 // The reaction if tamper recognition is ON is specified by local or global tamper options, selection is done by followPanel option
 //
 void Alarm::processTampers(int zn) {
 	int opt;
-	if (zonesRT[zn].bypassed & ZONE_BYPASSED) {					// can we ignore tamper on USER bypassed zone
-		if (alarmGlobalOpts.tamperBpsOpt) {						// allowed to ignore tamper in USER bypassed zone ONLY!
+	if (zonesRT[zn].bypassed & ZONE_BYPASSED) {					// can we ignore tamper on USER bypass zone
+		if (alarmGlobalOpts.tamperBpsOpt) {						// allowed to ignore tamper in USER bypass zone ONLY!
 			ErrWrite(LOG_ERR_DEBUG, "Tamper in bypassed zone %s  with Tamper tamper bypass enabled in global options\n", zonesDB[zn].zoneName);
 			zonesRT[zn].ignorredTamper = true;					// set zone ignorred tamper flag
 			zonesRT[zn].in_trouble = NO_TROUBLE;				// reset in_trouble flag flag
@@ -609,7 +617,7 @@ int Alarm::processEntryDelayZones(int zn) {
 		bulkBypassZones(prt, (zonesDB[zn].zoneType | FOLLOW), ZONE_EDx_BYPASSED, SET_BYPASS);
 		return NO_ALARM;										// no alarm needed YET
 	}
-	else if (partitionRT[prt].partitionTimers[timer].timerFSM == RUNNING) {					// shall never happen as zone shall be bypassed when entry delay is active	
+	else if (partitionRT[prt].partitionTimers[timer].timerFSM == RUNNING) {					// shall never happen as zone shall be bypass when entry delay is active	
 		ErrWrite(LOG_ERR_DEBUG, "Zone %s open but ENTRY DELAY stil RUNNING\n", zonesDB[zn].zoneName);
 		return NO_ALARM;										// no alarm needed
 	}
@@ -624,7 +632,7 @@ int Alarm::processOpenZone(int zn) {
 	byte prt = zonesDB[zn].zonePartition;
 	//
 	if (zonesRT[zn].bypassed || (zonesDB[zn].zoneType == ZONE_DISABLED))
-		return NO_ALARM;									// ignore disabled and bypassed zones
+		return NO_ALARM;									// ignore disabled and bypass zones
 	// check for 24H and special zones, they  generate unconditionally alarm when opened
 	if (zonesDB[zn].zoneType & (SPECIAL_ZONES | H24_BUZZER | H24_BURGLAR)) {	
 		alarm |= zonesDB[zn].zoneAlarmType;					// issue alarm
@@ -654,11 +662,11 @@ int Alarm::processOpenZone(int zn) {
 			alarm |= zonesDB[zn].zoneAlarmType;
 		break;
 	case FOLLOW:
-		// if all ENTRY_DELAY_X zones are bypassed, FOLLOW zones shall kick-off the delay timer (2) if enable in partition options
-		if (partitionSTATS[prt].notBypassedEntyDelayZones)	// check if all entry delay zones are bypassed
+		// if all ENTRY_DELAY_X zones are bypass, FOLLOW zones shall kick-off the delay timer (2) if enable in partition options
+		if (partitionSTATS[prt].notBypassedEntyDelayZones)	// check if all entry delay zones are bypass
 			// start of ENTRY DELAY X will bypass FOLLOW zones as well, means if we get here, the enrty delay is not started
 			alarm |= zonesDB[zn].zoneAlarmType;				// generate alarm
-		else												// follow zone when all entry delay zones are bypassed will end-up here
+		else												// follow zone when all entry delay zones are bypass will end-up here
 			alarm |= processEntryDelayZones(zn);			// handle it as entry delay 2 zone
 		break;
 	default:
@@ -717,7 +725,7 @@ void Alarm::alarm_loop() {
 				zonesRT[zn].in_alarm = processOpenZone(zn);						// returns true if alarm requested
 				partitionSTATS[zonesDB[zn].zonePartition].openZonesCnt++;		// update statistics
 			}
-			if (zonesRT[zn].bypassed & ZONE_BYPASSED)	 						// update statistics, only user bypassed zones
+			if (zonesRT[zn].bypassed & ZONE_BYPASSED)	 						// update statistics, only user bypass zones
 				partitionSTATS[prt].bypassedZonesCnt++;
 			if (zonesRT[zn].ignorredTamper)										// update statistics
 				partitionSTATS[prt].ignorredTamperZonesCnt++;
@@ -736,7 +744,7 @@ void Alarm::alarm_loop() {
 		}
 		// done with zones processing
 		// do partition level processing staff here
-		partitionSTATS[prt].notBypassedEntyDelayZones = countNotBypassedEntryDelayZones(prt);	// mark how many entry delay zone are not bypassed, must be here cause armPartition force bypasses
+		partitionSTATS[prt].notBypassedEntyDelayZones = countNotBypassedEntryDelayZones(prt);	// mark how many entry delay zone are not bypass, must be here cause armPartition force bypasses
 		//
 		// if all ENTRY DELAY zones are closed, reset entry delay FSM 
 		if ((partitionRT[prt].partitionTimers[ENTRY_DELAY1_TIMER].timerFSM == DONE) && !partitionSTATS[prt].openZonesCntEDSD1)	

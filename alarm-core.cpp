@@ -1,20 +1,21 @@
-// this is heeded for windows JSON library
-//#include "json.hpp"
+#pragma once
 #include <stdio.h>
+#include <string.h>
+
 typedef unsigned char byte;
+
 #include "alarm-core-config.h"
 #include "src\alarm-core-debug.h"
-//#include "src\alarm-core-timers.h"
 #include "alarm-FS-wrapper.h"
-#include "alarm-core.h"
-#include "src\alarm-core-JSON.h" // Include the new header-only parser
-//#include "alarm-core-mqtt.h" // Include the new header
-//#include "alarm-core-CSV-parser.h" // Include the new header
-#include <string.h>
-//#include "..\esp-json-parser\include\json_parser-code.h"
 
-// Sample JSON configuration for testing
-// #define alarm_config_json "{\"zones\":[{\"zName\":\"Front\"},{\"zName\":\"Back\"}]}"
+
+#include "alarm-core.h"
+
+#include "src\alarm-core-JSON.h" // Include the new header-only parser
+#include "alarm-core-mqtt.h"
+
+
+
 
 // global storage definitions
 char prnBuf[1024];
@@ -33,9 +34,8 @@ void debugPrinter(const char* message, size_t length) {
 Alarm alarm;
 // instance of the JSON parser class
 alarmJSON parser(alarm);
+
 // Create the MqttProcessor, "injecting" the dependencies (myAlarm and myJsonParser).
-// 
-#include "alarm-core-mqtt.h"
 //MqttProcessor myMqttProcessor(alarm, parser);
 MqttProcessor myMqttProcessor(parser);
 
@@ -52,7 +52,7 @@ static void mqttPublishWrapper(void* context, const char* topic, const char* pay
 
 
 int main() {
-
+	LOG_DEBUG("Starting Alarm Core JSON MQTT Tests...\n");
 	// debug callback setup
     alarm.setDebugCallback(GlobalDebugLogger);
     alarm.debugCallback(LOG_ERR_OK, "test\n");

@@ -12,12 +12,13 @@ enum LogLevel_t {
     LOG_ERR_OK        = 0,
     LOG_ERR_INFO      = 1,
     LOG_ERR_DEBUG     = 2,
-    LOG_ERR_WARNING   =-2,
+    LOG_ERR_WARNING   =-3,
+    LOG_ERR_ERROR     =-2,
     LOG_ERR_CRITICAL  =-1,
 };
 #endif
 // Default log level (can be changed at runtime)
-static LogLevel_t g_logLevel = LOG_ERR_INFO;
+static LogLevel_t g_logLevel = LOG_ERR_DEBUG;
 
 // Set log level at runtime
 inline void SetLogLevel(LogLevel_t level) { g_logLevel = level; }
@@ -46,6 +47,7 @@ inline void GlobalDebugLogger(LogLevel_t level, const char* fmt, ...) {
         case LOG_ERR_DEBUG:     levelStr = "DEBUG   "; break;
         case LOG_ERR_INFO:      levelStr = "INFO    "; break;
         case LOG_ERR_WARNING:   levelStr = "WARNING "; break;
+        case LOG_ERR_ERROR:     levelStr = "ERROR   "; break;
         case LOG_ERR_CRITICAL:  levelStr = "CRITICAL"; break;
         default:                levelStr = "UNKNOWN "; break;
         }

@@ -398,32 +398,32 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
     printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
 //
-bool Alarm::setGlobalOptions(const char* opt_name, const parsedValue* opt_val) {
-    // Loop through the gOptsTags array to find the matching option name
-    for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
-        if (strncmp(opt_name, gOptsKeyValProcessors[i].jsonKeyStr, NAME_LEN) == 0) {
-            // Found the matching option name
-            const int offset = gOptsKeyValProcessors[i].patchOffset;
-            const int length = gOptsKeyValProcessors[i].patchLen;
-            auto patchCallback = gOptsKeyValProcessors[i].patchCallBack;
-
-            // Call the patchCallBack function to set the value
-            if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
-                ErrWrite(LOG_ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val->s);
-                return TRUE;
-            }
-            else {
-                ErrWrite(LOG_ERR_DEBUG, "Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
-                return FALSE;
-            }
-            return FALSE; // Exit the function after processing the option
-        }
-    }
-
-    // If the option name is not found in gOptsTags
-    printf("Global option '%s' not found.\n", opt_name);
-    return FALSE;           // option not found
-}
+//bool Alarm::setGlobalOptions(const char* opt_name, const parsedValue* opt_val) {
+//    // Loop through the gOptsTags array to find the matching option name
+//    for (size_t i = 0; i < GOPTS_KEYS_CNT; ++i) {
+//        if (strncmp(opt_name, gOptsKeyValProcessors[i].jsonKeyStr, NAME_LEN) == 0) {
+//            // Found the matching option name
+//            const int offset = gOptsKeyValProcessors[i].patchOffset;
+//            const int length = gOptsKeyValProcessors[i].patchLen;
+//            auto patchCallback = gOptsKeyValProcessors[i].patchCallBack;
+//
+//            // Call the patchCallBack function to set the value
+//            if (patchCallback(reinterpret_cast<byte*>(&alarmGlobalOpts), offset, length, opt_val)) {
+//                ErrWrite(LOG_ERR_DEBUG, "Global option '%s' set to '%s' successfully.\n", opt_name, opt_val->s);
+//                return TRUE;
+//            }
+//            else {
+//                ErrWrite(LOG_ERR_DEBUG, "Failed to set global option '%s' with value '%s'.\n", opt_name, opt_val);
+//                return FALSE;
+//            }
+//            return FALSE; // Exit the function after processing the option
+//        }
+//    }
+//
+//    // If the option name is not found in gOptsTags
+//    printf("Global option '%s' not found.\n", opt_name);
+//    return FALSE;           // option not found
+//}
 //
 int Alarm::getGlobalOptionsCnt() const {
     return GOPTS_KEYS_CNT;
@@ -646,68 +646,5 @@ void Alarm::ErrWrite(LogLevel_t level, const char* format, ...) {
 
     va_end(args);
 }
-
-
-#ifdef INTERNAL_JSON_HANDLERS
-//// Define the JSON processor functions (payload handlers)
-//bool Alarm::processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
-//    printf("processGlobalOptionsJson() - NOT IMPLEMENTED\n");
-//    return false;
-//}
-//bool Alarm::processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
-//    printf("processPgmJson() - NOT IMPLEMENTED\n");
-//    return false;
-//}
-//
-//bool Alarm::processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
-//    printf("processPartitionJson() - NOT IMPLEMENTED\n");
-//	return false;   
-//}
-//bool Alarm::processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length) {
-//
-//    printf("processZoneJson() - NOT IMPLEMENTED\n");    
-//    //printf("Processing zone action: %s for zone index %d\n", value, zoneIndex);
-//
-//    unsigned int action = 0;
-//    //if (strcmp(value, "bypass") == 0) action = ZONE_BYPASS_CMD;
-//    //else if (strcmp(value, "clear_bypass") == 0) action = ZONE_UNBYPASS_CMD;
-//    //else if (strcmp(value, "tamper") == 0) action = ZONE_TAMPER_CMD;
-//    //else if (strcmp(value, "close") == 0) action = ZONE_CLOSE_CMD;
-//    //else if (strcmp(value, "open") == 0) action = ZONE_OPEN_CMD;
-//    //else if (strcmp(value, "anti-mask") == 0) action = ZONE_AMASK_CMD;
-//    //else {
-//    //    printf("Unknown zone action: %s\n", value);
-//    //    return false;
-//    //}
-//
-//    // Call the zone modification function with the appropriate action
-//    //alarm.modifyZn(&zoneIndex, &action, nullptr);
-//    return false;// Define the JSON
-
-
-}
-
-// Structure to define a topic and its JSON handlers
-//struct JsonTopicHandler {
-//    const char* topic;              // MQTT topic to subscribe to
-//    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
-//    bool (*processor)(Alarm& alarm, const char* jsonPayload, size_t length); // Function to process the entire JSON
-//    const char* description;        // Description of topic purpose
-//};
- // Define the JSON topic handlers array as a static member of the Alarm class
-//const Alarm::JsonTopicHandler Alarm::mqttTopicHandlers[4] = {
-//    {MQTT_ZONES_CONTROL_TOPIC,      JSON_SECTION_ZONES,         &Alarm::processZoneJsonPayload,
-//     "Control zones (bypass, tamper, etc.)"},
-//    {MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &Alarm::processPartitionJsonPayload,
-//     "Control partitions (arm, disarm, etc.)"},
-//    {MQTT_OUTPUTS_CONTROL_TOPIC,    JSON_SECTION_PGMS,          &Alarm::processPgmJsonPayload,
-//     "Control PGMs (on, off, pulse)"},
-//    {MQTT_GLOBAL_OPT_CONTROL_TOPIC, JSON_SECTION_GLOBAL_OPTIONS, &Alarm::processGlobalOptionsJsonPayload,
-//     "Set global alarm options"}
-//};
-//
-//const int Alarm::MQTT_TOPIC_HANDLER_COUNT = sizeof(Alarm::mqttTopicHandlers) / sizeof(Alarm::mqttTopicHandlers[0]);
-#endif //INTERNAL_JSON_HANDLERS
-
-#endif // ALARM_H
+#endif  // ALARM_H
 

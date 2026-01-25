@@ -21,22 +21,25 @@ public:
 
         int ret = json_parse_start(&jctx, jsonBuffer, length);
         if (ret != OS_SUCCESS) {
-            printf("Parser failed\n");
+            LOG_ERROR("Parser fstart failed\n");
             return false;
         }
         ret = 0;
         switch(domain) {
-            case GLOBAL_OPT:
-                ret = parse_global_options(&jctx);
+            case GLOBAL_OPT_CFG:
+                ret = parseGlobalOptionsCfg(&jctx);
                 break;
-            case ZONES:
-                ret = parse_zone(&jctx);
+            case ZONES_CFG:
+                ret = parseZoneCfg(&jctx);
                 break;
-            case PARTITIONS:
-                ret = parse_partition(&jctx);
+            case ZONES_CMD:
+                ret = parseZoneCmd(&jctx);
                 break;
-            case PGMS:
-                ret = parse_pgm(&jctx);
+            case PARTITIONS_CFG:
+                ret = parsePartitionCfg(&jctx);
+                break;
+            case PGMS_CFG:
+                //ret = parsePgmCfg(&jctx);
                 break;
             default:
                 printf("Unknown domain type\n");
@@ -63,28 +66,26 @@ public:
             printf("Parser failed\n");
             return -1;
         }
-        //parse_global_options(&jctx);
-
 
         // Parse and display global options
         if (json_obj_get_object(&jctx, "globalOptions") == OS_SUCCESS) {
-            parse_global_options(&jctx);
+            parseGlobalOptionsCfg(&jctx);
             json_obj_leave_object(&jctx);
         }
 
         // Parse and display zones
         if (json_obj_get_array(&jctx, "zones", &num_elem) == OS_SUCCESS) {
-            printf("\n===== Zones (%d) =====\n", num_elem);
+            LOG_DEBUG("\n===== Zones (%d) =====\n", num_elem);
             tmp_jctx = jctx;                                // needed to properly parse arrays
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nZone %d:\n", i + 1);
-                    parse_zone(&jctx);
+                    parseZoneCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
                 else
-                    printf("\nInvalid Zone %d:\n", i + 1);
+                    LOG_ERROR("\nInvalid Zone %d:\n", i + 1);
 
             }
             json_obj_leave_array(&jctx);
@@ -92,13 +93,13 @@ public:
 
         // Parse and display partitions
         if (json_obj_get_array(&jctx, "partitions", &num_elem) == OS_SUCCESS) {
-            printf("\n===== Partitions (%d) =====\n", num_elem);
+            LOG_DEBUG("\n===== Partitions (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
                     printf("\nPartition %d:\n", i + 1);
-                    parse_partition(&jctx);
+                    parsePartitionCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
             }
@@ -107,13 +108,13 @@ public:
 
         // Parse and display pgms
         if (json_obj_get_array(&jctx, "pgms", &num_elem) == OS_SUCCESS) {
-            printf("\n===== PGMs (%d) =====\n", num_elem);
+            LOG_DEBUG("\n===== PGMs (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    printf("\nPGM %d:\n", i + 1);
-                    parse_pgm(&jctx);
+                    LOG_DEBUG("\nPGM %d:\n", i + 1);
+                    //parsePgmCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
             }
@@ -122,13 +123,13 @@ public:
 
         // Parse and display keyswitches
         if (json_obj_get_array(&jctx, "keyswitches", &num_elem) == OS_SUCCESS) {
-            printf("\n===== Keyswitches (%d) =====\n", num_elem);
+            LOG_DEBUG("\n===== Keyswitches (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    printf("\nKeyswitch %d:\n", i + 1);
-                    parse_keyswitch(&jctx);
+                    LOG_DEBUG("\nKeyswitch %d:\n", i + 1);
+                    //parse_keyswitch(&jctx);
                     json_obj_leave_object(&jctx);
                 }
             }
@@ -213,21 +214,21 @@ private:
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         parsedValue result;
 
-        // iterate over all zone JSON key:val pairs defined in zoneKeyValProcessors[]
+        // iterate over all zone JSON key:val pairs defined in zoneCfgKeyValProcessors[]
         for (size_t j = 0; j < processor_count; ++j) {
             processors[j].pos = 0;        // Reset presence flag before parsing
-            // try get the JSON val for the key stored in zoneKeyValProcessors[j].jsonKeyStr
+            // try get the JSON val for the key stored in zoneCfgKeyValProcessors[j].jsonKeyStr
             // Pass the address of the 'result' union to parseJSONval
-            printf("Looking for %s key: ", processors[j]);
+            LOG_DEBUG("Looking for %s key: ", processors[j].jsonKeyStr);
             if (parseJSONval(jctx, processors[j], &result)) {
                 // found key, the val is stored in result
-                printf("Found\n");
+                LOG_DEBUG("Found\n");
                 if (processors[j].patchCallBack) {
                     // Get the processor for context
                     auto& processor = processors[j];
                     // Call the patch function, passing a pointer to the entire 'result' union
                     if (!processor.patchCallBack(tempObj, processor.patchOffset, processor.patchLen, &result)) {
-                        printf("Failed to process VAL for zone json KEY: %s\n", processor.jsonKeyStr);
+                        LOG_ERROR("Failed to process VAL for zone json KEY: %s\n", processor.jsonKeyStr);
                         ret++;                  // Increment error count if patching fails and go to next key:val
                     }
                     else {
@@ -236,12 +237,12 @@ private:
                 }
             }
             else {
-                printf("Not found\n");
-                //printf("Failed to find zone json KEY: %s\n", zoneKeyValProcessors[j].jsonKeyStr);
+                LOG_ERROR("Not found\n");
+                //printf("Failed to find zone json KEY: %s\n", zoneCfgKeyValProcessors[j].jsonKeyStr);
             }
         }
         if (ret) {                               // If any error occurred during patching, return false
-            printf("Failed to parse zone completely. Errors occurred during VAL parsing/patching.\n");
+            LOG_ERROR("Failed to parse zone completely. Errors occurred during VAL parsing/patching.\n");
             return false;
         }
         return true;
@@ -250,7 +251,7 @@ private:
     /**
     * @brief Parses the "globalOptions" object from the JSON.
     */
-    bool parse_global_options(jparse_ctx_t* jctx) {
+    bool parseGlobalOptionsCfg(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         ALARM_GLOBAL_OPTS_t temp_gOpts; // Create a temporary local variable
         memset(&temp_gOpts, -1, sizeof(temp_gOpts));
@@ -268,41 +269,80 @@ private:
     }
 
     /**
-    * @brief Parses the "zones" array from the JSON.
+    * @brief Parses the "zones" array from config JSON.
     */
-    bool parse_zone(jparse_ctx_t* jctx) {
+    bool parseZoneCfg(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         int zoneIdx = -1;                       // to hold the index of the zone if it exists
         ALARM_ZONE tempZone;              // Create a temporary local variable
-        memset(&tempZone, -1, sizeof(tempZone));
+        memset(&tempZone, 0, sizeof(tempZone));
 
-        if (!parse_object(jctx, zoneKeyValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone))
+        if (!parse_object(jctx, zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&tempZone))
             return false;
         // print temp zone          
-        // m_alarm.printConfigData(zoneValProcessors, ZONE_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
+        //m_alarm.printConfigData(zoneValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&tempZone, PRTCLASS_ALL);
 
         // first check if we have zone name already in DB and add it if not exists, else overwtite it
         // we use zone name as unique identifier of the zone
         if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
-            printf("Zone with name '%s' not found. Adding new zone.\n", tempZone.zoneName);
+            LOG_DEBUG("Zone with name %s not found. Adding new zone.\n", tempZone.zoneName);
             if ((zoneIdx = m_alarm.addZone(tempZone)) >= 0)
-                printf("Zone with name '%s' added successfully at index %d.\n", tempZone.zoneName, zoneIdx);
+                LOG_DEBUG("Zone with name '%s' added successfully at index %d.\n", tempZone.zoneName, zoneIdx);
             else {
-                printf("Failed to add zone with name '%s'.\n", tempZone.zoneName);
+                LOG_ERROR("Failed to add zone with name %s.\n", tempZone.zoneName);
                 return false;
             }
         }
         // Copy only the members that were present in the JSON to the target zone
-        patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneKeyValProcessors, ZONE_KEYS_CNT);
+        patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
         m_alarm.printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
         return true;
     }
 
-  
+    /**
+    * @brief Parses the zone command JSON
+    */
+    bool parseZoneCmd(jparse_ctx_t* jctx) {
+        int ret = 0;                            // to track if any error occurs during the conversion of JSON values
+        int zoneIdx = -1;                       // to hold the index of the zone if it exists
+        ALARM_ZONE_CMD tempZone;
+        tempZone.open = tempZone.bypass = tempZone.tamper = tempZone.antiMask = ZONE_RESERVED_CMD ; 
+		tempZone.zoneName[0] = '\0';           // initialize zone name to empty string
+        int res;
+
+        if (!parse_object(jctx, zoneCmdKeyValProcessors, ZONE_CMD_KEYS_CNT, (byte*)&tempZone))
+            return false;
+
+        if (tempZone.zoneName[0] == '\0') {
+            LOG_ERROR("Zone name must be provided in zone command!\n", tempZone.zoneName);
+            return false;
+        }
+        if ((zoneIdx = m_alarm.getZoneIndex(tempZone.zoneName)) == ERR_IDX_NOT_FND) { // zone name not found, we can add it
+            LOG_ERROR("No zone with name %s exists.\n", tempZone.zoneName);
+            return false;
+        }
+        if (tempZone.bypass != ZONE_RESERVED_CMD) {
+            res = tempZone.bypass ? ZONE_BYPASS_CMD : ZONE_UNBYPASS_CMD;
+            m_alarm.modifyZn((void *)&zoneIdx, &res, NULL);
+        }
+        if (tempZone.open != ZONE_RESERVED_CMD) {
+            res = tempZone.open ? ZONE_OPEN_CMD : ZONE_CLOSE_CMD;
+            m_alarm.modifyZn((void*)&zoneIdx, &res, NULL);
+        }
+        if (tempZone.tamper != ZONE_RESERVED_CMD) {
+            res = tempZone.tamper ? ZONE_TAMPER_ON_CMD : ZONE_TAMPER_OFF_CMD;
+            m_alarm.modifyZn((void*)&zoneIdx, &res, NULL);
+        }
+        if (tempZone.antiMask != ZONE_RESERVED_CMD) {
+            res = tempZone.antiMask ? ZONE_AMASK_ON_CMD : ZONE_AMASK_OFF_CMD;
+            m_alarm.modifyZn((void*)&zoneIdx, &res, NULL);
+        }
+        return true;
+    }
     /**
      * @brief Parses the "partitions" array from the JSON.
      */
-    bool parse_partition(jparse_ctx_t* jctx) {
+    bool parsePartitionCfg(jparse_ctx_t* jctx) {
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         int partitionIdx = -1;                  // to hold the index of the partition if it exists
         ALARM_PARTITION_t tempPartition;        // Create a temporary local variable
@@ -314,11 +354,11 @@ private:
         // first check if we have partition name already in DB and add it if not exists, else overwrite it
         // we use partition name as unique identifier of the partition
         if ((partitionIdx = m_alarm.getPartitionIndex(tempPartition.partitionName)) == ERR_IDX_NOT_FND) { // partition name not found, we can add it
-            printf("Partition with name '%s' not found. Adding new partition.\n", tempPartition.partitionName);
+            LOG_DEBUG("Partition with name '%s' not found. Adding new partition.\n", tempPartition.partitionName);
             if ((partitionIdx = m_alarm.addPartition(tempPartition)) >= 0)
-                printf("Partition with name '%s' added successfully at index %d.\n", tempPartition.partitionName, partitionIdx);
+                LOG_DEBUG("Partition with name '%s' added successfully at index %d.\n", tempPartition.partitionName, partitionIdx);
             else {
-                printf("Failed to add partition with name '%s'.\n", tempPartition.partitionName);
+                LOG_ERROR("Failed to add partition with name '%s'.\n", tempPartition.partitionName);
                 return false;
             }
         }
@@ -332,7 +372,7 @@ private:
     /**
      * @brief Parses the "pgms" array from the JSON.
      */
-    bool parse_pgm(jparse_ctx_t* jctx) {
+    bool parsePgmCfg(jparse_ctx_t* jctx) {
         int ret = 0;
         int pgmIdx = -1;
         // parsedValue result; // UNUSED

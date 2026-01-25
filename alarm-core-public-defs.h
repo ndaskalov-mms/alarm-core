@@ -17,7 +17,7 @@
 
 // MQTT JSON keys
 
-// ------------   ZONES ------------------
+// ------------   ZONES_CFG ------------------
 // keys allowed in zone JSON config 
 #define ZN_NAME_KEY_STR					"zName"
 #define ZN_BRD_ID_KEY_STR				"zBRD"
@@ -41,9 +41,7 @@
 //
 // Zone control (ZN_CONTROL_KEY_STR) supported JSON values (commands)
 #define ZONE_BYPASS_VAL_STR				"bypass"      
-#define ZONE_CLR_BYPASS_VAL_STR			"clear_bypass"
 #define ZONE_TAMPER_VAL_STR				"tamper"      
-#define ZONE_CLOSE_VAL_STR				"close"       
 #define ZONE_OPEN_VAL_STR				"open"        
 #define ZONE_ANTI_MSK_VAL_STR			"anti-mask"   
 
@@ -90,7 +88,7 @@
 #define LINE_ERR_OPT_ALARM_WHEN_ARMED_VAL_STR	"ALARM_WHEN_ARMED"
 #define LINE_ERR_OPT_ALARM_ONLY_VAL_STR			"ALARM"
 
-// ------------   PARTITIONS ------------------
+// ------------   PARTITIONS_CFG ------------------
 // keys allowed in partition JSON config 
 #define	PT_NAME_KEY_STR					"pName"
 #define	PT_IDX_KEY_STR					"pIdx"
@@ -164,12 +162,17 @@
 
 //
 enum ALARM_DOMAINS_t {
-	RESERVED = -1,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
-	ZONES = 0,
-	PARTITIONS = 1,
-	PGMS = 2,
-	KEYSW = 3,
-	GLOBAL_OPT = 4,
+	RESERVED = 0,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
+	ZONES_CFG = 0x10,
+	ZONES_CMD = 0x11,
+	PARTITIONS_CFG = 0x20,
+	PARTITIONS_CND = 0x21,
+	PGMS_CFG = 0x40,
+	PGMS_CMD = 0x41,
+	KEYSW_CFG = 0x80,
+	KEYSW_CMD = 0x81,
+	GLOBAL_OPT_CFG = 0x100,
+	GLOBAL_OPT_CMD = 0x101,
 };
 //
 //
@@ -182,14 +185,18 @@ enum PGM_CMDS_t {
 // zone commands definitions
 //
 enum ZONE_CMDS_t {
-	ZONE_BYPASS_CMD = 1,    // keep BYPASS and UNBYPASS cmds as power of 2 as they can be or-ed in 
-	ZONE_UNBYPASS_CMD = 2,    // in zoneNewCmd TODO - check if this is correct
-	ZONE_CLOSE_CMD = 3,
-	ZONE_OPEN_CMD = 4,
-	ZONE_AMASK_CMD = 5,
-	ZONE_TAMPER_CMD = 6,
-	ZONE_ANAL_SET_CMD = 7,
-	ZONE_DIGITAL_SET_CMD = 8,
+
+	ZONE_BYPASS_CMD		= 1,    // keep BYPASS and UNBYPASS cmds as power of 2 as they can be bitwise or-ed in 
+	ZONE_UNBYPASS_CMD	= 2,	
+	ZONE_CLOSE_CMD		= 3,
+	ZONE_OPEN_CMD		= 4,
+	ZONE_AMASK_ON_CMD	= 5,
+	ZONE_AMASK_OFF_CMD	= 6,
+	ZONE_TAMPER_ON_CMD	= 7,
+	ZONE_TAMPER_OFF_CMD = 8,
+	ZONE_ANAL_SET_CMD	= 9,
+	ZONE_DIG_SET_CMD	= 10,
+	ZONE_RESERVED_CMD	= 0xFF, // used to determine if new command was received
 };
 //
 //

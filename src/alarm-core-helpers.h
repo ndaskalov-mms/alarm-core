@@ -55,10 +55,10 @@ void Alarm::printAlarmPartition(int startPt, int endPt) {
 //
 void Alarm::printAlarmZones(int startZn, int endZn) {
     lprintf("\nZone(s)\n");
-    printConfigHeader(zoneKeyValProcessors, ZONE_KEYS_CNT);
+    printConfigHeader(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
     for (int i = startZn; i < endZn; i++) {             // for each board' zone
         if (zonesDB[i].valid)                        // 0 means disable zone
-            printConfigData(zoneKeyValProcessors, ZONE_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
+            printConfigData(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&zonesDB[i], PRTCLASS_ALL);
     }
     lprintf("\n");
 }

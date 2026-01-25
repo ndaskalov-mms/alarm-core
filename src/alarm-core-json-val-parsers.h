@@ -128,9 +128,13 @@ static int pokeByte(byte* basePtr, int offset, int len, const parsedValue* token
     //unsigned res  = (unsigned int)atoi(token);
 	int res = token->i;
     if (res > 255) {
-        // TODO (ERR_WARNING, "Byte value larger than 255. Truncated");
+        LOG_CRITICAL("Byte value % d larger than 255. Truncated\n", res);
         res = 255;
     }
+    if (res < 0) {
+        LOG_CRITICAL("Byte value % d lower than 0. Truncated\n", res);
+        res = 0;
+	}
     basePtr[offset] = res;
     return true;
 }
@@ -327,6 +331,21 @@ static byte* peekAlarmType(byte* basePtr, int offset, int len) {
     return (byte*)ret;
 }
 
+   
+/**
+ * @brief           Function to write COMMAND boolean val to memory
+ * @param basePtr   Memory start
+ * @param offset    Memory offset
+ * @param len       Not used
+ * @param token     shall be "true" or "false"
+ * @return          Always true
+*/
+static int pokeCmd(byte* basePtr, int offset, int len, const parsedValue* token) {
+    //(basePtr[offset] = !_stricmp(token, "true"));
+    (basePtr[offset] = token->b);
+    return true;
+}
+
 // Define field types enumeration
 typedef enum {
     VAL_TYP_INT,
@@ -352,50 +371,71 @@ struct jsonKeyValProcessor {
 /**
  * @brief Zone tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_ZONE. Used to modify tag values direct in memory.
 */
-struct jsonKeyValProcessor zoneKeyValProcessors[] = {
-{ZN_NAME_KEY_STR,     -1, offsetof(struct ALARM_ZONE, zoneName),         sizeof(((struct ALARM_ZONE*)0)->zoneName),        &pokeString   , &peekString    , 16                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
-{ZN_ID_KEY_STR,       -1, offsetof(struct ALARM_ZONE, zoneID),           sizeof(((struct ALARM_ZONE*)0)->zoneID),          &pokeByte     , &peekByte      , strlen(ZN_ID_KEY_STR)      , PRTCLASS_GENERAL  , VAL_TYP_INT  },
-{ZN_TYPE_KEY_STR,     -1, offsetof(struct ALARM_ZONE, zoneType),         sizeof(((struct ALARM_ZONE*)0)->zoneType),        &pokeZoneType , &peekZoneType  , 12                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
-{ZN_PRT_KEY_STR,      -1, offsetof(struct ALARM_ZONE, zonePartition),    sizeof(((struct ALARM_ZONE*)0)->zonePartition),   &pokePrtNo    , &peekPrtnNo    , strlen(ZN_PRT_KEY_STR)     , PRTCLASS_GENERAL  , VAL_TYP_INT  },
-{ZN_ALARM_KEY_STR,    -1, offsetof(struct ALARM_ZONE, zoneAlarmType),    sizeof(((struct ALARM_ZONE*)0)->zoneAlarmType),   &pokeAlarmType, &peekAlarmType , 8                          , PRTCLASS_GENERAL  , VAL_TYP_STR  },
-{ZN_SHD_EN_KEY_STR,   -1, offsetof(struct ALARM_ZONE, zoneShdwnEn),      sizeof(((struct ALARM_ZONE*)0)->zoneShdwnEn),     &pokeBool     , &peekBool      , strlen(ZN_SHD_EN_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_BYP_EN_KEY_STR,   -1, offsetof(struct ALARM_ZONE, zoneBypassEn),     sizeof(((struct ALARM_ZONE*)0)->zoneBypassEn),    &pokeBool     , &peekBool      , strlen(ZN_BYP_EN_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_STAY_KEY_STR,     -1, offsetof(struct ALARM_ZONE, zoneStayZone),     sizeof(((struct ALARM_ZONE*)0)->zoneStayZone),    &pokeBool     , &peekBool      , strlen(ZN_STAY_KEY_STR)    , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_FORCE_EN_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneForceEn),      sizeof(((struct ALARM_ZONE*)0)->zoneForceEn),     &pokeBool     , &peekBool      , strlen(ZN_FORCE_EN_KEY_STR), PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_INTEL_KEY_STR,    -1, offsetof(struct ALARM_ZONE, zoneIntelizone),   sizeof(((struct ALARM_ZONE*)0)->zoneIntelizone),  &pokeBool     , &peekBool      , strlen(ZN_INTEL_KEY_STR)   , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_DLYTRM_KEY_STR,   -1, offsetof(struct ALARM_ZONE, delayTrm),         sizeof(((struct ALARM_ZONE*)0)->delayTrm),        &pokeBool     , &peekBool      , strlen(ZN_DLYTRM_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
-{ZN_TMPR_GLB_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneTamperFpanel), sizeof(((struct ALARM_ZONE*)0)->zoneTamperFpanel),&pokeBool     , &peekBool      , strlen(ZN_TMPR_GLB_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_BOOL },
-{ZN_TMPR_OPT_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneTamperOpts),   sizeof(((struct ALARM_ZONE*)0)->zoneTamperOpts),  &pokeLineErr  , &peekLineErr   , strlen(ZN_TMPR_OPT_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_STR  },
-{ZN_AMSK_GLB_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneAmaskFpanel),  sizeof(((struct ALARM_ZONE*)0)->zoneAmaskFpanel), &pokeBool     , &peekBool      , strlen(ZN_AMSK_GLB_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_BOOL },
-{ZN_AMSK_OPT_KEY_STR, -1, offsetof(struct ALARM_ZONE, zoneAmaskOpts),    sizeof(((struct ALARM_ZONE*)0)->zoneAmaskOpts),   &pokeLineErr  , &peekLineErr   , strlen(ZN_AMSK_OPT_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_STR  },
+struct jsonKeyValProcessor zoneCfgKeyValProcessors[] = {
+{ZN_NAME_KEY_STR,     0, offsetof(struct ALARM_ZONE, zoneName),         sizeof(((struct ALARM_ZONE*)0)->zoneName),        &pokeString   , &peekString    , 16                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
+{ZN_ID_KEY_STR,       0, offsetof(struct ALARM_ZONE, zoneID),           sizeof(((struct ALARM_ZONE*)0)->zoneID),          &pokeByte     , &peekByte      , strlen(ZN_ID_KEY_STR)      , PRTCLASS_GENERAL  , VAL_TYP_INT  },
+{ZN_TYPE_KEY_STR,     0, offsetof(struct ALARM_ZONE, zoneType),         sizeof(((struct ALARM_ZONE*)0)->zoneType),        &pokeZoneType , &peekZoneType  , 12                         , PRTCLASS_GENERAL  , VAL_TYP_STR  },
+{ZN_PRT_KEY_STR,      0, offsetof(struct ALARM_ZONE, zonePartition),    sizeof(((struct ALARM_ZONE*)0)->zonePartition),   &pokePrtNo    , &peekPrtnNo    , strlen(ZN_PRT_KEY_STR)     , PRTCLASS_GENERAL  , VAL_TYP_INT  },
+{ZN_ALARM_KEY_STR,    0, offsetof(struct ALARM_ZONE, zoneAlarmType),    sizeof(((struct ALARM_ZONE*)0)->zoneAlarmType),   &pokeAlarmType, &peekAlarmType , 8                          , PRTCLASS_GENERAL  , VAL_TYP_STR  },
+{ZN_SHD_EN_KEY_STR,   0, offsetof(struct ALARM_ZONE, zoneShdwnEn),      sizeof(((struct ALARM_ZONE*)0)->zoneShdwnEn),     &pokeBool     , &peekBool      , strlen(ZN_SHD_EN_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_BYP_EN_KEY_STR,   0, offsetof(struct ALARM_ZONE, zoneBypassEn),     sizeof(((struct ALARM_ZONE*)0)->zoneBypassEn),    &pokeBool     , &peekBool      , strlen(ZN_BYP_EN_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_STAY_KEY_STR,     0, offsetof(struct ALARM_ZONE, zoneStayZone),     sizeof(((struct ALARM_ZONE*)0)->zoneStayZone),    &pokeBool     , &peekBool      , strlen(ZN_STAY_KEY_STR)    , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_FORCE_EN_KEY_STR, 0, offsetof(struct ALARM_ZONE, zoneForceEn),      sizeof(((struct ALARM_ZONE*)0)->zoneForceEn),     &pokeBool     , &peekBool      , strlen(ZN_FORCE_EN_KEY_STR), PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_INTEL_KEY_STR,    0, offsetof(struct ALARM_ZONE, zoneIntelizone),   sizeof(((struct ALARM_ZONE*)0)->zoneIntelizone),  &pokeBool     , &peekBool      , strlen(ZN_INTEL_KEY_STR)   , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_DLYTRM_KEY_STR,   0, offsetof(struct ALARM_ZONE, delayTrm),         sizeof(((struct ALARM_ZONE*)0)->delayTrm),        &pokeBool     , &peekBool      , strlen(ZN_DLYTRM_KEY_STR)  , PRTCLASS_GENERAL  , VAL_TYP_BOOL },
+{ZN_TMPR_GLB_KEY_STR, 0, offsetof(struct ALARM_ZONE, zoneTamperFpanel), sizeof(((struct ALARM_ZONE*)0)->zoneTamperFpanel),&pokeBool     , &peekBool      , strlen(ZN_TMPR_GLB_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_BOOL },
+{ZN_TMPR_OPT_KEY_STR, 0, offsetof(struct ALARM_ZONE, zoneTamperOpts),   sizeof(((struct ALARM_ZONE*)0)->zoneTamperOpts),  &pokeLineErr  , &peekLineErr   , strlen(ZN_TMPR_OPT_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_STR  },
+{ZN_AMSK_GLB_KEY_STR, 0, offsetof(struct ALARM_ZONE, zoneAmaskFpanel),  sizeof(((struct ALARM_ZONE*)0)->zoneAmaskFpanel), &pokeBool     , &peekBool      , strlen(ZN_AMSK_GLB_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_BOOL },
+{ZN_AMSK_OPT_KEY_STR, 0, offsetof(struct ALARM_ZONE, zoneAmaskOpts),    sizeof(((struct ALARM_ZONE*)0)->zoneAmaskOpts),   &pokeLineErr  , &peekLineErr   , strlen(ZN_AMSK_OPT_KEY_STR), PRTCLASS_LINE_ERR , VAL_TYP_STR  },
 }; 
-#define ZONE_KEYS_CNT (sizeof(zoneKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
+#define ZONE_CFG_KEYS_CNT (sizeof(zoneCfgKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
+
+struct ALARM_ZONE_CMD {
+    char    zoneName[NAME_LEN];  // param name e.g. zone name, partition name  etc
+    short   bypass, tamper, antiMask, open;
+    };
+
+//// Wrapper function to call the member function from a C-style function pointer
+//static bool wrapModifyZn(const char* jsonPayload, size_t length, ALARM_DOMAINS_t domain) {
+//    // Delegate the call to the processZoneJsonPayload method of the global 'parser' instance
+//    return parser.processJsonPayload(jsonPayload, length, domain);
+//}
+
+// Zone control (ZN_CONTROL_KEY_STR) supported JSON values (commands)
+struct jsonKeyValProcessor zoneCmdKeyValProcessors[] = {
+{ZN_NAME_KEY_STR,       0, offsetof(struct ALARM_ZONE_CMD, zoneName),  sizeof(((struct ALARM_ZONE_CMD*)0)->zoneName),  &pokeString, &peekString, 16, PRTCLASS_GENERAL, VAL_TYP_STR },
+{ZONE_BYPASS_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD, bypass),    sizeof(((struct ALARM_ZONE_CMD*)0)->bypass),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_TAMPER_VAL_STR,   0, offsetof(struct ALARM_ZONE_CMD, tamper),    sizeof(((struct ALARM_ZONE_CMD*)0)->tamper),    &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_ANTI_MSK_VAL_STR, 0, offsetof(struct ALARM_ZONE_CMD, antiMask),  sizeof(((struct ALARM_ZONE_CMD*)0)->antiMask),  &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+{ZONE_OPEN_VAL_STR,     0, offsetof(struct ALARM_ZONE_CMD, open),      sizeof(((struct ALARM_ZONE_CMD*)0)->open),      &pokeBool,   &peekBool,   16, PRTCLASS_GENERAL, VAL_TYP_BOOL},
+};
+#define ZONE_CMD_KEYS_CNT (sizeof(zoneCmdKeyValProcessors)/sizeof(struct jsonKeyValProcessor))                                                               
 
 /**
  * @brief Partition tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_PARTITION_t. Used to modify tag values direct in memory.
 */
 struct jsonKeyValProcessor partitionKeyValProcessors[] = {
-{PT_NAME_KEY_STR			    , -1, offsetof(struct ALARM_PARTITION_t, partitionName)     ,   sizeof(((struct ALARM_PARTITION_t*)0)->partitionName)       ,   &pokeString, &peekString  , 16                                  , PRTCLASS_GENERAL , VAL_TYP_STR    },
-{PT_IDX_KEY_STR					, -1, offsetof(struct ALARM_PARTITION_t, partIdx)           ,   sizeof(((struct ALARM_PARTITION_t*)0)->partIdx)             ,   &pokePrtNo,  &peekPrtnNo  , strlen(PT_IDX_KEY_STR)              , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FORCE_ON_REG_ARM_KEY_STR	, -1, offsetof(struct ALARM_PARTITION_t, forceOnRegularArm) ,   sizeof(((struct ALARM_PARTITION_t*)0)->forceOnRegularArm)   ,   &pokeBool,   &peekBool    , strlen(PT_FORCE_ON_REG_ARM_KEY_STR) , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_FORCE_ON_STAY_ARM_KEY_STR	, -1, offsetof(struct ALARM_PARTITION_t, forceOnStayArm)    ,   sizeof(((struct ALARM_PARTITION_t*)0)->forceOnStayArm)      ,   &pokeBool,   &peekBool    , strlen(PT_FORCE_ON_STAY_ARM_KEY_STR), PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_ED2_FOLLOW_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, followEntryDelay2) ,   sizeof(((struct ALARM_PARTITION_t*)0)->followEntryDelay2)   ,   &pokeBool,   &peekBool    , strlen(PT_ED2_FOLLOW_KEY_STR)       , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_ALRM_OUT_EN_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, alarmOutputEn)     ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmOutputEn)       ,   &pokeBool,   &peekBool    , strlen(PT_ALRM_OUT_EN_KEY_STR)      , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_ALRM_LENGHT_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, alarmCutOffTime)   ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmCutOffTime)     ,   &pokeByte,   &peekByte    , strlen(PT_ALRM_LENGHT_KEY_STR)      , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_NO_CUT_ON_FIRE_KEY_STR		, -1, offsetof(struct ALARM_PARTITION_t, noCutOffOnFire)    ,   sizeof(((struct ALARM_PARTITION_t*)0)->noCutOffOnFire)      ,   &pokeBool,   &peekBool    , strlen(PT_NO_CUT_ON_FIRE_KEY_STR)   , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_ALARM_RECYC_TIME_KEY_STR	, -1, offsetof(struct ALARM_PARTITION_t, alarmRecycleTime)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmRecycleTime)    ,   &pokeByte,   &peekByte    , strlen(PT_ALARM_RECYC_TIME_KEY_STR) , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_ED1_INTERVAL_KEY_STR		, -1, offsetof(struct ALARM_PARTITION_t, entryDelay1Intvl)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->entryDelay1Intvl)    ,   &pokeByte,   &peekByte    , strlen(PT_ED1_INTERVAL_KEY_STR)     , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_ED2_INTERVAL_KEY_STR		, -1, offsetof(struct ALARM_PARTITION_t, entryDelay2Intvl)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->entryDelay2Intvl)    ,   &pokeByte,   &peekByte    , strlen(PT_ED2_INTERVAL_KEY_STR)     , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_EXIT_DLY_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, exitDelay)         ,   sizeof(((struct ALARM_PARTITION_t*)0)->exitDelay)           ,   &pokeByte,   &peekByte    , strlen(PT_EXIT_DLY_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_VALID_KEY_STR				, -1, offsetof(struct ALARM_PARTITION_t, valid)             ,   sizeof(((struct ALARM_PARTITION_t*)0)->valid)               ,   &pokeBool,   &peekBool    , strlen(PT_VALID_KEY_STR	)           , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
-{PT_FOLLOW_1_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows)           ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_1_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_2_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 1       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_2_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_3_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 2       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_3_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_4_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 3       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_4_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_5_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 4       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_5_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_6_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 5       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_6_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_7_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 6       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_7_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
-{PT_FOLLOW_8_KEY_STR			, -1, offsetof(struct ALARM_PARTITION_t, follows) + 7       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_8_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_NAME_KEY_STR			    , 0, offsetof(struct ALARM_PARTITION_t, partitionName)     ,   sizeof(((struct ALARM_PARTITION_t*)0)->partitionName)       ,   &pokeString, &peekString  , 16                                  , PRTCLASS_GENERAL , VAL_TYP_STR    },
+{PT_IDX_KEY_STR					, 0, offsetof(struct ALARM_PARTITION_t, partIdx)           ,   sizeof(((struct ALARM_PARTITION_t*)0)->partIdx)             ,   &pokePrtNo,  &peekPrtnNo  , strlen(PT_IDX_KEY_STR)              , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FORCE_ON_REG_ARM_KEY_STR	, 0, offsetof(struct ALARM_PARTITION_t, forceOnRegularArm) ,   sizeof(((struct ALARM_PARTITION_t*)0)->forceOnRegularArm)   ,   &pokeBool,   &peekBool    , strlen(PT_FORCE_ON_REG_ARM_KEY_STR) , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_FORCE_ON_STAY_ARM_KEY_STR	, 0, offsetof(struct ALARM_PARTITION_t, forceOnStayArm)    ,   sizeof(((struct ALARM_PARTITION_t*)0)->forceOnStayArm)      ,   &pokeBool,   &peekBool    , strlen(PT_FORCE_ON_STAY_ARM_KEY_STR), PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_ED2_FOLLOW_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, followEntryDelay2) ,   sizeof(((struct ALARM_PARTITION_t*)0)->followEntryDelay2)   ,   &pokeBool,   &peekBool    , strlen(PT_ED2_FOLLOW_KEY_STR)       , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_ALRM_OUT_EN_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, alarmOutputEn)     ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmOutputEn)       ,   &pokeBool,   &peekBool    , strlen(PT_ALRM_OUT_EN_KEY_STR)      , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_ALRM_LENGHT_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, alarmCutOffTime)   ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmCutOffTime)     ,   &pokeByte,   &peekByte    , strlen(PT_ALRM_LENGHT_KEY_STR)      , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_NO_CUT_ON_FIRE_KEY_STR		, 0, offsetof(struct ALARM_PARTITION_t, noCutOffOnFire)    ,   sizeof(((struct ALARM_PARTITION_t*)0)->noCutOffOnFire)      ,   &pokeBool,   &peekBool    , strlen(PT_NO_CUT_ON_FIRE_KEY_STR)   , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_ALARM_RECYC_TIME_KEY_STR	, 0, offsetof(struct ALARM_PARTITION_t, alarmRecycleTime)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->alarmRecycleTime)    ,   &pokeByte,   &peekByte    , strlen(PT_ALARM_RECYC_TIME_KEY_STR) , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_ED1_INTERVAL_KEY_STR		, 0, offsetof(struct ALARM_PARTITION_t, entryDelay1Intvl)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->entryDelay1Intvl)    ,   &pokeByte,   &peekByte    , strlen(PT_ED1_INTERVAL_KEY_STR)     , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_ED2_INTERVAL_KEY_STR		, 0, offsetof(struct ALARM_PARTITION_t, entryDelay2Intvl)  ,   sizeof(((struct ALARM_PARTITION_t*)0)->entryDelay2Intvl)    ,   &pokeByte,   &peekByte    , strlen(PT_ED2_INTERVAL_KEY_STR)     , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_EXIT_DLY_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, exitDelay)         ,   sizeof(((struct ALARM_PARTITION_t*)0)->exitDelay)           ,   &pokeByte,   &peekByte    , strlen(PT_EXIT_DLY_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_VALID_KEY_STR				, 0, offsetof(struct ALARM_PARTITION_t, valid)             ,   sizeof(((struct ALARM_PARTITION_t*)0)->valid)               ,   &pokeBool,   &peekBool    , strlen(PT_VALID_KEY_STR	)           , PRTCLASS_GENERAL , VAL_TYP_BOOL   },
+{PT_FOLLOW_1_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows)           ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_1_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_2_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 1       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_2_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_3_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 2       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_3_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_4_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 3       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_4_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_5_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 4       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_5_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_6_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 5       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_6_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_7_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 6       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_7_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
+{PT_FOLLOW_8_KEY_STR			, 0, offsetof(struct ALARM_PARTITION_t, follows) + 7       ,   sizeof(byte)                                                ,   &pokeFollow, &peekFollow  , strlen(PT_FOLLOW_8_KEY_STR)         , PRTCLASS_GENERAL , VAL_TYP_INT    },
 };
 #define PARTITION_KEYS_CNT (sizeof(partitionKeyValProcessors)/sizeof(partitionKeyValProcessors[0]))
 
@@ -403,19 +443,19 @@ struct jsonKeyValProcessor partitionKeyValProcessors[] = {
  * @brief Global options tags Contains tag as a string and corresponding offset from beginnig of struct ALARM_GLOBAL_OPTS_t. Used to modify tag values direct in memory.
 */
 struct jsonKeyValProcessor gOptsKeyValProcessors[] = {
-{GO_MAX_SLAVES_KEY_STR,		 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, maxSlaveBrds),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->maxSlaveBrds),     &pokeByte,    &peekByte   , strlen(GO_MAX_SLAVES_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_INT},
-{GO_RESTR_SPRVS_LOSS_KEY_STR,-1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnSprvsLoss),  sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnSprvsLoss), &pokeBool,    &peekBool   , strlen(GO_RESTR_SPRVS_LOSS_KEY_STR),  PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_TAMPER_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnTamper),     sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnTamper),    &pokeBool,    &peekBool   , strlen(GO_RESTR_TAMPER_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_AC_FAIL_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnACfail),     sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnACfail),    &pokeBool,    &peekBool   , strlen(GO_RESTR_AC_FAIL_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_BAT_FAIL_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBatFail),    sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBatFail),   &pokeBool,    &peekBool   , strlen(GO_RESTR_BAT_FAIL_KEY_STR),	PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_BELL_KEY_STR,		 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBellFail),   sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBellFail),  &pokeBool,    &peekBool   , strlen(GO_RESTR_BELL_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_BOARD_FAIL_KEY_STR,-1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBrdFail),    sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBrdFail),   &pokeBool,    &peekBool   , strlen(GO_RESTR_BOARD_FAIL_KEY_STR),  PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_RESTR_AMASK_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnAntimask),   sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnAntimask),  &pokeBool,    &peekBool   , strlen(GO_RESTR_AMASK_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_TROUBLE_LATCH_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, troubleLatch),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->troubleLatch),     &pokeBool,    &peekBool   , strlen(GO_TROUBLE_LATCH_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_TAMPER_BPS_OPT_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, tamperBpsOpt),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->tamperBpsOpt),     &pokeBool,    &peekBool   , strlen(GO_TAMPER_BPS_OPT_KEY_STR),	PRTCLASS_GENERAL , VAL_TYP_BOOL},
-{GO_TAMPER_OPTS_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, tamperOpts),        sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->tamperOpts),       &pokeLineErr, &peekLineErr, strlen(GO_TAMPER_OPTS_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_STR},
-{GO_AMASK_OPTS_KEY_STR,		 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, antiMaskOpt),       sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->antiMaskOpt),      &pokeLineErr, &peekLineErr, strlen(GO_AMASK_OPTS_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_STR},
-{GO_RF_SPRVS_OPT_KEY_STR,	 -1, offsetof(struct ALARM_GLOBAL_OPTS_t, rfSprvsOpt),        sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->rfSprvsOpt),       &pokeLineErr, &peekLineErr, strlen(GO_RF_SPRVS_OPT_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_STR},
+{GO_MAX_SLAVES_KEY_STR,		 0, offsetof(struct ALARM_GLOBAL_OPTS_t, maxSlaveBrds),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->maxSlaveBrds),     &pokeByte,    &peekByte   , strlen(GO_MAX_SLAVES_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_INT},
+{GO_RESTR_SPRVS_LOSS_KEY_STR,0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnSprvsLoss),  sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnSprvsLoss), &pokeBool,    &peekBool   , strlen(GO_RESTR_SPRVS_LOSS_KEY_STR),  PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_TAMPER_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnTamper),     sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnTamper),    &pokeBool,    &peekBool   , strlen(GO_RESTR_TAMPER_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_AC_FAIL_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnACfail),     sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnACfail),    &pokeBool,    &peekBool   , strlen(GO_RESTR_AC_FAIL_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_BAT_FAIL_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBatFail),    sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBatFail),   &pokeBool,    &peekBool   , strlen(GO_RESTR_BAT_FAIL_KEY_STR),	PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_BELL_KEY_STR,		 0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBellFail),   sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBellFail),  &pokeBool,    &peekBool   , strlen(GO_RESTR_BELL_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_BOARD_FAIL_KEY_STR,0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnBrdFail),    sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnBrdFail),   &pokeBool,    &peekBool   , strlen(GO_RESTR_BOARD_FAIL_KEY_STR),  PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_RESTR_AMASK_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, restrOnAntimask),   sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->restrOnAntimask),  &pokeBool,    &peekBool   , strlen(GO_RESTR_AMASK_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_TROUBLE_LATCH_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, troubleLatch),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->troubleLatch),     &pokeBool,    &peekBool   , strlen(GO_TROUBLE_LATCH_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_TAMPER_BPS_OPT_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, tamperBpsOpt),      sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->tamperBpsOpt),     &pokeBool,    &peekBool   , strlen(GO_TAMPER_BPS_OPT_KEY_STR),	PRTCLASS_GENERAL , VAL_TYP_BOOL},
+{GO_TAMPER_OPTS_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, tamperOpts),        sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->tamperOpts),       &pokeLineErr, &peekLineErr, strlen(GO_TAMPER_OPTS_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_STR},
+{GO_AMASK_OPTS_KEY_STR,		 0, offsetof(struct ALARM_GLOBAL_OPTS_t, antiMaskOpt),       sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->antiMaskOpt),      &pokeLineErr, &peekLineErr, strlen(GO_AMASK_OPTS_KEY_STR),		PRTCLASS_GENERAL , VAL_TYP_STR},
+{GO_RF_SPRVS_OPT_KEY_STR,	 0, offsetof(struct ALARM_GLOBAL_OPTS_t, rfSprvsOpt),        sizeof(((struct ALARM_GLOBAL_OPTS_t*)0)->rfSprvsOpt),       &pokeLineErr, &peekLineErr, strlen(GO_RF_SPRVS_OPT_KEY_STR),	    PRTCLASS_GENERAL , VAL_TYP_STR},
 };
 #define GOPTS_KEYS_CNT (sizeof(gOptsKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
@@ -423,11 +463,11 @@ struct jsonKeyValProcessor gOptsKeyValProcessors[] = {
  * @brief PGM tags. Contains tag as a string and corresponding offset from beginnig of struct ALARM_PGM. Used to modify tag values direct in memory.
 */
 struct jsonKeyValProcessor pgmKeyValProcessors[] = {
-  {PGM_NAME_KEY_STR,     -1, offsetof(struct ALARM_PGM, pgmName) ,  sizeof(((struct ALARM_PGM*)0)->pgmName) ,   &pokeString,  &peekString,  16                              ,   PRTCLASS_GENERAL , VAL_TYP_STR},
-  {PGM_BRD_ID_KEY_STR,   -1, offsetof(struct ALARM_PGM, boardID) ,  sizeof(((struct ALARM_PGM*)0)->boardID) ,   &pokeByte,    &peekByte,    strlen(PGM_BRD_ID_KEY_STR)      ,   PRTCLASS_GENERAL , VAL_TYP_INT},
-  {PGM_ID_KEY_STR,       -1, offsetof(struct ALARM_PGM, pgmID)   ,  sizeof(((struct ALARM_PGM*)0)->pgmID)   ,   &pokeByte,    &peekByte,    strlen(PGM_ID_KEY_STR)          ,   PRTCLASS_GENERAL , VAL_TYP_INT},
-  {PGM_PULSE_LEN_KEY_STR,-1, offsetof(struct ALARM_PGM, pulseLen),  sizeof(((struct ALARM_PGM*)0)->pulseLen),   &pokeByte,    &peekByte,    strlen(PGM_PULSE_LEN_KEY_STR)   ,   PRTCLASS_GENERAL , VAL_TYP_INT},
-  {PGM_VALID_KEY_STR,    -1, offsetof(struct ALARM_PGM, valid)   ,  sizeof(((struct ALARM_PGM*)0)->valid)   ,   &pokeByte,    &peekByte,    strlen(PGM_VALID_KEY_STR)       ,   PRTCLASS_GENERAL , VAL_TYP_INT},
+  {PGM_NAME_KEY_STR,     0, offsetof(struct ALARM_PGM, pgmName) ,  sizeof(((struct ALARM_PGM*)0)->pgmName) ,   &pokeString,  &peekString,  16                              ,   PRTCLASS_GENERAL , VAL_TYP_STR},
+  {PGM_BRD_ID_KEY_STR,   0, offsetof(struct ALARM_PGM, boardID) ,  sizeof(((struct ALARM_PGM*)0)->boardID) ,   &pokeByte,    &peekByte,    strlen(PGM_BRD_ID_KEY_STR)      ,   PRTCLASS_GENERAL , VAL_TYP_INT},
+  {PGM_ID_KEY_STR,       0, offsetof(struct ALARM_PGM, pgmID)   ,  sizeof(((struct ALARM_PGM*)0)->pgmID)   ,   &pokeByte,    &peekByte,    strlen(PGM_ID_KEY_STR)          ,   PRTCLASS_GENERAL , VAL_TYP_INT},
+  {PGM_PULSE_LEN_KEY_STR,0, offsetof(struct ALARM_PGM, pulseLen),  sizeof(((struct ALARM_PGM*)0)->pulseLen),   &pokeByte,    &peekByte,    strlen(PGM_PULSE_LEN_KEY_STR)   ,   PRTCLASS_GENERAL , VAL_TYP_INT},
+  {PGM_VALID_KEY_STR,    0, offsetof(struct ALARM_PGM, valid)   ,  sizeof(((struct ALARM_PGM*)0)->valid)   ,   &pokeByte,    &peekByte,    strlen(PGM_VALID_KEY_STR)       ,   PRTCLASS_GENERAL , VAL_TYP_INT},
 };
 #define PGM_KEYS_CNT (sizeof(pgmKeyValProcessors)/sizeof(struct jsonKeyValProcessor))
 
@@ -468,11 +508,11 @@ enum parseFlags_t {
 //        {CSV_PRT_HDR_TTL,	    RESERVED,   &getHeaderLine, partitionTags,  PARTITION_TAGS_CNT,       HAVE_PRT_HDR,           CLEAR_FLAGS,                                NULL,           NULL},
 //        {CSV_PGM_HDR_TTL,	    RESERVED,   &getHeaderLine, pgmTags ,       PGM_TAGS_CNT,             HAVE_PGM_HDR,           CLEAR_FLAGS,                                NULL,           NULL},
 //        {CSV_GOPT_HDR_TTL,      RESERVED,   &getHeaderLine, gOptsTags,      GLOBAL_OPTIONS_TAGS_CNT,  HAVE_GOPT_HDR,          CLEAR_FLAGS,                                NULL,           NULL},
-//        {CSV_ZONE_TTL,		    ZONES,      &getDataLine,   zoneTags,       ZONE_TAGS_CNT,            CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_ZN_HDR |HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-//        {CSV_PRT_TTL,	        PARTITIONS, &getDataLine,   partitionTags,  PARTITION_TAGS_CNT,       CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_PRT_HDR|HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-//        {CSV_PGM_TTL,	        PGMS,       &getDataLine,   pgmTags ,       PGM_TAGS_CNT,             CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_PGM_HDR|HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-//        {CSV_GOPT_TTL,          GLOBAL_OPT, &getDataLine,   gOptsTags,      GLOBAL_OPTIONS_TAGS_CNT,  HAVE_G_OPT,             HAVE_GOPT_HDR,                              (byte*)&maxTmp, &postprocesStoreImportedCSVData},
-//        //{CSV_KEYSW_HDR_TTL,   KEYSW,      &getHeaderLine,   KEYSW_HDR   },
+//        {CSV_ZONE_TTL,		    ZONES_CFG,      &getDataLine,   zoneTags,       ZONE_TAGS_CNT,            CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_ZN_HDR |HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+//        {CSV_PRT_TTL,	        PARTITIONS_CFG, &getDataLine,   partitionTags,  PARTITION_TAGS_CNT,       CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_PRT_HDR|HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+//        {CSV_PGM_TTL,	        PGMS_CFG,       &getDataLine,   pgmTags ,       PGM_TAGS_CNT,             CLEAR_FLAGS,            HAVE_GOPT_HDR|HAVE_PGM_HDR|HAVE_G_OPT,      (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+//        {CSV_GOPT_TTL,          GLOBAL_OPT_CFG, &getDataLine,   gOptsTags,      GLOBAL_OPTIONS_TAGS_CNT,  HAVE_G_OPT,             HAVE_GOPT_HDR,                              (byte*)&maxTmp, &postprocesStoreImportedCSVData},
+//        //{CSV_KEYSW_HDR_TTL,   KEYSW_CFG,      &getHeaderLine,   KEYSW_HDR   },
 //};
 //#define CSV_HEADERS_CNT         (sizeof(csvHeaders)/sizeof(csvHeaders[0]))
 //

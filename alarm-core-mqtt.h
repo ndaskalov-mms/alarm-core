@@ -23,7 +23,7 @@ struct JsonTopicHandler {
 
 // Define the JSON topic handlers array as a static member of the  class
 const JsonTopicHandler mqttTopicHandlers[] = {
-    {MQTT_ZONES_CONTROL_TOPIC,      ZONES,         &wrapProcessJsonPayload,
+    {MQTT_ZONES_CONTROL_TOPIC,      ZONES_CMD,         &wrapProcessJsonPayload,
      "Control zones (bypass, tamper, etc.)"},
 
     //{MQTT_PARTITIONS_CONTROL_TOPIC, JSON_SECTION_PARTITIONS,    &wrapProcessPartitionJsonPayload,
@@ -61,7 +61,7 @@ public:
      * @param length The length of the payload.
      */
     bool processConfigMessage(const char* topic, const char* payload, unsigned int length) {
-        printf("MqttProcessor received message on topic: %s\n", topic);
+        LOG_DEBUG("MqttProcessor received message on topic: %s\n", topic);
 
         // This part remains the same, but it now uses the external parser
         // provided in the constructor.
@@ -74,25 +74,25 @@ public:
         jsonBuffer[length] = '\0';
 
         if (strstr(topic, "/config")) {
-            printf("Processing configuration payload...\n");
+            LOG_INFO("Processing configuration payload...\n");
             int result = m_jsonParser.parseConfigJSON(jsonBuffer);
             if (result == 0) {
-                printf("Configuration parsed successfully.\n");
+                LOG_INFO("Configuration parsed successfully.\n");
                 return true;
             }
             else {
-                printf("Error parsing configuration.\n");
+                LOG_ERROR("Error parsing configuration.\n");
                 return false;
             }
         }
         else {
-            printf("Topic not relevant for configuration. Ignoring.\n");
+            LOG_WARNING("Topic not relevant for configuration. Ignoring.\n");
 
         }
 
         delete[] jsonBuffer;
     }
-
+    
     bool processMessage(const char* topic, const char* payload, size_t length) {
         for (int i = 0; i < MQTT_TOPIC_HANDLER_COUNT; ++i) {
             if (strcmp(topic, mqttTopicHandlers[i].topic) == 0) {
@@ -101,30 +101,9 @@ public:
             }
         }
         // No handler found for this topic
-        printf("No handler found for topic: %s\n", topic);
+        LOG_CRITICAL("No handler found for topic: %s\n", topic);
         return false;
     }
-
-    //// Process a JSON message by finding the matching topic handler
-    //bool processMqttMessage(const char* topic, const char* payload, size_t length) {
-    //    // Find the handler for this topic
-    //    for (int i = 0; i < MQTT_TOPIC_HANDLER_COUNT; i++) {
-    //        if (strcmp(topic, mqttTopicHandlers[i].topic) == 0) {
-    //            // Call the JSON processor for this topic
-    //            if (mqttTopicHandlers[i].processor) {
-    //                return mqttTopicHandlers[i].processor(m_jsonParser, payload, length);
-    //            }
-    //            else {
-    //                printf("No processor defined for topic: %s\n", topic);
-    //                //ErrWrite(LOG_ERR_WARNING, "No processor defined for topic: %s\n", topic);
-    //                return false;
-    //            }
-    //        }
-    //    }
-    //    printf("No handler found for topic: %s\n", topic);
-    //    //ErrWrite(LOG_ERR_WARNING, "No handler found for topic: %s\n", topic);
-    //    return false;
-    //}
 
 private:
     //Alarm& m_alarm;
