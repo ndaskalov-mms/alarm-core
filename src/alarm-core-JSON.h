@@ -352,7 +352,7 @@ private:
         ALARM_PARTITION_CMD_t tempPartition;
         tempPartition.partitionName[0] = '\0';  // initialize zone name to empty string
 		tempPartition.armMethod[0] = '\0';      // initialize arm method to empty string
-        int res;
+        //int res;
 
         if (!parse_object(jctx, partitionCmdKeyValProcessors, PARTITION_CMD_KEYS_CNT, (byte*)&tempPartition))
             return false;
@@ -365,27 +365,22 @@ private:
             LOG_ERROR("No partition with name %s exists.\n", tempPartition.partitionName);
             return false;
         }
-        if (strcmp(tempPartition.armMethod, PT_DISARM_VAL_STR) == 0) {
-            // Handle Disarm
+        // look-up the command in commands array
+        ARM_METHODS_t cmd = INVALID_CMD;
+        for (int i = 0; i < PARTITION_CMDS_CNT; i++) {
+            if (_stricmp(tempPartition.armMethod, partitionCmdsInt2Str[i].valStr) == 0) {
+                cmd = (ARM_METHODS_t) partitionCmdsInt2Str[i].val;
+                break;
+            }
         }
-        else if (strcmp(tempPartition.armMethod, PT_REG_ARM_VAL_STR) == 0) {
-            // Handle Regular Arming
-        }
-        else if (strcmp(tempPartition.armMethod, PT_FORCE_ARM_VAL_STR) == 0) {
-            // Handle Force Arming
-        }
-        else if (strcmp(tempPartition.armMethod, PT_STAY_ARM_VAL_STR) == 0) {
-            // Handle Stay Arming
-        }
-        else if (strcmp(tempPartition.armMethod, PT_INSTANT_ARM_VAL_STR) == 0) {
-            // Handle Instant Arming
+        if (cmd != -1) {
+            // Execute the found command
+            ret = m_alarm.trigerArm(partitionIdx, cmd);
         }
         else {
-            // Handle unknown method (optional)
-            LOG_ERROR("Unknown arm method: %s\n", tempPartition.armMethod);
+            LOG_ERROR("Unknown partition command: %s\n", tempPartition.armMethod);
             return false;
         }
-
         return true;
     }
     /**
@@ -469,4 +464,6 @@ private:
         //}
     }
 };
+
+
 

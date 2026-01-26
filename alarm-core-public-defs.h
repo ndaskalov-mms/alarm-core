@@ -114,7 +114,7 @@
 
 //
 // Partition control supported JSON values (commands)
-// TODO: some PAI command are not implemented - arm_sleep, arm_stay_stayd, arm_sleep_stay 
+// used as a value of arm_method JSON key in partition control command
 #define	PT_ARM_METHOD_KEY_STR			"arm_method"
 #define	PT_DISARM_VAL_STR				"disarm"
 #define	PT_REG_ARM_VAL_STR				"arm"
@@ -202,6 +202,7 @@ enum ZONE_CMDS_t {
 //
 //
 enum  ARM_METHODS_t {
+	INVALID_CMD = -1,
 	DISARM = 0,
 	REGULAR_ARM = 0x1,
 	FORCE_ARM = 0x2,

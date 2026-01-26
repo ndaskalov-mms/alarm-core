@@ -8,7 +8,7 @@ extern char token[256];
 //
 #ifdef ARDUINO
 #define _itoa itoa
-#define _stricmp strcmp  // TODO - not case sensitive
+#define _stricmp strcasecmp // Correct mapping for case-insensitive comparison
 #endif
 
 // ??????Str2val arrays contain list of all possible values which can be present in the config file cells different digit or true/false bool
@@ -38,18 +38,30 @@ static struct valStr2int zoneTypeInt2Str[] = {
 {H24_WATER_VAL_STR				, H24_WATER},
 {H24_FREEZE_VAL_STR				, H24_FREEZE},
 {H24_FIRE_DELAYED_VAL_STR		, H24_FIRE_DELAYED},
-{H24_FIRE_STANDARD_VAL_STR		, H24_FIRE_STANDARD} };
-//
+{H24_FIRE_STANDARD_VAL_STR		, H24_FIRE_STANDARD}
+};
 #define ZONE_TYPES_CNT (sizeof(zoneTypeInt2Str)/sizeof(struct valStr2int))
 //
+// partition commands integer mapping, defined in enum  ARM_METHODS_t
+static struct valStr2int partitionCmdsInt2Str[] = {
+{PT_DISARM_VAL_STR		,	DISARM      },
+{PT_REG_ARM_VAL_STR		,	REGULAR_ARM },
+{PT_FORCE_ARM_VAL_STR	,	FORCE_ARM   },
+{PT_STAY_ARM_VAL_STR	,	INSTANT_ARM },
+{PT_INSTANT_ARM_VAL_STR	,	STAY_ARM    }
+};
+#define PARTITION_CMDS_CNT (sizeof(partitionCmdsInt2Str)/sizeof(struct valStr2int))
+//
+// zone alarm types string to int mapping, defined in ALARM_TYPES_t
 static struct valStr2int alarmTypeStr2int[] = { 
 {STEADY_ALARM_VAL_STR	        , STEADY_ALARM},
 {SILENT_ALARM_VAL_STR	        , SILENT_ALARM},
 {PULSED_ALARM_VAL_STR	        , PULSED_ALARM},
-{REPORT_ALARM_VAL_STR	        , REPORT_ALARM} };
-//
+{REPORT_ALARM_VAL_STR	        , REPORT_ALARM}
+};
 #define ALARMS_TITLE_CNT (sizeof(alarmTypeStr2int)/sizeof(struct valStr2int))
 //
+// zone line error options string to int mapping
 static struct valStr2int lineErrStr2int[] = { 
 {LINE_ERR_OPT_DISABLED_VAL_STR			    , LINE_ERR_OPT_DISABLED },
 {LINE_ERR_OPT_TROUBLE_ONLY_VAL_STR		    , LINE_ERR_OPT_TROUBLE_ONLY},

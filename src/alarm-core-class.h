@@ -65,6 +65,7 @@ public:
 	int         isPartitionValid(const int idx) const;
 	bool        setPartitionTarget(int partitionIndex, ARM_METHODS_t targetArmStatus);
     int         armPartition(byte prt, ARM_METHODS_t action);
+    bool        trigerArm(int partID, ARM_METHODS_t cmd);
     
     // PGM-related methods
     int         getPgmIndex(const char* name) const;

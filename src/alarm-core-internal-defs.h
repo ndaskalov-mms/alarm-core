@@ -135,11 +135,13 @@ enum PRINT_CLASS_t	{
 #define NO_TROUBLE						0x0
 #define TROUBLE							0x1
 //
-#define NO_ALARM						0x0
-#define STEADY_ALARM					0x1
-#define PULSED_ALARM					0X2
-#define SILENT_ALARM					0x4
-#define REPORT_ALARM 					0x8
+enum ALARM_TYPES_t {
+	NO_ALARM = 0x0,
+	STEADY_ALARM						= 0x1,
+	PULSED_ALARM						= 0X2,
+	SILENT_ALARM						= 0x4,
+	REPORT_ALARM						= 0x8,
+};
 //
 enum LINE_ERR_OPT_t {
 	LINE_ERR_OPT_DISABLED				= 0,
