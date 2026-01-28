@@ -13,11 +13,11 @@ const       char* password[NUMBER_OF_AP] = { /*"Roksi6moksi"*/	 "fenwowmo" };
 // MQTT
 const char* mqttServer = "192.168.33.201"; //"192.168.0.228";
 const int   mqttPort = 1883;
-const char* mqttUser = ""; // "alarm";
+const char* mqttUser = ""; // "my_alarm";
 const char* mqttPassword = ""; // "12345";
 //
 // config file(s)
-const char masterDataPrefix[] = ""; //    "../master/data/";
+const char masterDataPrefix[] = "arduino/data/"; //    "../master/data/";
 const char jsonConfigFname[] = "alarm-config.json"; // alarmConfig.json";
 const char csvConfigFname[] = "alarm-config.csv"; 
 

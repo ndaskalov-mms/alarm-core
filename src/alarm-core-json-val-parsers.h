@@ -1,4 +1,4 @@
-// file: alarm-core-json-val-parsers.h
+// file: my_alarm-core-json-val-parsers.h
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 extern char token[256];
@@ -52,7 +52,7 @@ static struct valStr2int partitionCmdsInt2Str[] = {
 };
 #define PARTITION_CMDS_CNT (sizeof(partitionCmdsInt2Str)/sizeof(struct valStr2int))
 //
-// zone alarm types string to int mapping, defined in ALARM_TYPES_t
+// zone my_alarm types string to int mapping, defined in ALARM_TYPES_t
 static struct valStr2int alarmTypeStr2int[] = { 
 {STEADY_ALARM_VAL_STR	        , STEADY_ALARM},
 {SILENT_ALARM_VAL_STR	        , SILENT_ALARM},

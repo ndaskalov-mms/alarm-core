@@ -75,7 +75,7 @@
 #define	H24_FIRE_STANDARD_VAL_STR		"H24_FIRE_STANDARD"    
 
 //
-// value strings allowed for alarm type (ZN_ALARM_TTL) in zone config JSON
+// value strings allowed for my_alarm type (ZN_ALARM_TTL) in zone config JSON
 #define	STEADY_ALARM_VAL_STR			"STEADY_ALARM"
 #define	SILENT_ALARM_VAL_STR			"SILENT_ALARM"
 #define	PULSED_ALARM_VAL_STR			"PULSED_ALARM"

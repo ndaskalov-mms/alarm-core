@@ -1,4 +1,4 @@
-// alarm-core-debug.h
+// my_alarm-core-debug.h
 #pragma once
 #include <stdarg.h>
 

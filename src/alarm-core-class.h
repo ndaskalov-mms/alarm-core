@@ -38,7 +38,7 @@ public:
     // debug prints
     void ErrWrite(LogLevel_t level, const char* format, ...);
 
-    // Public methods to interact with alarm system
+    // Public methods to interact with my_alarm system
     // These methods don't provide direct access to underlying arrays
     void        alarm_loop(void);
     void        setDebugCallback(DebugCallbackFunc callback);
@@ -90,7 +90,7 @@ public:
 	// Debugging and logging methods
     static void defaultDebugOut(LogLevel_t err_code, const char* what, ...);
 
-    // printing methods - defined in alarm-core-helpers.h
+    // printing methods - defined in my_alarm-core-helpers.h
 	//
     static void printConfigData(struct jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
     void        printConfigHeader(struct jsonKeyValProcessor targetKeys[], int numEntries);
@@ -114,66 +114,66 @@ public:
 
 
 //#define INTERNAL_JSON_HANDLERS // comment out to disable internal JSON handlers
-#ifdef INTERNAL_JSON_HANDLERS
-    // Structure to define a JSON key handler
-    struct JsonKeyHandler {
-        const char* key;                // JSON key name
-        bool (*handler)(Alarm& alarm, const char* value, int itemIndex, void* context); // Function to handle this key's value
-        const char* description;        // Description of what this key does
-    };
-
-    // Structure to define a topic and its JSON handlers
-    //struct JsonTopicHandler {
-    //    const char* topic;              // MQTT topic to subscribe to
-    //    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
-    //    bool (*processor)(Alarm& alarm, const char* jsonPayload, size_t length); // Function to process the entire JSON
-    //    const char* description;        // Description of topic purpose
-    //};
-
-    // Static JSON handler functions
-    static bool handleZoneJsonPayload(Alarm& alarm, const char* value, int zoneIndex, void* context);
-    static bool handlePartitionJsonPayload(Alarm& alarm, const char* value, int partitionIndex, void* context);
-    static bool handlePgmJsonPayload(Alarm& alarm, const char* value, int pgmIndex, void* context);
-    static bool handleGlobalOptionJsonPayload(Alarm& alarm, const char* value, int optionIndex, void* context);
-
-    // Static JSON processor functions
-    static bool processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
-    static bool processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
-    static bool processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
-    static bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
-
-    // Accessor methods for MQTT integration
-    //static const JsonTopicHandler* getJsonTopicHandlers() { return mqttTopicHandlers; }
-    static int getJsonTopicHandlerCount() { return MQTT_TOPIC_HANDLER_COUNT; }
-    
-    // Process a JSON message received via MQTT
-    bool processMqttMessage(const char* topic, const char* payload, size_t length);
-#endif //INTERNAL_JSON_HANDLERS
+//#ifdef INTERNAL_JSON_HANDLERS
+//    // Structure to define a JSON key handler
+//    struct JsonKeyHandler {
+//        const char* key;                // JSON key name
+//        bool (*handler)(Alarm& alarm, const char* value, int itemIndex, void* context); // Function to handle this key's value
+//        const char* description;        // Description of what this key does
+//    };
+//
+//    // Structure to define a topic and its JSON handlers
+//    //struct JsonTopicHandler {
+//    //    const char* topic;              // MQTT topic to subscribe to
+//    //    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
+//    //    bool (*processor)(Alarm& my_alarm, const char* jsonPayload, size_t length); // Function to process the entire JSON
+//    //    const char* description;        // Description of topic purpose
+//    //};
+//
+//    // Static JSON handler functions
+//    static bool handleZoneJsonPayload(Alarm& alarm, const char* value, int zoneIndex, void* context);
+//    static bool handlePartitionJsonPayload(Alarm& alarm, const char* value, int partitionIndex, void* context);
+//    static bool handlePgmJsonPayload(Alarm& alarm, const char* value, int pgmIndex, void* context);
+//    static bool handleGlobalOptionJsonPayload(Alarm& alarm, const char* value, int optionIndex, void* context);
+//
+//    // Static JSON processor functions
+//    static bool processZoneJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+//    static bool processPartitionJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+//    static bool processPgmJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+//    static bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
+//
+//    // Accessor methods for MQTT integration
+//    //static const JsonTopicHandler* getJsonTopicHandlers() { return mqttTopicHandlers; }
+//    static int getJsonTopicHandlerCount() { return MQTT_TOPIC_HANDLER_COUNT; }
+//    
+//    // Process a JSON message received via MQTT
+//    bool processMqttMessage(const char* topic, const char* payload, size_t length);
+//#endif //INTERNAL_JSON_HANDLERS
 
 private:
 
-#ifdef INTERNAL_JSON_HANDLERS
-    // Static array of MQTT topics and their handlers
-    //static const JsonTopicHandler mqttTopicHandlers[4];
-    static const int MQTT_TOPIC_HANDLER_COUNT;
-#endif //INTERNAL_JSON_HANDLERS
+//#ifdef INTERNAL_JSON_HANDLERS
+//    // Static array of MQTT topics and their handlers
+//    //static const JsonTopicHandler mqttTopicHandlers[4];
+//    static const int MQTT_TOPIC_HANDLER_COUNT;
+//#endif //INTERNAL_JSON_HANDLERS
 
     // MQTT publish callback
     MqttPublishCallback m_publish_func = nullptr;
     void* m_publish_context = nullptr;
 
-    // Private static arrays for alarm data
+    // Private static arrays for my_alarm data
     // zoneDB - database with all zones CONFIG info. 
     // zonesRT = all run time zone related data. 
     struct ALARM_ZONE zonesDB[MAX_ALARM_ZONES];
     struct ALARM_ZONE_RT zonesRT[MAX_ALARM_ZONES];
     // PGMs DB
     struct ALARM_PGM pgmsDB[MAX_ALARM_PGM];
-    // alarm keysw records structure to hold all alarm pgms related info     
+    // my_alarm keysw records structure to hold all my_alarm pgms related info     
     struct ALARM_KEYSW keyswDB[MAX_KEYSW_CNT];
-    // alarm global options storage
+    // my_alarm global options storage
     struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
-    // alarm partition options storage
+    // my_alarm partition options storage
     struct ALARM_PARTITION_t			partitionDB[MAX_PARTITION];		// Partitions CONFIG data
     struct ALARM_PARTITION_RUN_TIME_t	partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
     struct ALARM_PARTITION_STATS_t		partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
@@ -294,7 +294,7 @@ void Alarm::setDebugCallback(DebugCallbackFunc callback) {
 // 
 // Constructor
 Alarm::Alarm() {
-    //ErrWrite(LOG_ERR_WARNING, "Init alarm from file\n");
+    //ErrWrite(LOG_ERR_WARNING, "Init my_alarm from file\n");
     initializeZones();
     initializePgms();
     initializePartitions();
@@ -571,7 +571,7 @@ bool Alarm::isRestrictionActive(int restrictionType) const {
 }
 
 void Alarm::updateAlarmState() {
-    // This would implement the main alarm loop logic
+    // This would implement the main my_alarm loop logic
     // Process all zones, partitions, and timers
     
     // Example pseudocode:

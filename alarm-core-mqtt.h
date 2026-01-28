@@ -4,7 +4,7 @@
 #include <string.h>
 #include "alarm-core.h"
 
-// Forward-declare the global alarmJSON instance from alarm-core.cpp
+// Forward-declare the global alarmJSON instance from my_alarm-core.cpp
 extern alarmJSON parser;
 
 // Wrapper function to call the member function from a C-style function pointer
@@ -33,7 +33,7 @@ const JsonTopicHandler mqttTopicHandlers[] = {
     // "Control PGMs (on, off, pulse)"},
 
     //{MQTT_GLOBAL_OPT_CONTROL_TOPIC, JSON_SECTION_GLOBAL_OPTIONS, &wrapProcessGlobalOptionsJsonPayload,
-    // "Set global alarm options"}
+    // "Set global my_alarm options"}
 };
 
 const int MQTT_TOPIC_HANDLER_COUNT = sizeof(mqttTopicHandlers) / sizeof(mqttTopicHandlers[0]);
@@ -41,12 +41,12 @@ class MqttProcessor {
 public:
     /**
      * @brief Constructor that takes references to the Alarm instance and an existing JSON parser.
-     * @param alarm The core Alarm object.
+     * @param my_alarm The core Alarm object.
      * @param jsonParser An existing instance of the alarmJSON parser.
      */
-    //MqttProcessor(Alarm& alarm, alarmJSON& jsonParser)
+    //MqttProcessor(Alarm& my_alarm, alarmJSON& jsonParser)
     //    // Store references to the objects provided by the caller.
-    //    : m_alarm(alarm), m_jsonParser(jsonParser)
+    //    : m_alarm(my_alarm), m_jsonParser(jsonParser)
     MqttProcessor(alarmJSON& jsonParser)
         // Store references to the objects provided by the caller.
         : m_jsonParser(jsonParser)

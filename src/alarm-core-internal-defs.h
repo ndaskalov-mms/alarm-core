@@ -45,7 +45,7 @@ enum {
 //
 #define UNKNOWN_TTL "unknown"
 //
-// ----------- alarm-defs.h -------------------
+// ----------- my_alarm-defs.h -------------------
 //
 #define MAX_PARTITION			8
 #define MAX_FOLLOW_PART			8
@@ -212,7 +212,7 @@ enum entryDelay_t {
 	DONE							= 0x2,
 };
 //
-// alarm zones structure to hold all alarm zones related info
+// my_alarm zones structure to hold all my_alarm zones related info
 //
 struct ALARM_ZONE {
 	uint16_t  valid;				// TODO - why uint16_t?
@@ -221,7 +221,7 @@ struct ALARM_ZONE {
 	byte	zoneID;
 	uint16_t zoneType;				// zone type - enable, entry delay, follow, instant, stay, etc see ZONE_DEFS_t
 	byte	zonePartition;			// assigned to partition X
-	byte	zoneAlarmType;			// zone alarm type - steady, pulsed, etc
+	byte	zoneAlarmType;			// zone my_alarm type - steady, pulsed, etc
 	byte	zoneShdwnEn;
 	byte	zoneBypassEn;
 	byte	zoneStayZone;
@@ -229,16 +229,16 @@ struct ALARM_ZONE {
 	byte	zoneIntelizone;
 	byte	delayTrm;
 	byte	zoneTamperFpanel;		// on tamper follow panel settings
-	byte	zoneTamperOpts;			// zone tamper options - when/how to generate alarm when tamper
+	byte	zoneTamperOpts;			// zone tamper options - when/how to generate my_alarm when tamper
 	byte	zoneAmaskFpanel;		// on antimask follow panel settings
-	byte	zoneAmaskOpts;			// zone tamper options - when/how to generate alarm when tamper
+	byte	zoneAmaskOpts;			// zone tamper options - when/how to generate my_alarm when tamper
 };
 //
 struct ALARM_ZONE_RT {				// zone's run time staff
 	byte  	zoneStat;               // status of the zone switch. (open, close, short, line break
 	byte  	bypassed;			    // true if zone is bypassed, contains bitmas of bytass source(s)
 	byte    changed;				// butmap of what chaned in zone (so far status open/close + tamper + amask + bypass)
-	byte  	in_alarm;				// zone trigerred alarm
+	byte  	in_alarm;				// zone trigerred my_alarm
 	byte  	in_trouble;				// zone trigerred trouble
 	byte  	ignorredTamper;			// zone with ignorred tamper
 	byte  	ignorredAmask;			// zone with ignorred anti-mask
@@ -246,7 +246,7 @@ struct ALARM_ZONE_RT {				// zone's run time staff
 	byte  	openEDSD2zone;			// open ED2/SD2 zone in ED2 interval
 };      
 //
-// alarm pgms records structure to hold all alarm pgms related info
+// my_alarm pgms records structure to hold all my_alarm pgms related info
 struct ALARM_PGM {
 	uint16_t  valid;				// TODO - why uint16_t?
 	byte	boardID;
@@ -293,18 +293,18 @@ struct ALARM_GLOBAL_OPTS_t {		// TODO - add SW version
 	byte BrdFail;
 };
 //
-// alarm partition 
+// my_alarm partition 
 struct ALARM_PARTITION_t {
 	// configuration data
 	uint16_t valid;					// partition is valid if true
 	byte partIdx;					// partition index (barely used)
 	byte forceOnRegularArm;			// allways use force arm (bypass open zones) when regular arming
 	byte forceOnStayArm;			// allways use force arm (bypass open zones) when stay arming
-	byte followEntryDelay2;			// if and entry delay zone is bypassed and follow zone is opens, the alarm will be postponed by EntryDelay2 
-	byte alarmOutputEn;				// enable to triger bell or siren once alarm condition is detected in partition
-	byte alarmCutOffTime;			// cut alarm output after 1-255 seconds
+	byte followEntryDelay2;			// if and entry delay zone is bypassed and follow zone is opens, the my_alarm will be postponed by EntryDelay2 
+	byte alarmOutputEn;				// enable to triger bell or siren once my_alarm condition is detected in partition
+	byte alarmCutOffTime;			// cut my_alarm output after 1-255 seconds
 	byte noCutOffOnFire;			// disable cut-off for fire alarms
-	byte alarmRecycleTime;			// re-enable after this time if alarm condition not fixed
+	byte alarmRecycleTime;			// re-enable after this time if my_alarm condition not fixed
 	byte entryDelay1Intvl;			// entry delay 1 delay in seconds 1-255
 	byte entryDelay2Intvl;			// entry delay 2 delay in seconds 1-255
 	byte exitDelay;					// exit delay in seconds 1-255
@@ -379,13 +379,13 @@ struct ALARM_PARTITION_STATS_t {
 	//// MASTER PGMs organized as 1D array - MASTER_PGM_CNT followed by MAX_SLAVES * SLAVE_PGM_CNT
 	//struct ALARM_PGM pgmsDB[MAX_ALARM_PGM];
 	////
-	//// alarm keysw records structure to hold all alarm pgms related info     
+	//// my_alarm keysw records structure to hold all my_alarm pgms related info     
 	//struct ALARM_KEYSW keyswDB[MAX_KEYSW_CNT];
 	////
-	//// alarm global options storage
+	//// my_alarm global options storage
 	//struct ALARM_GLOBAL_OPTS_t  alarmGlobalOpts;
 	//
-	//// alarm partition options storage
+	//// my_alarm partition options storage
 	//struct ALARM_PARTITION_t					partitionDB[MAX_PARTITION];		// Partitions CONFIG data
 	//struct ALARM_PARTITION_RUN_TIME_t			partitionRT[MAX_PARTITION];		// Partitions Entry Delay data
 	//struct ALARM_PARTITION_STATS_t				partitionSTATS[MAX_PARTITION];	// Partitons Run-Time statistics
@@ -397,7 +397,7 @@ struct ALARM_PARTITION_STATS_t {
 // ------------------------ end this code is copied to alarmClass.h ------------------------
 // 
 // ------------------------ shall not be used  --------------------------
-//// struct describing parameters for array representing specific alarm domain like zones, partitions, pgms, etc
+//// struct describing parameters for array representing specific my_alarm domain like zones, partitions, pgms, etc
 //struct dbProps_t {
 //	const char  title[NAME_LEN];			// string to identify for what are the data of CSV line (needed by CSV parser), not used
 //	const char*	dbBaseAddr;					// base address of the DB (zonesDB, pgmsDB, keyswDB,..)
@@ -409,7 +409,7 @@ struct ALARM_PARTITION_STATS_t {
 ////
 
 ////
-//// array containing parameters for data(bases) for all alarm domains. used to get runtime parameters of the domains
+//// array containing parameters for data(bases) for all my_alarm domains. used to get runtime parameters of the domains
 ////
 //struct dbProps_t dbPtrArr[] = {  //{NULL,				NULL,						0,				0,						0													,0										 	},
 //								{CSV_ZONE_TTL,		(const char*)&zonesDB,			MAX_ALARM_ZONES,sizeof(zonesDB[0]),		offsetof(struct ALARM_ZONE, zoneName)				,offsetof(struct ALARM_ZONE, zoneType)	 	},

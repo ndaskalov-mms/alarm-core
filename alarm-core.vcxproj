@@ -132,8 +132,8 @@
     <ClCompile Include="alarm-core.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="alarm-config.json" />
-    <None Include="alarm_core_test.ino\alarm_core_test.ino.ino" />
+    <None Include="arduino\alarm_core_arduino\alarm_core_arduino.ino" />
+    <None Include="arduino\data\alarm-config.json" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alarm-core-config.h" />

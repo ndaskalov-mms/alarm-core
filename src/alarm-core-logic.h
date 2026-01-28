@@ -47,31 +47,6 @@ void Alarm::resetAllPartitionTimers(int prt) {
 	partitionRT[prt].changed |= (CHG_EXIT_DELAY_TIMER | CHG_ENTRY_DELAY1_TIMER | CHG_ENTRY_DELAY2_TIMER);	// TODO ??? tova trqbwa da e vyv funkciata force MQTT report
 	return;
 }
-//-----------------------------------------------------------------------------------
-// Implementation of selected methods
-//-----------------------------------------------------------------------------------
-//void Alarm::initRTdata(void) {
-//	int i;
-//	// reset zone's tun-time data
-//	for (int j = 0; j < MAX_ALARM_ZONES; j++) {
-//		memset((byte*)&zonesRT[j], 0x0, sizeof(ALARM_ZONE_RT));
-//		zonesRT[j].zoneStat = ZONE_CLOSE;
-//		zonesRT[j].changed = 0;
-//	}
-//	for (i = 0; i < MAX_PARTITION; i++) {
-//		// reset all partition statistics
-//		memset((byte*)&partitionSTATS[i], 0x0, sizeof(ALARM_PARTITION_STATS_t));
-//		// init rut-time partition timers with configured delays in seconds
-//		resetAllPartitionTimers(i);
-//		// reset ARM state
-//		partitionRT[i].armStatus = partitionRT[i].targetArmStatus = DISARM;
-//		partitionRT[i].newCmd = false; partitionRT[i].changed = 0;
-//	}
-//	// clear all HW errors
-//	alarmGlobalOpts.SprvsLoss = 0; alarmGlobalOpts.ACfail = alarmGlobalOpts.BatFail = alarmGlobalOpts.BellFail = alarmGlobalOpts.BrdFail = 0;
-//}
-
-//
 // clearBypass- un- baypasses zone
 // params:  int zn			- zone index 0 .. MAX_ALARM_ZONES
 //			int	bypassType	- which bit to unset
@@ -85,7 +60,7 @@ void Alarm::clearBypass(byte zn, int bypassType) {
 	partitionRT[zonesDB[zn].zonePartition].changed |= CHG_ZONE_CHANGED;				// and partition too
 }
 //
-// clearBypasssAllZones- un- baypasses all alarm zones assigned to partition
+// clearBypasssAllZones- un- baypasses all my_alarm zones assigned to partition
 //
 void Alarm::clearBypassAllZones(int partIxd) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
@@ -114,7 +89,7 @@ inline void Alarm::bypassZone(byte zn, int bypassType) {
 	return;
 }
 //
-// bypassAllForceZones - bypasses all alarm forceable  zones assigned to partition
+// bypassAllForceZones - bypasses all my_alarm forceable  zones assigned to partition
 //
 void Alarm::bypassAllForceZones(int prtId) {
 	for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {
@@ -229,7 +204,7 @@ int Alarm::check4openUnbypassedZones(int prt) {
 }
 
 //
-// alarm-cmds.h
+// my_alarm-cmds.h
 
 //extern void bypassZone(byte zoneIdx, int requestor);
 //extern void clearBypass(byte zoneIdx, int bypassType);
@@ -292,8 +267,8 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 			break;
 		case ZONE_CLOSE_CMD:
 			clearBypass(zn, ZONE_FORCED);									// if closed now it shall start acting as if it was not forced
-			zonesRT[zn].in_alarm = NO_ALARM;								// when zone close, alarm/trouble goes off clear zone alarm flag
-			zonesRT[zn].in_trouble = NO_TROUBLE;							// clear zone alarm/trouble flag
+			zonesRT[zn].in_alarm = NO_ALARM;								// when zone close, my_alarm/trouble goes off clear zone my_alarm flag
+			zonesRT[zn].in_trouble = NO_TROUBLE;							// clear zone my_alarm/trouble flag
 			zonesRT[zn].ignorredTamper = false;								// clear zone ignorred tamper flag
 			zonesRT[zn].ignorredAmask = false;								// clear zone ignorred anti mask flag
 			zonesRT[zn].openEDSD1zone = zonesRT[zn].openEDSD2zone = false;	// clear open EDx/SDx zone in EDx interval
@@ -328,7 +303,7 @@ void Alarm::modifyZn(void* param1, void* param2, void* param3) {
 				break;															// no, return. (publishZoneStatusChanges will dect that command is not executed)
 			}
 			bypassZone(zn, ZONE_BYPASSED);
-			//newZonesDataAvailable |= NEW_DATA_BIT;							// force alarm loop to execute		
+			//newZonesDataAvailable |= NEW_DATA_BIT;							// force my_alarm loop to execute		
 			break;
 		case ZONE_UNBYPASS_CMD:
 			clearBypass(zn, ZONE_BYPASSED);
@@ -494,12 +469,12 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	return false;
 }
 //
-//  process alarm as specified by partition options:
-// 		alarmOutputEn - enable to triger bell or siren once alarm condition is detected in partition
-//		alarmCutOffTime -cut alarm output after 1-255 seconds
+//  process my_alarm as specified by partition options:
+// 		alarmOutputEn - enable to triger bell or siren once my_alarm condition is detected in partition
+//		alarmCutOffTime -cut my_alarm output after 1-255 seconds
 //		noCutOffOnFire - disable cut-off for fire alarms
-//		alarmRecycleTime -re-enable after this time if alarm condition not fixed
-//		MQTT:			alarm, audible_alarm, silent_alarm, strobe_alarm,
+//		alarmRecycleTime -re-enable after this time if my_alarm condition not fixed
+//		MQTT:			my_alarm, audible_alarm, silent_alarm, strobe_alarm,
 // TODO - implement me
 //
 void Alarm::processAlarm(int alarm) {
@@ -516,7 +491,7 @@ void Alarm::processLineErrors(int zn, int opts) {
 		break;
 	case LINE_ERR_OPT_ALARM_WHEN_ARMED:
 		if (partitionRT[zonesDB[zn].zonePartition].armStatus)
-			//trigerAlarm(zone.zonePartition);					// when armed - generete alarm
+			//trigerAlarm(zone.zonePartition);					// when armed - generete my_alarm
 			zonesRT[zn].in_alarm = zonesDB[zn].zoneAlarmType;
  		else
  			//reportTrouble(zone);								// when disarmed - only report the tamper, no alarms
@@ -529,7 +504,7 @@ void Alarm::processLineErrors(int zn, int opts) {
 	}
 }
 //
-// process zone error, generates trouble or alarm
+// process zone error, generates trouble or my_alarm
 // if alarmGlobalOpts.tamperBpsOpt == true - if zone is bypass ignore tamper;
 //									  false - follow global or local tamper settings
 // zone global tamper options:	alarmGlobalOpts.tamperOpts, bitmask, same as local - see #define ZONE_TAMPER_OPT_XXXXXX
@@ -563,7 +538,7 @@ void Alarm::processTampers(int zn) {
 	return;
 }
 //
-// process anti-mask error (line short), generates trouble or alarm
+// process anti-mask error (line short), generates trouble or my_alarm
 // global a-mask options:	alarmGlobalOpts.antiMaskOpts, bitmask, same as local - see #define LINE_ERR_OPT_XXXXXX
 //
 void Alarm::processAmasks(int zn) {
@@ -577,7 +552,7 @@ void Alarm::processAmasks(int zn) {
 }
 //
 //	processEntryDelayZones(struct ALARM_ZONE zone)
-//	return:	TRUE if alarm shall be issued, otherwise FALSE
+//	return:	TRUE if my_alarm shall be issued, otherwise FALSE
 //
 int Alarm::processEntryDelayZones(int zn) {
 	byte  prt = zonesDB[zn].zonePartition;
@@ -614,29 +589,29 @@ int Alarm::processEntryDelayZones(int zn) {
 		ErrWrite(LOG_ERR_DEBUG, "Partition ENTRY delay timer started\n");
 		// bypass all zones of this type and FOLLOW type zones, when timer is done, they will be unbypassed
 		bulkBypassZones(prt, (zonesDB[zn].zoneType | FOLLOW), ZONE_EDx_BYPASSED, SET_BYPASS);
-		return NO_ALARM;										// no alarm needed YET
+		return NO_ALARM;										// no my_alarm needed YET
 	}
 	else if (partitionRT[prt].partitionTimers[timer].timerFSM == RUNNING) {					// shall never happen as zone shall be bypass when entry delay is active	
 		ErrWrite(LOG_ERR_DEBUG, "Zone %s open but ENTRY DELAY stil RUNNING\n", zonesDB[zn].zoneName);
-		return NO_ALARM;										// no alarm needed
+		return NO_ALARM;										// no my_alarm needed
 	}
-	else 														// *prtEntryDelayFSM == DONE - ED timer exired, request alarm
-		return zonesDB[zn].zoneAlarmType;						// request alarm because entry delay expired
+	else 														// *prtEntryDelayFSM == DONE - ED timer exired, request my_alarm
+		return zonesDB[zn].zoneAlarmType;						// request my_alarm because entry delay expired
 }
 //
-// process open zones , generates trouble or alarm
+// process open zones , generates trouble or my_alarm
 //
 int Alarm::processOpenZone(int zn) {
-	int alarm = NO_ALARM;									// raise alarm?
+	int alarm = NO_ALARM;									// raise my_alarm?
 	byte prt = zonesDB[zn].zonePartition;
 	//
 	if (zonesRT[zn].bypassed || (zonesDB[zn].zoneType == ZONE_DISABLED))
 		return NO_ALARM;									// ignore disabled and bypass zones
-	// check for 24H and special zones, they  generate unconditionally alarm when opened
+	// check for 24H and special zones, they  generate unconditionally my_alarm when opened
 	if (zonesDB[zn].zoneType & (SPECIAL_ZONES | H24_BUZZER | H24_BURGLAR)) {	
-		alarm |= zonesDB[zn].zoneAlarmType;					// issue alarm
+		alarm |= zonesDB[zn].zoneAlarmType;					// issue my_alarm
 	}
-	// if partition is NOT armed - no alarm
+	// if partition is NOT armed - no my_alarm
 	if (partitionRT[prt].armStatus == DISARM) 					
 		return NO_ALARM;										
 	// now process open zone
@@ -644,7 +619,7 @@ int Alarm::processOpenZone(int zn) {
 	case ZONE_DISABLED:
 		break;												// nothing to do
 	case INSTANT:
-		alarm |= zonesDB[zn].zoneAlarmType;					// issue alarm
+		alarm |= zonesDB[zn].zoneAlarmType;					// issue my_alarm
 		break;
 	case ENTRY_DELAY1:										// ENTRY delay zones are treated as such only in 
 	case ENTRY_DELAY2:										// REGULAR and FORCE arm, otherwise they are treated as instant zones
@@ -664,7 +639,7 @@ int Alarm::processOpenZone(int zn) {
 		// if all ENTRY_DELAY_X zones are bypass, FOLLOW zones shall kick-off the delay timer (2) if enable in partition options
 		if (partitionSTATS[prt].notBypassedEntyDelayZones)	// check if all entry delay zones are bypass
 			// start of ENTRY DELAY X will bypass FOLLOW zones as well, means if we get here, the enrty delay is not started
-			alarm |= zonesDB[zn].zoneAlarmType;				// generate alarm
+			alarm |= zonesDB[zn].zoneAlarmType;				// generate my_alarm
 		else												// follow zone when all entry delay zones are bypass will end-up here
 			alarm |= processEntryDelayZones(zn);			// handle it as entry delay 2 zone
 		break;
@@ -674,18 +649,18 @@ int Alarm::processOpenZone(int zn) {
 	return alarm;
 }
 //
-// alarmLoop() - implement all alarm business
+// alarmLoop() - implement all my_alarm business
 //
 void Alarm::alarm_loop() {
 	//
 	int prt; int alarm = NO_ALARM; int trouble = NO_TROUBLE;
 	// 
-	// run alarm loop only if there is zones status change or on ALARM_LOOP_INTERVAL
-	// TODO - this shall be controlled by the alarm class client
+	// run my_alarm loop only if there is zones status change or on ALARM_LOOP_INTERVAL
+	// TODO - this shall be controlled by the my_alarm class client
 	//if (!timeoutOps(GET, ALARM_LOOP_TIMER))										// run the loop on spec intervals									
 	//	return;																	// interval did not expired, do something else
 	//else
-	//	timeoutOps(SET, ALARM_LOOP_TIMER);										// restart timer and execute the alarm logic
+	//	timeoutOps(SET, ALARM_LOOP_TIMER);										// restart timer and execute the my_alarm logic
 	//
 	for (prt = 0; prt < MAX_PARTITION; prt++) {									// process each partition individually
 		if (!partitionDB[prt].valid)											// not a valid partition
@@ -721,7 +696,7 @@ void Alarm::alarm_loop() {
 			if (zonesRT[zn].zoneStat & ZONE_OPEN) {								// open zone?
 				//lprintf("Open zone %d (%s) on board %d found\n", zn, zonesDB[brd][zn].zoneName, brd);
 				//processOpenH24Zone(zonesDB[brd][zn]);							// call to process H24* zones
-				zonesRT[zn].in_alarm = processOpenZone(zn);						// returns true if alarm requested
+				zonesRT[zn].in_alarm = processOpenZone(zn);						// returns true if my_alarm requested
 				partitionSTATS[zonesDB[zn].zonePartition].openZonesCnt++;		// update statistics
 			}
 			if (zonesRT[zn].bypassed & ZONE_BYPASSED)	 						// update statistics, only user bypass zones
@@ -737,9 +712,9 @@ void Alarm::alarm_loop() {
 			if (zonesRT[zn].in_alarm) 
 				partitionSTATS[prt].alarmZonesCnt++;
 			// 	
-			// aggregate all alarm/trouble statuses (0 means no alarm/no trouble will be generated if armed)
-			alarm	|= zonesRT[zn].in_alarm;									// in_alarm contains bitmask of requested alarm type (STEADY, PULSING,..) of zone
-			trouble |= zonesRT[zn].in_trouble;									// in_trouble contains bitmask of requested alarm type when troubel
+			// aggregate all my_alarm/trouble statuses (0 means no my_alarm/no trouble will be generated if armed)
+			alarm	|= zonesRT[zn].in_alarm;									// in_alarm contains bitmask of requested my_alarm type (STEADY, PULSING,..) of zone
+			trouble |= zonesRT[zn].in_trouble;									// in_trouble contains bitmask of requested my_alarm type when troubel
 		}
 		// done with zones processing
 		// do partition level processing staff here

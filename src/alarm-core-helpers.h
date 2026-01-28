@@ -1,5 +1,5 @@
 //
-// alarm-core-helpers.h - init defaults, print and other helper functions 
+// my_alarm-core-helpers.h - init defaults, print and other helper functions 
 //
 
 //  print config data  data
@@ -50,7 +50,7 @@ void Alarm::printAlarmPartition(int startPt, int endPt) {
     lprintf("\n");
 }
 //
-//  print alarm zones data
+//  print my_alarm zones data
 //  parms: (byte pointer) to array of ALARM_ZONE  containing the zones to be printed
 //
 void Alarm::printAlarmZones(int startZn, int endZn) {
@@ -89,7 +89,7 @@ void Alarm::printAlarmPgms(void) {
     lprintf("\n");
 }
 //
-//  print alarm keysw data
+//  print my_alarm keysw data
 //  parms: (byte pointer) to array of ALARM_KEYSW  containing the keysw to be printed
 //
 void Alarm::printAlarmKeysw(byte* keyswArrPtr, int maxKeysw) {
@@ -261,9 +261,9 @@ void Alarm::printParttionsSummary() {
 
 
 /**
- * @brief Tries to load complete alarm configuration data from storage or memory.
+ * @brief Tries to load complete my_alarm configuration data from storage or memory.
  *
- * This function attempts to initialize the alarm loop by loading the complete alarm
+ * This function attempts to initialize the my_alarm loop by loading the complete my_alarm
  * configuration data. It may involve retrieving data from storage or memory, depending
  * on the implementation.
  *
@@ -271,7 +271,7 @@ void Alarm::printParttionsSummary() {
  *
  */
  //int initAlarmLoop() {
- //    ErrWrite(LOG_ERR_WARNING, "Init alarm from file\n");
+ //    ErrWrite(LOG_ERR_WARNING, "Init my_alarm from file\n");
  //    if (!storageSetup()) {					                                    // mount file system
  //        ErrWrite(LOG_ERR_CRITICAL, "Error initializing storage while processing the new config\n");
  //        storageClose();
@@ -285,7 +285,7 @@ void Alarm::printParttionsSummary() {
  //        return false;
  //    }
  //    //
- //    // clear all storage arrays (DBs) for all alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
+ //    // clear all storage arrays (DBs) for all my_alarm domains - zonesDB[], partitonsDB[], pgmsDB[], ...  
  //    //clearAllDBs();
  //    //
  //    // now parse the config data and store it in corresponding arrays (DBs) - zonesDB[], partitonsDB[], pgmsDB[], ... 
@@ -372,7 +372,7 @@ void Alarm::printParttionsSummary() {
 //    }
 //}
 /**
- * @brief Clear all storage for all alarm domains - zones, partitons, pgms, global options, etc
+ * @brief Clear all storage for all my_alarm domains - zones, partitons, pgms, global options, etc
  */
     //void clearAllDBs() {
     //    int i;

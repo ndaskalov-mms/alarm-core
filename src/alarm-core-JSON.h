@@ -11,7 +11,7 @@ class alarmJSON {
 public:
     /**
      * @brief Constructor that takes a reference to the Alarm instance to be populated.
-     * @param alarm The Alarm object to configure.
+     * @param my_alarm The Alarm object to configure.
      */
     alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
 
@@ -149,7 +149,7 @@ private:
      * @brief Parses a single field (STRING, INT, BOOL) from the JSON object based on
       expected from the current JSON processor. JSON processor is selected based on particular JSON key.
 	  For example, for zoneName key, we expect string value, for zoneType - int value, etc.
-	  jsonValProcessor struct and all processors are defined in alarm-core-json-val-parsers.h
+	  jsonValProcessor struct and all processors are defined in my_alarm-core-json-val-parsers.h
      */
     bool parseJSONval(jparse_ctx_t* jctx, const jsonKeyValProcessor& processor, parsedValue* result) {
 

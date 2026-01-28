@@ -20,10 +20,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="alarm-config.json">
+    <None Include="arduino\alarm_core_arduino\alarm_core_arduino.ino">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="alarm_core_test.ino\alarm_core_test.ino.ino">
+    <None Include="arduino\data\alarm-config.json">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
