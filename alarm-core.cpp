@@ -60,7 +60,7 @@ int main() {
         printf("Failed to load config file\n");
         return -1;
     }
-       if(!parser.parseConfigJSON(jsonBuffer)) {
+       if(parser.parseConfigJSON(jsonBuffer)) {
         printf("Failed to parse config JSON\n");
         return -1;
 	}
