@@ -26,6 +26,9 @@
     <None Include="arduino\data\alarm-config.json">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="arduino\data\mqtt-test-vectors.json">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\alarm-core-class.h">

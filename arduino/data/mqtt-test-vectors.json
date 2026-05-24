@@ -1,0 +1,7 @@
+description:"Bypass Front Door zone"
+topic:/alarm/zones/control
+payload:{"zName":"Front Door","bypass":true}
+
+description: "Stay arm Upper Floor partition"
+topic: /alarm/partitions/control
+payload: {"pName":"Upper Floor","arm_method":"arm_stay"}

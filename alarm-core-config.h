@@ -20,6 +20,7 @@ const char* mqttPassword = ""; // "12345";
 const char masterDataPrefix[] = "arduino/data/"; //    "../master/data/";
 const char jsonConfigFname[] = "alarm-config.json"; // alarmConfig.json";
 const char csvConfigFname[] = "alarm-config.csv"; 
+const char jsonMqttTestVectorsFname[] = "mqtt-test-vectors.json";
 
 //
 // //const char configFileName[]					= "/alarmConfig3.cfg";

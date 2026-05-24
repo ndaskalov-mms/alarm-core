@@ -134,6 +134,7 @@
   <ItemGroup>
     <None Include="arduino\alarm_core_arduino\alarm_core_arduino.ino" />
     <None Include="arduino\data\alarm-config.json" />
+    <None Include="arduino\data\mqtt-test-vectors.json" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alarm-core-config.h" />
