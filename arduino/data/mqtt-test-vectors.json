@@ -1,7 +1,15 @@
+Description: Precondition - disarm Upper Floor partition
+Topic: /alarm/partitions/control
+Payload: {"pName":"Upper Floor","arm_method":"disarm"}
+
+Description: Arm Upper Floor partition (regular arm)
+Topic: /alarm/partitions/control
+Payload: {"pName":"Upper Floor","arm_method":"arm"}
+
 description:"Bypass Front Door zone"
 topic:/alarm/zones/control
 payload:{"zName":"Front Door","bypass":true}
 
-description: "Stay arm Upper Floor partition"
+//description: "Stay arm Upper Floor partition"
 topic: /alarm/partitions/control
 payload: {"pName":"Upper Floor","arm_method":"arm_stay"}

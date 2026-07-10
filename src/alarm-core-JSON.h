@@ -54,17 +54,18 @@ public:
 
     /**
      * @brief Parses the provided JSON configuration string and populates the Alarm object.
-     * @param jsonString The null-terminated string containing the JSON configuration.
+     * @param jsonString String containing the JSON configuration.
+     * @param length     Lenght of JSON in the buffer
      * @return 0 on success, -1 on failure.
      */
 
-    int parseConfigJSON(char* jsonBuffer)
+    int parseConfigJSON(const char* jsonBuffer, size_t length)
     {
 		jparse_ctx_t jctx, tmp_jctx;    // JSON parsing context
 		int num_elem; 				    // number of elements in arrays     
 
         // Initialize JSON parser
-		int ret = json_parse_start(&jctx, jsonBuffer, (int)strlen(jsonBuffer)); 
+        int ret = json_parse_start(&jctx, jsonBuffer, (int)length);
         if (ret != OS_SUCCESS) {
             printf("Parser failed\n");
             return -1;

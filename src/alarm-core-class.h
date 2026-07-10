@@ -107,6 +107,7 @@ public:
     void        reportPartitionNamesBasedOnFlag(int offset);
     void        printZonesSummary(int prt);
     void        printParttionsSummary(void);
+    void        PublishMQTT(const char* payload, const char* topic, ...);
     //const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
 
 	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut

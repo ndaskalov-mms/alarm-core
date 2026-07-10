@@ -6,6 +6,13 @@
 
 typedef unsigned char byte;
 
+// global storage definitions
+char prnBuf[1024];
+char token[256];
+char jsonBuffer[32768];
+char tempMQTTbuf[8192];         // used for publishing MQTT messages
+
+
 #include "alarm-core-config.h"
 #include "src\alarm-core-debug.h"
 #include "alarm-FS-wrapper.h"
@@ -14,10 +21,6 @@ typedef unsigned char byte;
 #include "alarm-core-mqtt.h"
 
 
-// global storage definitions
-char prnBuf[1024];
-char token[256];
-char jsonBuffer[32768];
 //TimerManager alarmTimerManager;
 
 void runJsonMQTTTests(Alarm& alarm, const char* fileName);
@@ -30,20 +33,41 @@ void debugPrinter(const char* message, size_t length) {
 Alarm my_alarm;
 // instance of the JSON parser class
 alarmJSON parser(my_alarm);
-
 // Create the MqttProcessor, "injecting" the dependencies (myAlarm and myJsonParser).
 //MqttProcessor myMqttProcessor(my_alarm, parser);
 MqttProcessor myMqttProcessor(parser);
 
 #ifndef ARDUINO
-// MQTT publish wrapper function
+
 // Dummy MQTT client object
 struct DummyMqttClient {};
 DummyMqttClient mqttClient;
-// Add dummy definitions for mqttPublishWrapper and mqttClient if not already defined
+
+// MQTT publish wrapper function
 static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
+    //
+    //if (!MQTTclient.connected()) {                    // TODO: enable connection check
+    //lprintf("MQTT client not connected\n");
+    //return;
+    //}
+    // 
     // Example implementation: just print the topic and payload
     printf("[MQTT] Topic: %s, Payload: %s\n", topic, payload);
+}
+
+#else
+
+// Arduino MQTT context placeholder (keeps main() call unchanged: &mqttClient)
+struct ArduinoMqttClientContext {};
+ArduinoMqttClientContext mqttClient;
+
+// MQTT publish wrapper function (Arduino path)
+static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
+    (void)context; // Replace with real MQTT client cast/publish when integrated
+    Serial.print(F("[MQTT] Topic: "));
+    Serial.print(topic);
+    Serial.print(F(", Payload: "));
+    Serial.println(payload);
 }
 #endif
 
@@ -57,12 +81,13 @@ int main() {
     // args passed to the Alarm class: static wrapper function (mqttPublishWrapper) and pointer of your client object (&mqttClient)
     my_alarm.setPublisher(mqttPublishWrapper, &mqttClient);
 
+	my_alarm.PublishMQTT("Hello from Alarm Core JSON MQTT Tests!", "alarm/test");
 
     if (!loadConfig(jsonConfigFname, (byte *)jsonBuffer, sizeof(jsonBuffer))) {
         printf("Failed to load config file\n");
         return -1;
     }
-       if(parser.parseConfigJSON(jsonBuffer)) {
+       if(parser.parseConfigJSON(jsonBuffer, strlen(jsonBuffer))) {
         printf("Failed to parse config JSON\n");
         return -1;
 	}
@@ -249,26 +274,31 @@ static void executeJsonMqttTestBlock(
      std::string line;
      std::string currentBlock;
 
-     while (alarmFileReadLine(testsFile, line)) {
-         if (isWhitespaceOnly(line)) {
-             if (!isWhitespaceOnly(currentBlock)) {
-                 blockIndex++;
-                 executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
-                 currentBlock.clear();
-             }
-             continue;
-         }
+    // Read the test vector file line by line and build one JSON test block at a time.
+    // Blocks are separated by blank/whitespace-only lines.
+    while (alarmFileReadLine(testsFile, line)) {
+        if (isWhitespaceOnly(line)) {
+            // End of the current block: execute it only if it contains non-whitespace content.
+            if (!isWhitespaceOnly(currentBlock)) {
+                blockIndex++;
+                executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
+                currentBlock.clear();
+            }
+            continue;
+        }
 
-         if (!currentBlock.empty()) {
-             currentBlock += "\n";
-         }
-         currentBlock += line;
-     }
+        // Preserve original multi-line JSON payload formatting while reconstructing the block.
+        if (!currentBlock.empty()) {
+            currentBlock += "\n";
+        }
+        currentBlock += line;
+    }
 
-     if (!isWhitespaceOnly(currentBlock)) {
-         blockIndex++;
-         executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
-     }
+    // Handle the final block when the file does not end with a blank separator line.
+    if (!isWhitespaceOnly(currentBlock)) {
+        blockIndex++;
+        executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
+    }
 
      alarmFileClose(testsFile);
 
