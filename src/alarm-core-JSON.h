@@ -1,3 +1,42 @@
+// alarmJSON class instance. It receives reference to Alarm instance (my_alarm) during constructor.
+// provides JSON based public interface to configure and control the Alarm class instance
+// Internally communicates via non-public interface to access internal members of Alarm instance
+
+/*
+### `alarmJSON`
+
+Owns the JSON parsing workflow and writes parsed values into `Alarm`.
+
+- **Constructor**
+  - `alarmJSON(Alarm& alarm)`
+
+- **Main entry points**
+  - `int processConfigJsonPld(const char* jsonBuffer, size_t length)`
+    - Parses configuration JSON (`globalOptions`, `zones`, `partitions`, `pgms`, `keyswitches`).
+  - `bool processControlJsonPld(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain)`
+    - Parses control/config payload by explicit domain (`ZONES_CMD`, `PARTITIONS_CMD`, etc.).
+
+- **Domain parsers**
+  - `parseGlobalOptionsCfg(...)`
+  - `parseZoneCfg(...)`
+  - `parseZoneCmd(...)`
+  - `parsePartitionCfg(...)`
+  - `parsePartitionCmd(...)`
+  - `parsePgmCfg(...)` (partial/placeholder)
+
+- **Helpers**
+  - `parseJSONval(...)` (typed key extraction)
+  - `parse_object(...)` (processor-table driven parsing)
+  - `patch_db_item(...)` (patch only fields present in JSON)
+
+It uses processor tables from `src/alarm-core-json-val-parsers.h`:
+- `zoneCfgKeyValProcessors`
+- `zoneCmdKeyValProcessors`
+- `partitionKeyValProcessors`
+- `partitionCmdKeyValProcessors`
+- `gOptsKeyValProcessors`
+*/
+
 #pragma once
 #include <stdio.h>
 #include <string.h>
@@ -16,7 +55,9 @@ public:
     alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
 
     // Define the JSON processor functions (payload handlers)
-    bool processJsonPayload(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain) {
+	// processControlJsonPld is the main entry point for processing incoming JSON payloads 
+    // for different domains (zones, partitions, global options, etc.)
+    bool processControlJsonPld(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain) {
         jparse_ctx_t jctx;    // JSON parsing context
 
         int ret = json_parse_start(&jctx, jsonBuffer, length);
@@ -54,12 +95,14 @@ public:
 
     /**
      * @brief Parses the provided JSON configuration string and populates the Alarm object.
+     * @brief processConfigJsonPld is the main entry point for processing incoming JSON payload
+	 * @brief for configuration of zones, partitions, global options, etc.
      * @param jsonString String containing the JSON configuration.
-     * @param length     Lenght of JSON in the buffer
+     * @param length  -   Lenght of JSON in the buffer
      * @return 0 on success, -1 on failure.
      */
 
-    int parseConfigJSON(const char* jsonBuffer, size_t length)
+    int processConfigJsonPld(const char* jsonBuffer, size_t length)
     {
 		jparse_ctx_t jctx, tmp_jctx;    // JSON parsing context
 		int num_elem; 				    // number of elements in arrays     
@@ -226,7 +269,7 @@ private:
             LOG_DEBUG("Looking for %s key: ", processors[j].jsonKeyStr);
             if (parseJSONval(jctx, processors[j], &result)) {
                 // found key, the val is stored in result
-                LOG_DEBUG("Found\n");
+                LOG_DEBUG("Found: %s\n", processors[j].jsonKeyStr);
                 if (processors[j].patchCallBack) {
                     // Get the processor for context
                     auto& processor = processors[j];

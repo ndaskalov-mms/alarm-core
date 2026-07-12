@@ -124,7 +124,7 @@ public:
 //    };
 //
 //    // Structure to define a topic and its JSON handlers
-//    //struct JsonTopicHandler {
+//    //struct mqttTopicHandler {
 //    //    const char* topic;              // MQTT topic to subscribe to
 //    //    const char* itemKey;            // JSON key that identifies the item (zone, partition, etc.)
 //    //    bool (*processor)(Alarm& my_alarm, const char* jsonPayload, size_t length); // Function to process the entire JSON
@@ -144,7 +144,7 @@ public:
 //    static bool processGlobalOptionsJsonPayload(Alarm& alarm, const char* jsonPayload, size_t length);
 //
 //    // Accessor methods for MQTT integration
-//    //static const JsonTopicHandler* getJsonTopicHandlers() { return mqttTopicHandlers; }
+//    //static const mqttTopicHandler* getJsonTopicHandlers() { return mqttTopicHandlers; }
 //    static int getJsonTopicHandlerCount() { return MQTT_TOPIC_HANDLER_COUNT; }
 //    
 //    // Process a JSON message received via MQTT
@@ -155,7 +155,7 @@ private:
 
 //#ifdef INTERNAL_JSON_HANDLERS
 //    // Static array of MQTT topics and their handlers
-//    //static const JsonTopicHandler mqttTopicHandlers[4];
+//    //static const mqttTopicHandler mqttTopicHandlers[4];
 //    static const int MQTT_TOPIC_HANDLER_COUNT;
 //#endif //INTERNAL_JSON_HANDLERS
 

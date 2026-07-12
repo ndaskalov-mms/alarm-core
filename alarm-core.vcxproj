@@ -151,6 +151,9 @@
     <ClInclude Include="src\alarm-core-debug.h" />
     <ClInclude Include="src\alarm-core-json-val-parsers.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
