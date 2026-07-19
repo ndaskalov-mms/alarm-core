@@ -43,7 +43,7 @@ alarmJSON parser(my_alarm);
 // processIncommingMQTTmsg() method, which then calls appropriate JSON processor (processConfigMessage() or
 // processControlMessage() -> processByDomain() ) based on the topic and payload. They call as part of processing 
 // alarmJSON object processConfigJsonPld(), processControlJsonPld(), etc
-MqttProcessor myMqttProcessor(parser);
+MqttProcessor myMqttProcessor(parser, my_alarm);
 
 #ifndef ARDUINO
 
@@ -57,11 +57,11 @@ static bool mqttProcessIncomingMsgWrapper(const char* topic, const char* payload
 }
 
 // MQTT publish wrapper function
-static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
-    // 
-    // Example implementation: just print the topic and payload
-    printf("[MQTT] Topic: %s, Payload: %s\n", topic, payload);
-}
+//static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
+//    // 
+//    // Example implementation: just print the topic and payload
+//    printf("[MQTT] Topic: %s, Payload: %s\n", topic, payload);
+//}
 
 #else
 
@@ -99,9 +99,8 @@ int main() {
 
 	// MQTT publisher setup
     // args passed to the Alarm class: static wrapper function (mqttPublishWrapper) and pointer of your client object (&mqttClient)
-    my_alarm.setPublisher(mqttPublishWrapper, &mqttClient);
-
-	my_alarm.PublishMQTT("Hello from Alarm Core JSON MQTT Tests!", "alarm/test");
+    // my_alarm.setPublisher(mqttPublishWrapper, &mqttClient);
+    // my_alarm.publish2broker("Hello from Alarm Core JSON MQTT Tests!", "alarm/test");
 
     if (!loadConfig(jsonConfigFname, (byte *)jsonBuffer, sizeof(jsonBuffer))) {
         printf("Failed to load config file\n");

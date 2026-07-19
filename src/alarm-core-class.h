@@ -25,10 +25,13 @@ typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
 // A C-style function pointer type for the MQTT callback
 typedef void (*MqttPublishCallback)(void* context, const char* topic, const char* payload);
 
+class MqttProcessor;
+
 class Alarm {
 
     // Grant alarmJSON access to private and protected members
     friend class alarmJSON;
+    friend class MqttProcessor; // allow direct access if publish methods need private DB/runtime arrays
 
 public:
     // Constructor and destructor
@@ -80,7 +83,7 @@ public:
     bool        setGlobalOptions(const char* opt_name, const parsedValue* opt_val);
     bool        isRestrictionActive(int restrictionType) const;
     int         getGlobalOptionsCnt() const;
-    const char* getGlobalOptionKeyStr(int idx) const;
+    //const char* getGlobalOptionKeyStr(int idx) const;
         
     // System methods
     void        updateAlarmState();
@@ -107,7 +110,7 @@ public:
     void        reportPartitionNamesBasedOnFlag(int offset);
     void        printZonesSummary(int prt);
     void        printParttionsSummary(void);
-    void        PublishMQTT(const char* payload, const char* topic, ...);
+    //void        PublishMQTT(const char* payload, const char* topic, ...);
     //const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
 
 	// debug printing callback function, shall be set from Alarm clas client. Defaults to defaultDebugOut
@@ -160,8 +163,8 @@ private:
 //#endif //INTERNAL_JSON_HANDLERS
 
     // MQTT publish callback
-    MqttPublishCallback m_publish_func = nullptr;
-    void* m_publish_context = nullptr;
+    //MqttPublishCallback m_publish_func = nullptr;
+    //void* m_publish_context = nullptr;
 
     // Private static arrays for my_alarm data
     // zoneDB - database with all zones CONFIG info. 
@@ -187,7 +190,7 @@ private:
 
     // Timer management
     void resetAllPartitionTimers(int partitionIndex);
-    int partitionTimer(int tmr, int oper, int prt);
+    int  partitionTimer(int tmr, int oper, int prt);
     void processPartitionTimers(int prt);
 
     // Zone management
@@ -210,8 +213,8 @@ private:
     void processLineErrors(int zn, int opts);
     void processTampers(int zn);
     void processAmasks(int zn);
-    int processEntryDelayZones(int zn);
-    int processOpenZone(int zn);
+    int  processEntryDelayZones(int zn);
+    int  processOpenZone(int zn);
 
     // Private helper methods
     void initializeZones();
@@ -229,7 +232,7 @@ private:
     // end of private
 
 protected:
-    void publish(const char* topic, const char* payload);
+    // void publish(const char* topic, const char* payload);
 
 
 };  // end of class Alarm
@@ -244,16 +247,16 @@ protected:
     * @param func The function pointer.
     * @param context A pointer to the object needed by the function (e.g., the MQTT client).
     */
-void Alarm::setPublisher(MqttPublishCallback func, void* context) {
-    m_publish_func = func;
-    m_publish_context = context;
-}
-void Alarm::publish(const char* topic, const char* payload) {
-    if (m_publish_func) {
-        // Call the function, passing its context back to it
-        m_publish_func(m_publish_context, topic, payload);
-    }
-}
+//void Alarm::setPublisher(MqttPublishCallback func, void* context) {
+//    m_publish_func = func;
+//    m_publish_context = context;
+//}
+//void Alarm::publish(const char* topic, const char* payload) {
+//    if (m_publish_func) {
+//        // Call the function, passing its context back to it
+//        m_publish_func(m_publish_context, topic, payload);
+//    }
+//}
 
 void Alarm::defaultDebugOut(LogLevel_t err_code, const char* what, ...)
 {
@@ -431,11 +434,11 @@ int Alarm::getGlobalOptionsCnt() const {
     return GOPTS_KEYS_CNT;
 }
 //
-const char* Alarm::getGlobalOptionKeyStr(int idx) const {
-    if (idx < 0 || idx >= GOPTS_KEYS_CNT)
-        return nullptr;
-    return gOptsKeyValProcessors[idx].jsonKeyStr;
-}
+//const char* Alarm::getGlobalOptionKeyStr(int idx) const {
+//    if (idx < 0 || idx >= GOPTS_KEYS_CNT)
+//        return nullptr;
+//    return gOptsKeyValProcessors[idx].jsonKeyStr;
+//}
 //
  void Alarm::synchPGMstates() {
      printf("synchPGMstates() - NOT IMPLEMENTED\n"); //(ErrWrite(ERR_WARNING, "synchPGMstates() - NOT IMPLEMENTED\n");

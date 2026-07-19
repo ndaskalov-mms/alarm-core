@@ -738,7 +738,7 @@ void Alarm::alarm_loop() {
 		//
 		// publish and print results
 		// printZonesSummary(prt);
-		// doPublishing(prt);
+		// publishAll(prt);
 		// mark done with this partition
 		partitionRT[prt].changed = 0;													// mark as processed
 	}
