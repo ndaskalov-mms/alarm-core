@@ -95,21 +95,21 @@ public:
 
     // printing methods - defined in my_alarm-core-helpers.h
 	//
-    static void printConfigData(struct jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
-    void        printConfigHeader(struct jsonKeyValProcessor targetKeys[], int numEntries);
-    void        printAlarmPartition(int startPt, int endPt);
-    void        printAlarmZones(int startZn, int endZn);
-    void        printAlarmOpts(byte* optsPtr);
-    void        printAlarmPgms(void);
-    void        printAlarmKeysw(byte* keyswArrPtr, int maxKeysw);
-    void        printAlarmPartitionRT(int idx);
-    void        printPartHeaderRT(void);
-    void        printAlarmPartRT(void);
-    void        reportZonesNamesBasedOnStatus(int prt, int stat);
-    void        reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask);
-    void        reportPartitionNamesBasedOnFlag(int offset);
-    void        printZonesSummary(int prt);
-    void        printParttionsSummary(void);
+    //static void printConfigData(struct jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass);
+    //void        printConfigHeader(struct jsonKeyValProcessor targetKeys[], int numEntries);
+    //void        printAlarmPartition(int startPt, int endPt);
+    //void        printAlarmZones(int startZn, int endZn);
+    //void        printAlarmOpts(byte* optsPtr);
+    //void        printAlarmPgms(void);
+    //void        printAlarmKeysw(byte* keyswArrPtr, int maxKeysw);
+    //void        printAlarmPartitionRT(int idx);
+    //void        printPartHeaderRT(void);
+    //void        printAlarmPartRT(void);
+    //void        reportZonesNamesBasedOnStatus(int prt, int stat);
+    //void        reportZonesNamesBasedOnFlag(int prt, int offset, byte bitmask);
+    //void        reportPartitionNamesBasedOnFlag(int offset);
+    //void        printZonesSummary(int prt);
+    //void        printParttionsSummary(void);
     //void        PublishMQTT(const char* payload, const char* topic, ...);
     //const char* titleByAction(struct zoneStates_t Cmds[], int CmdsCnt, int stateCode);
 
@@ -239,8 +239,6 @@ protected:
 
 //
 #include "alarm-core-logic.h"
-#include "alarm-core-json-val-parsers.h"
-#include "alarm-core-helpers.h"
 
 /**
     * @brief Registers a C-style callback for publishing.
@@ -400,7 +398,7 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 
     // Log the updated global options
     ErrWrite(LOG_ERR_INFO, "Global options updated successfully.\n");
-    printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
+    //printAlarmOpts(reinterpret_cast<byte*>(&alarmGlobalOpts));
 }
 //
 //bool Alarm::setGlobalOptions(const char* opt_name, const parsedValue* opt_val) {
@@ -430,9 +428,9 @@ void Alarm::setGlobalOptions(const ALARM_GLOBAL_OPTS_t& globalOptions) {
 //    return FALSE;           // option not found
 //}
 //
-int Alarm::getGlobalOptionsCnt() const {
-    return GOPTS_KEYS_CNT;
-}
+//int Alarm::getGlobalOptionsCnt() const {
+//    return GOPTS_KEYS_CNT;
+//}
 //
 //const char* Alarm::getGlobalOptionKeyStr(int idx) const {
 //    if (idx < 0 || idx >= GOPTS_KEYS_CNT)
@@ -457,7 +455,11 @@ bool Alarm::validatePgmIndex(int pgmIndex) const {
 }
 
 // Public accessor methods with bounds checking
+// replace line near end of alarm_loop():
+// printParttionsSummary();
 
+// with:
+ // printing moved out of Alarm (handled by alarmJSON/reporting layer)
 //#include <cstring> // For strncmp
 
 int Alarm::getZoneIndex(const char* name) const {

@@ -98,16 +98,16 @@ inline void MqttProcessor::publishZonesStatusChanges(int prt) {
         if (m_alarm.zonesRT[zn].changed & ZONE_STATE_CHANGED) {     // zone state changed (OPEN/CLOSE/TAMPER/AMASK
             
         }
-        if (m_alarm.zonesRT[zn].changed & ZONE_USR_BYPASS_CHANGED) {// if zone is BYPASSED/UNBYPASSED on user request
-            if (m_alarm.zonesRT[zn].bypassed & ZONE_BYPASSED)       // report it
-                publish2broker(TRUE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
-            else
-                publish2broker(FALSE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
-        }
+        //if (m_alarm.zonesRT[zn].changed & ZONE_USR_BYPASS_CHANGED) {// if zone is BYPASSED/UNBYPASSED on user request
+        //    if (m_alarm.zonesRT[zn].bypassed & ZONE_BYPASSED)       // report it
+        //       publish2broker(TRUE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
+        //    else
+        //      publish2broker(FALSE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
+        //}
         m_alarm.zonesRT[zn].changed = 0;
     }
-    if (cnt)
-        timeoutOps(FORCE, MQTT_PUBLISH_TIMER);              // force partition status publish
+    //if (cnt)
+    //    timeoutOps(FORCE, MQTT_PUBLISH_TIMER);              // force partition status publish
 }
 
 inline const char* zoneStatToText(byte zoneStat) {

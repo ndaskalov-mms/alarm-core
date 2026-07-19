@@ -40,9 +40,6 @@
     <ClInclude Include="src\alarm-core-internal-defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\alarm-core-helpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\alarm-core-debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>

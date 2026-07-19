@@ -2,40 +2,7 @@
 // provides JSON based public interface to configure and control the Alarm class instance
 // Internally communicates via non-public interface to access internal members of Alarm instance
 
-/*
-### `alarmJSON`
 
-Owns the JSON parsing workflow and writes parsed values into `Alarm`.
-
-- **Constructor**
-  - `alarmJSON(Alarm& alarm)`
-
-- **Main entry points**
-  - `int processConfigJsonPld(const char* jsonBuffer, size_t length)`
-    - Parses configuration JSON (`globalOptions`, `zones`, `partitions`, `pgms`, `keyswitches`).
-  - `bool processControlJsonPld(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain)`
-    - Parses control/config payload by explicit domain (`ZONES_CMD`, `PARTITIONS_CMD`, etc.).
-
-- **Domain parsers**
-  - `parseGlobalOptionsCfg(...)`
-  - `parseZoneCfg(...)`
-  - `parseZoneCmd(...)`
-  - `parsePartitionCfg(...)`
-  - `parsePartitionCmd(...)`
-  - `parsePgmCfg(...)` (partial/placeholder)
-
-- **Helpers**
-  - `parseJSONval(...)` (typed key extraction)
-  - `parse_object(...)` (processor-table driven parsing)
-  - `patch_db_item(...)` (patch only fields present in JSON)
-
-It uses processor tables from `src/alarm-core-json-val-parsers.h`:
-- `zoneCfgKeyValProcessors`
-- `zoneCmdKeyValProcessors`
-- `partitionKeyValProcessors`
-- `partitionCmdKeyValProcessors`
-- `gOptsKeyValProcessors`
-*/
 
 #pragma once
 #include <stdio.h>
@@ -43,6 +10,7 @@ It uses processor tables from `src/alarm-core-json-val-parsers.h`:
 #include "..\alarm-core.h"
 #include "alarm-core-internal-defs.h" // Include the internal definitions
 #include "..\..\esp-json-parser\include\json_parser-code.h"
+#include "alarm-core-json-val-parsers.h"
 
 class alarmJSON {
     // Reference to the Alarm instance we are populating
@@ -55,8 +23,8 @@ public:
     alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
 
     // Define the JSON processor functions (payload handlers)
-	// processControlJsonPld is the main entry point for processing incoming JSON payloads 
-    // for different domains (zones, partitions, global options, etc.)
+// processControlJsonPld is the main entry point for processing incoming JSON payloads 
+// for different domains (zones, partitions, global options, etc.)
     bool processControlJsonPld(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain) {
         jparse_ctx_t jctx;    // JSON parsing context
 
@@ -66,29 +34,29 @@ public:
             return false;
         }
         ret = 0;
-        switch(domain) {
-            case GLOBAL_OPT_CFG:
-                ret = parseGlobalOptionsCfg(&jctx);
-                break;
-            case ZONES_CFG:
-                ret = parseZoneCfg(&jctx);
-                break;
-            case ZONES_CMD:
-                ret = parseZoneCmd(&jctx);
-                break;
-            case PARTITIONS_CFG:
-                ret = parsePartitionCfg(&jctx);
-                break;
-            case PARTITIONS_CMD:
-                ret = parsePartitionCmd(&jctx);
-                break;
-            case PGMS_CFG:
-                //ret = parsePgmCfg(&jctx);
-                break;
-            default:
-                printf("Unknown domain type\n");
-				ret = 0;
-		}
+        switch (domain) {
+        case GLOBAL_OPT_CFG:
+            ret = parseGlobalOptionsCfg(&jctx);
+            break;
+        case ZONES_CFG:
+            ret = parseZoneCfg(&jctx);
+            break;
+        case ZONES_CMD:
+            ret = parseZoneCmd(&jctx);
+            break;
+        case PARTITIONS_CFG:
+            ret = parsePartitionCfg(&jctx);
+            break;
+        case PARTITIONS_CMD:
+            ret = parsePartitionCmd(&jctx);
+            break;
+        case PGMS_CFG:
+            //ret = parsePgmCfg(&jctx);
+            break;
+        default:
+            printf("Unknown domain type\n");
+            ret = 0;
+        }
         json_parse_end(&jctx);
         return ret;
     }
@@ -96,7 +64,7 @@ public:
     /**
      * @brief Parses the provided JSON configuration string and populates the Alarm object.
      * @brief processConfigJsonPld is the main entry point for processing incoming JSON payload
-	 * @brief for configuration of zones, partitions, global options, etc.
+     * @brief for configuration of zones, partitions, global options, etc.
      * @param jsonString String containing the JSON configuration.
      * @param length  -   Lenght of JSON in the buffer
      * @return 0 on success, -1 on failure.
@@ -104,8 +72,8 @@ public:
 
     int processConfigJsonPld(const char* jsonBuffer, size_t length)
     {
-		jparse_ctx_t jctx, tmp_jctx;    // JSON parsing context
-		int num_elem; 				    // number of elements in arrays     
+        jparse_ctx_t jctx, tmp_jctx;    // JSON parsing context
+        int num_elem; 				    // number of elements in arrays     
 
         // Initialize JSON parser
         int ret = json_parse_start(&jctx, jsonBuffer, (int)length);
@@ -192,19 +160,19 @@ private:
     /**
      * @brief Parses a single field (STRING, INT, BOOL) from the JSON object based on
       expected from the current JSON processor. JSON processor is selected based on particular JSON key.
-	  For example, for zoneName key, we expect string value, for zoneType - int value, etc.
-	  jsonValProcessor struct and all processors are defined in my_alarm-core-json-val-parsers.h
+      For example, for zoneName key, we expect string value, for zoneType - int value, etc.
+      jsonValProcessor struct and all processors are defined in my_alarm-core-json-val-parsers.h
      */
     bool parseJSONval(jparse_ctx_t* jctx, const jsonKeyValProcessor& processor, parsedValue* result) {
 
         // Use a local buffer for parsing and printing.
-		// char str_val[NAME_LEN];                 // Temporary buffer for string values - UNUSED
-		int int_val;                            // Temporary variable for integer values
-		bool bool_val;                          // Temporary variable for boolean values 
+        // char str_val[NAME_LEN];                 // Temporary buffer for string values - UNUSED
+        int int_val;                            // Temporary variable for integer values
+        bool bool_val;                          // Temporary variable for boolean values 
 
-		if (!result)                            // Sanity check
+        if (!result)                            // Sanity check
             return false;
-      
+
         // Correctly get the address and size of the char array within the union to store the string values.
         char* target_buf = result->s;
         size_t target_size = sizeof(result->s);
@@ -311,7 +279,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-        m_alarm.printAlarmOpts((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
+        printAlarmOpts((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
         return true;
     }
 
@@ -342,7 +310,7 @@ private:
         }
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
-        m_alarm.printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
+        printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
         return true;
     }
 
@@ -353,8 +321,8 @@ private:
         int ret = 0;                            // to track if any error occurs during the conversion of JSON values
         int zoneIdx = -1;                       // to hold the index of the zone if it exists
         ALARM_ZONE_CMD_t tempZone;
-        tempZone.open = tempZone.bypass = tempZone.tamper = tempZone.antiMask = ZONE_RESERVED_CMD ; 
-		tempZone.zoneName[0] = '\0';           // initialize zone name to empty string
+        tempZone.open = tempZone.bypass = tempZone.tamper = tempZone.antiMask = ZONE_RESERVED_CMD;
+        tempZone.zoneName[0] = '\0';           // initialize zone name to empty string
         int res;
 
         if (!parse_object(jctx, zoneCmdKeyValProcessors, ZONE_CMD_KEYS_CNT, (byte*)&tempZone))
@@ -370,7 +338,7 @@ private:
         }
         if (tempZone.bypass != ZONE_RESERVED_CMD) {
             res = tempZone.bypass ? ZONE_BYPASS_CMD : ZONE_UNBYPASS_CMD;
-            m_alarm.modifyZn((void *)&zoneIdx, &res, NULL);
+            m_alarm.modifyZn((void*)&zoneIdx, &res, NULL);
         }
         if (tempZone.open != ZONE_RESERVED_CMD) {
             res = tempZone.open ? ZONE_OPEN_CMD : ZONE_CLOSE_CMD;
@@ -395,7 +363,7 @@ private:
         int partitionIdx = -1;                  // to hold the index of the zone if it exists
         ALARM_PARTITION_CMD_t tempPartition;
         tempPartition.partitionName[0] = '\0';  // initialize zone name to empty string
-		tempPartition.armMethod[0] = '\0';      // initialize arm method to empty string
+        tempPartition.armMethod[0] = '\0';      // initialize arm method to empty string
         //int res;
 
         if (!parse_object(jctx, partitionCmdKeyValProcessors, PARTITION_CMD_KEYS_CNT, (byte*)&tempPartition))
@@ -413,7 +381,7 @@ private:
         ARM_METHODS_t cmd = INVALID_CMD;
         for (int i = 0; i < PARTITION_CMDS_CNT; i++) {
             if (_stricmp(tempPartition.armMethod, partitionCmdsInt2Str[i].valStr) == 0) {
-                cmd = (ARM_METHODS_t) partitionCmdsInt2Str[i].val;
+                cmd = (ARM_METHODS_t)partitionCmdsInt2Str[i].val;
                 break;
             }
         }
@@ -453,7 +421,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target partition
         patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionKeyValProcessors, PARTITION_KEYS_CNT);
-        m_alarm.printAlarmPartition(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
+        printAlarmPartition(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
         return true;
     }
 
@@ -507,7 +475,73 @@ private:
         //    json_obj_leave_array(&jctx);
         //}
     }
+
+public:
+    // keep current call sites working
+    void printAlarmPartition(int startPt, int endPt) { printAlarmPartitions(startPt, endPt); }
+    void printAlarmOpts(byte* optsPtr) { printAlarmOptions(optsPtr); }
+
+    // new canonical names
+    void printAlarmPartitions(int startPt, int endPt) {
+        lprintf("Partition(s)\n");
+        printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
+        for (int j = startPt; j < endPt; j++) {
+            if (!m_alarm.partitionDB[j].valid) continue;
+            printConfigData(partitionKeyValProcessors, PARTITION_KEYS_CNT, (byte*)&m_alarm.partitionDB[j], PRTCLASS_ALL);
+        }
+        lprintf("\n");
+    }
+
+    void printAlarmZones(int startZn, int endZn) {
+        lprintf("\nZone(s)\n");
+        printConfigHeader(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
+        for (int i = startZn; i < endZn; i++) {
+            if (m_alarm.zonesDB[i].valid)
+                printConfigData(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&m_alarm.zonesDB[i], PRTCLASS_ALL);
+        }
+        lprintf("\n");
+    }
+
+    void printAlarmOptions(byte* optsPtr) {
+        lprintf("\nGlobal options\n");
+        printConfigHeader(gOptsKeyValProcessors, GOPTS_KEYS_CNT);
+        printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
+        lprintf("\n");
+    }
+
+    void printAlarmPgms() {
+        lprintf("\nPGM(s)\n");
+        printConfigHeader(pgmKeyValProcessors, PGM_KEYS_CNT);
+        for (int i = 0; i < MAX_ALARM_PGM; i++) {
+            if (!m_alarm.pgmsDB[i].valid) continue;
+            printConfigData(pgmKeyValProcessors, PGM_KEYS_CNT, (byte*)&m_alarm.pgmsDB[i], PRTCLASS_ALL);
+        }
+        lprintf("\n");
+    }
+
+private:
+    void printConfigData(jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass) {
+        const char* titlePtr = NULL;
+        for (int i = 0; i < numEntries; i++) {
+            if (printClass && (printClass != targetKeys[i].printClass)) continue;
+            titlePtr = (const char*)targetKeys[i].unpatchCallBack(targetPtr, targetKeys[i].patchOffset, targetKeys[i].patchLen);
+            if (!titlePtr) titlePtr = "";
+            if (strlen(titlePtr) > targetKeys[i].keyStrLen) {
+                for (int j = 0; j < (int)targetKeys[i].keyStrLen; j++) lprintf("%c", titlePtr[j]);
+                lprintf(" ");
+            } else {
+                lprintf("%s ", titlePtr);
+                for (size_t j = strlen(titlePtr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
+            }
+        }
+        lprintf("\n");
+    }
+
+    void printConfigHeader(jsonKeyValProcessor targetKeys[], int numEntries) {
+        for (int i = 0; i < numEntries; i++) {
+            lprintf("%s ", targetKeys[i].jsonKeyStr);
+            for (size_t j = strlen(targetKeys[i].jsonKeyStr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
+        }
+        lprintf("\n");
+    }
 };
-
-
-

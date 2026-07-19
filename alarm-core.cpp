@@ -111,9 +111,9 @@ int main() {
         return -1;
 	}
 
-    my_alarm.printAlarmPartition(0, MAX_PARTITION);
-    my_alarm.printAlarmZones(0, MAX_ALARM_ZONES);
-    my_alarm.printAlarmPgms();
+    parser.printAlarmPartition(0, MAX_PARTITION);
+    parser.printAlarmZones(0, MAX_ALARM_ZONES);
+    parser.printAlarmPgms();
 
     runJsonMQTTTests(my_alarm, jsonMqttTestVectorsFname);
     return 0;

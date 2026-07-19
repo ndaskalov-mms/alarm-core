@@ -744,5 +744,5 @@ void Alarm::alarm_loop() {
 	}
 	// siren control
 	processAlarm(alarm);
-	printParttionsSummary();
+	//printParttionsSummary(); // printing moved to alarmJSON
 }
