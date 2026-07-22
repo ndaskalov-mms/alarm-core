@@ -142,7 +142,6 @@
     <ClInclude Include="alarm-core-public-defs.h" />
     <ClInclude Include="alarm-core.h" />
     <ClInclude Include="alarm-FS-wrapper.h" />
-    <ClInclude Include="alarm-printer.h" />
     <ClInclude Include="jsonTestVectors.h" />
     <ClInclude Include="src\alarm-core-internal-defs.h" />
     <ClInclude Include="src\alarm-core-class.h" />
@@ -150,6 +149,7 @@
     <ClInclude Include="src\alarm-core-logic.h" />
     <ClInclude Include="src\alarm-core-debug.h" />
     <ClInclude Include="src\alarm-core-json-val-parsers.h" />
+    <ClInclude Include="src\alarm-core-printer.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

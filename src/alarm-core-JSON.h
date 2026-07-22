@@ -11,16 +11,18 @@
 #include "alarm-core-internal-defs.h" // Include the internal definitions
 #include "..\..\esp-json-parser\include\json_parser-code.h"
 #include "alarm-core-json-val-parsers.h"
+#include "alarm-core-printer.h" // new
 
 class alarmJSON {
-    // Reference to the Alarm instance we are populating
     Alarm& m_alarm;
+    alarmPrinter m_printer; // new
+
 public:
     /**
      * @brief Constructor that takes a reference to the Alarm instance to be populated.
      * @param my_alarm The Alarm object to configure.
      */
-    alarmJSON(Alarm& alarm) : m_alarm(alarm) {}
+    alarmJSON(Alarm& alarm) : m_alarm(alarm), m_printer(alarm) {}
 
     // Define the JSON processor functions (payload handlers)
 // processControlJsonPld is the main entry point for processing incoming JSON payloads 
@@ -279,7 +281,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-        printAlarmOptions((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
+        m_printer.printAlarmOptions((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
         return true;
     }
 
@@ -310,7 +312,7 @@ private:
         }
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
-        printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
+        m_printer.printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
         return true;
     }
 
@@ -421,7 +423,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target partition
         patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionKeyValProcessors, PARTITION_KEYS_CNT);
-        printAlarmPartitions(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
+        m_printer.printAlarmPartitions(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
         return true;
     }
 
@@ -478,42 +480,42 @@ private:
 
 	// ---------------------- printing methods ----------------------
 public:
-     void printAlarmPartitions(int startPt, int endPt) {
-        lprintf("Partition(s)\n");
-        printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
-        for (int j = startPt; j < endPt; j++) {
-            if (!m_alarm.partitionDB[j].valid) continue;
-            printConfigData(partitionKeyValProcessors, PARTITION_KEYS_CNT, (byte*)&m_alarm.partitionDB[j], PRTCLASS_ALL);
-        }
-        lprintf("\n");
-    }
+    // void printAlarmPartitions(int startPt, int endPt) {
+    //    lprintf("Partition(s)\n");
+    //    printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
+    //    for (int j = startPt; j < endPt; j++) {
+    //        if (!m_alarm.partitionDB[j].valid) continue;
+    //        printConfigData(partitionKeyValProcessors, PARTITION_KEYS_CNT, (byte*)&m_alarm.partitionDB[j], PRTCLASS_ALL);
+    //    }
+    //    lprintf("\n");
+    //}
 
-    void printAlarmZones(int startZn, int endZn) {
-        lprintf("\nZone(s)\n");
-        printConfigHeader(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
-        for (int i = startZn; i < endZn; i++) {
-            if (m_alarm.zonesDB[i].valid)
-                printConfigData(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&m_alarm.zonesDB[i], PRTCLASS_ALL);
-        }
-        lprintf("\n");
-    }
+    //void printAlarmZones(int startZn, int endZn) {
+    //    lprintf("\nZone(s)\n");
+    //    printConfigHeader(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
+    //    for (int i = startZn; i < endZn; i++) {
+    //        if (m_alarm.zonesDB[i].valid)
+    //            printConfigData(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&m_alarm.zonesDB[i], PRTCLASS_ALL);
+    //    }
+    //    lprintf("\n");
+    //}
 
-    void printAlarmOptions(byte* optsPtr) {
-        lprintf("\nGlobal options\n");
-        printConfigHeader(gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-        printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
-        lprintf("\n");
-    }
+    //void printAlarmOptions(byte* optsPtr) {
+    //    lprintf("\nGlobal options\n");
+    //    printConfigHeader(gOptsKeyValProcessors, GOPTS_KEYS_CNT);
+    //    printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
+    //    lprintf("\n");
+    //}
 
-    void printAlarmPgms() {
-        lprintf("\nPGM(s)\n");
-        printConfigHeader(pgmKeyValProcessors, PGM_KEYS_CNT);
-        for (int i = 0; i < MAX_ALARM_PGM; i++) {
-            if (!m_alarm.pgmsDB[i].valid) continue;
-            printConfigData(pgmKeyValProcessors, PGM_KEYS_CNT, (byte*)&m_alarm.pgmsDB[i], PRTCLASS_ALL);
-        }
-        lprintf("\n");
-    }
+    //void printAlarmPgms() {
+    //    lprintf("\nPGM(s)\n");
+    //    printConfigHeader(pgmKeyValProcessors, PGM_KEYS_CNT);
+    //    for (int i = 0; i < MAX_ALARM_PGM; i++) {
+    //        if (!m_alarm.pgmsDB[i].valid) continue;
+    //        printConfigData(pgmKeyValProcessors, PGM_KEYS_CNT, (byte*)&m_alarm.pgmsDB[i], PRTCLASS_ALL);
+    //    }
+    //    lprintf("\n");
+    //}
 
 
     void publishArmStatus(int prt) { (void)prt; }
@@ -551,66 +553,67 @@ public:
         publishAlarmAndTroubleZones();
     }
 
-    bool buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const {
-        if (!outJson || outJsonSize == 0) return false;
-        if (zone < 0 || zone >= MAX_ALARM_ZONES) {
-            outJson[0] = '\0';
-            return false;
-        }
+    //bool buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const {
+    //    if (!outJson || outJsonSize == 0) return false;
+    //    if (zone < 0 || zone >= MAX_ALARM_ZONES) {
+    //        outJson[0] = '\0';
+    //        return false;
+    //    }
 
-        const ALARM_ZONE_RT& z = m_alarm.zonesRT[zone];
-        int n = snprintf(
-            outJson, outJsonSize,
-            "{"
-            "\"zoneStat\":\"%s\","
-            "\"bypassed\":\"0x%02X\","
-            "\"changed\":\"0x%02X\","
-            "\"in_alarm\":%s,"
-            "\"in_trouble\":%s,"
-            "\"ignorredTamper\":%s,"
-            "\"ignorredAmask\":%s,"
-            "\"openEDSD1zone\":%s,"
-            "\"openEDSD2zone\":%s"
-            "}",
-            //zoneStatToText(z.zoneStat),
-            (unsigned int)z.bypassed,
-            (unsigned int)z.changed,
-            z.in_alarm ? "true" : "false",
-            z.in_trouble ? "true" : "false",
-            z.ignorredTamper ? "true" : "false",
-            z.ignorredAmask ? "true" : "false",
-            z.openEDSD1zone ? "true" : "false",
-            z.openEDSD2zone ? "true" : "false"
-        );
-        return (n > 0) && ((size_t)n < outJsonSize);
-    }
+    //    const ALARM_ZONE_RT& z = m_alarm.zonesRT[zone];
+    //    int n = snprintf(
+    //        outJson, outJsonSize,
+    //        "{"
+    //        "\"zoneStat\":\"%s\","
+    //        "\"bypassed\":\"0x%02X\","
+    //        "\"changed\":\"0x%02X\","
+    //        "\"in_alarm\":%s,"
+    //        "\"in_trouble\":%s,"
+    //        "\"ignorredTamper\":%s,"
+    //        "\"ignorredAmask\":%s,"
+    //        "\"openEDSD1zone\":%s,"
+    //        "\"openEDSD2zone\":%s"
+    //        "}",
+    //        //zoneStatToText(z.zoneStat),
+    //        (unsigned int)z.bypassed,
+    //        (unsigned int)z.changed,
+    //        z.in_alarm ? "true" : "false",
+    //        z.in_trouble ? "true" : "false",
+    //        z.ignorredTamper ? "true" : "false",
+    //        z.ignorredAmask ? "true" : "false",
+    //        z.openEDSD1zone ? "true" : "false",
+    //        z.openEDSD2zone ? "true" : "false"
+    //    );
+    //    return (n > 0) && ((size_t)n < outJsonSize);
+    //}
 
 private:
-    void printConfigData(jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass) {
-        const char* titlePtr = NULL;
-        for (int i = 0; i < numEntries; i++) {
-            if (printClass && (printClass != targetKeys[i].printClass)) continue;
-            titlePtr = (const char*)targetKeys[i].unpatchCallBack(targetPtr, targetKeys[i].patchOffset, targetKeys[i].patchLen);
-            if (!titlePtr) titlePtr = "";
-            if (strlen(titlePtr) > targetKeys[i].keyStrLen) {
-                for (int j = 0; j < (int)targetKeys[i].keyStrLen; j++) lprintf("%c", titlePtr[j]);
-                lprintf(" ");
-            } else {
-                lprintf("%s ", titlePtr);
-                for (size_t j = strlen(titlePtr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
-            }
-        }
-        lprintf("\n");
-    }
+    //void printConfigData(jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass) {
+    //    const char* titlePtr = NULL;
+    //    for (int i = 0; i < numEntries; i++) {
+    //        if (printClass && (printClass != targetKeys[i].printClass)) continue;
+    //        titlePtr = (const char*)targetKeys[i].unpatchCallBack(targetPtr, targetKeys[i].patchOffset, targetKeys[i].patchLen);
+    //        if (!titlePtr) titlePtr = "";
+    //        if (strlen(titlePtr) > targetKeys[i].keyStrLen) {
+    //            for (int j = 0; j < (int)targetKeys[i].keyStrLen; j++) lprintf("%c", titlePtr[j]);
+    //            lprintf(" ");
+    //        } else {
+    //            lprintf("%s ", titlePtr);
+    //            for (size_t j = strlen(titlePtr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
+    //        }
+    //    }
+    //    lprintf("\n");
+    //}
 
-    void printConfigHeader(jsonKeyValProcessor targetKeys[], int numEntries) {
-        for (int i = 0; i < numEntries; i++) {
-            lprintf("%s ", targetKeys[i].jsonKeyStr);
-            for (size_t j = strlen(targetKeys[i].jsonKeyStr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
-        }
-        lprintf("\n");
-    }
+    //void printConfigHeader(jsonKeyValProcessor targetKeys[], int numEntries) {
+    //    for (int i = 0; i < numEntries; i++) {
+    //        lprintf("%s ", targetKeys[i].jsonKeyStr);
+    //        for (size_t j = strlen(targetKeys[i].jsonKeyStr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
+    //    }
+    //    lprintf("\n");
+    //}
 };
+
 
 
 

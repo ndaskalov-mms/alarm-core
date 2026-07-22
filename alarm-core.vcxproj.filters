@@ -67,7 +67,7 @@
     <ClInclude Include="jsonTestVectors.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="alarm-printer.h">
+    <ClInclude Include="src\alarm-core-printer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

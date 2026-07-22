@@ -26,12 +26,14 @@ typedef void (*DebugCallbackFunc)(LogLevel_t level, const char* format, ...);
 typedef void (*MqttPublishCallback)(void* context, const char* topic, const char* payload);
 
 class MqttProcessor;
+class alarmPrinter; // new
 
 class Alarm {
 
-    // Grant alarmJSON access to private and protected members
+    // Grant friends access
     friend class alarmJSON;
-    friend class MqttProcessor; // allow direct access if publish methods need private DB/runtime arrays
+    friend class MqttProcessor;
+    friend class alarmPrinter; // new
 
 public:
     // Constructor and destructor

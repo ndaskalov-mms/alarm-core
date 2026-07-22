@@ -18,6 +18,7 @@ char tempMQTTbuf[8192];         // used for publishing MQTT messages
 #include "alarm-FS-wrapper.h"
 #include "alarm-core.h"
 #include "src\alarm-core-JSON.h" // Include the new header-only parser
+#include "src\alarm-core-printer.h" // Include the new header-only parser
 #include "alarm-core-mqtt.h"
 
 
@@ -31,6 +32,8 @@ void debugPrinter(const char* message, size_t length) {
 
 // instance of the Alarm class
 Alarm my_alarm;
+
+alarmPrinter m_printer(my_alarm);
 
 // alarmJSON class instance. It receives reference to Alarm instance (my_alarm) during constructor.
 // provides JSON based public interface to configure and control the Alarm class instance
@@ -111,9 +114,9 @@ int main() {
         return -1;
 	}
 
-    parser.printAlarmPartitions(0, MAX_PARTITION);
-    parser.printAlarmZones(0, MAX_ALARM_ZONES);
-    parser.printAlarmPgms();
+    m_printer.printAlarmPartitions(0, MAX_PARTITION);
+    m_printer.printAlarmZones(0, MAX_ALARM_ZONES);
+    m_printer.printAlarmPgms();
 
     runJsonMQTTTests(my_alarm, jsonMqttTestVectorsFname);
     return 0;
