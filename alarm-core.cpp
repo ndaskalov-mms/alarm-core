@@ -111,7 +111,7 @@ int main() {
         return -1;
 	}
 
-    parser.printAlarmPartition(0, MAX_PARTITION);
+    parser.printAlarmPartitions(0, MAX_PARTITION);
     parser.printAlarmZones(0, MAX_ALARM_ZONES);
     parser.printAlarmPgms();
 

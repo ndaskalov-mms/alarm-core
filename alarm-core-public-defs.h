@@ -15,7 +15,7 @@
 #define JSON_SECTION_GLOBAL_OPTIONS		"global_options"
 	
 
-// MQTT JSON keys
+// JSON keys
 
 // ------------   ZONES_CFG ------------------
 // keys allowed in zone JSON config 

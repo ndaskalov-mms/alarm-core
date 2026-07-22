@@ -279,7 +279,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-        printAlarmOpts((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
+        printAlarmOptions((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
         return true;
     }
 
@@ -421,7 +421,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target partition
         patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionKeyValProcessors, PARTITION_KEYS_CNT);
-        printAlarmPartition(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
+        printAlarmPartitions(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
         return true;
     }
 
@@ -476,13 +476,9 @@ private:
         //}
     }
 
+	// ---------------------- printing methods ----------------------
 public:
-    // keep current call sites working
-    void printAlarmPartition(int startPt, int endPt) { printAlarmPartitions(startPt, endPt); }
-    void printAlarmOpts(byte* optsPtr) { printAlarmOptions(optsPtr); }
-
-    // new canonical names
-    void printAlarmPartitions(int startPt, int endPt) {
+     void printAlarmPartitions(int startPt, int endPt) {
         lprintf("Partition(s)\n");
         printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
         for (int j = startPt; j < endPt; j++) {
@@ -519,6 +515,76 @@ public:
         lprintf("\n");
     }
 
+
+    void publishArmStatus(int prt) { (void)prt; }
+    void publishAlarm(byte prtIdx) { (void)prtIdx; }
+    void publishTroubleZone(int zone) { (void)zone; }
+    void publishAlarmZone(int zone) { (void)zone; }
+
+    void publishAlarmAndTroubleZones() {
+        for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
+            if (!m_alarm.zonesDB[zn].zoneType) continue;
+            if (m_alarm.zonesRT[zn].in_alarm)   publishAlarmZone(zn);
+            if (m_alarm.zonesRT[zn].in_trouble) publishTroubleZone(zn);
+        }
+    }
+
+    void publishPartitionStatus(int prt) { (void)prt; }
+
+    void publishZonesStatusChanges(int prt) {
+        for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
+            if (m_alarm.zonesDB[zn].zonePartition != prt) continue;
+            if (!m_alarm.zonesDB[zn].zoneType) continue;
+            if (!m_alarm.zonesRT[zn].changed) continue;
+
+
+
+            m_alarm.zonesRT[zn].changed = 0;
+        }
+    }
+
+    void publishPGMStatusChanges() {}
+
+    void publishAll(int prt) {
+        publishZonesStatusChanges(prt);
+        publishPartitionStatus(prt);
+        publishAlarmAndTroubleZones();
+    }
+
+    bool buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const {
+        if (!outJson || outJsonSize == 0) return false;
+        if (zone < 0 || zone >= MAX_ALARM_ZONES) {
+            outJson[0] = '\0';
+            return false;
+        }
+
+        const ALARM_ZONE_RT& z = m_alarm.zonesRT[zone];
+        int n = snprintf(
+            outJson, outJsonSize,
+            "{"
+            "\"zoneStat\":\"%s\","
+            "\"bypassed\":\"0x%02X\","
+            "\"changed\":\"0x%02X\","
+            "\"in_alarm\":%s,"
+            "\"in_trouble\":%s,"
+            "\"ignorredTamper\":%s,"
+            "\"ignorredAmask\":%s,"
+            "\"openEDSD1zone\":%s,"
+            "\"openEDSD2zone\":%s"
+            "}",
+            //zoneStatToText(z.zoneStat),
+            (unsigned int)z.bypassed,
+            (unsigned int)z.changed,
+            z.in_alarm ? "true" : "false",
+            z.in_trouble ? "true" : "false",
+            z.ignorredTamper ? "true" : "false",
+            z.ignorredAmask ? "true" : "false",
+            z.openEDSD1zone ? "true" : "false",
+            z.openEDSD2zone ? "true" : "false"
+        );
+        return (n > 0) && ((size_t)n < outJsonSize);
+    }
+
 private:
     void printConfigData(jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass) {
         const char* titlePtr = NULL;
@@ -545,3 +611,6 @@ private:
         lprintf("\n");
     }
 };
+
+
+

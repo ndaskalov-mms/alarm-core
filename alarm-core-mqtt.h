@@ -52,123 +52,20 @@ public:
 
     // moved from free functions:
     void publish2broker(const char* payload, const char* topic, ...);
-    void publishArmStatus(int prt);
-    void publishAlarm(byte prtIdx);
-    void publishTroubleZone(int zone);
-    void publishAlarmZone(int zone);
-    void publishAlarmAndTroubleZones();
-    void publishPartitionStatus(int prt);
-    void publishZonesStatusChanges(int prt);
-    void publishPGMStatusChanges();
-    void publishAll(int prt);
-    bool buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const;
-
 private:
     alarmJSON& m_jsonParser;
     Alarm& m_alarm;
-    char m_topicBuf[8192]{};
 };
 
 inline void MqttProcessor::publish2broker(const char* payload, const char* topic, ...) {
     va_list args;
     va_start(args, topic);
-    vsnprintf(m_topicBuf, sizeof(m_topicBuf), topic, args);
+    //vsnprintf(m_topicBuf, sizeof(m_topicBuf), topic, args);
     va_end(args);
 
 	// call the MQTT publish callback if set
-    printf("Topic: %s, Payload: %s\n", m_topicBuf, payload);
+    //printf("Topic: %s, Payload: %s\n", m_topicBuf, payload);
 }
-
-inline void MqttProcessor::publishArmStatus(int prt) { (void)prt; }
-inline void MqttProcessor::publishAlarm(byte prtIdx) { (void)prtIdx; }
-inline void MqttProcessor::publishTroubleZone(int zone) { (void)zone; }
-inline void MqttProcessor::publishAlarmZone(int zone) { (void)zone; }
-inline void MqttProcessor::publishAlarmAndTroubleZones() {}
-inline void MqttProcessor::publishPartitionStatus(int prt) { (void)prt; }
-inline void MqttProcessor::publishZonesStatusChanges(int prt) {
-    int cnt = 0;
-    for (int zn = 0; zn < MAX_ALARM_ZONES; zn++) {          // for each board' zone
-        if (m_alarm.zonesDB[zn].zonePartition != prt)
-            continue;                                       // zone belongs to other partition
-        if (!m_alarm.zonesDB[zn].zoneType)
-            continue;                                       // zone not valid
-        if (!m_alarm.zonesRT[zn].changed)
-            continue;                                       // no changes in zone to publish
-        cnt++;                                              // we need to publish only if cnt != 0 (at least one zone changed)
-        if (m_alarm.zonesRT[zn].changed & ZONE_STATE_CHANGED) {     // zone state changed (OPEN/CLOSE/TAMPER/AMASK
-            
-        }
-        //if (m_alarm.zonesRT[zn].changed & ZONE_USR_BYPASS_CHANGED) {// if zone is BYPASSED/UNBYPASSED on user request
-        //    if (m_alarm.zonesRT[zn].bypassed & ZONE_BYPASSED)       // report it
-        //       publish2broker(TRUE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
-        //    else
-        //      publish2broker(FALSE_PAYLOAD, ZONES_STATES_TOPIC, m_alarm.zonesDB[zn].zoneName, BYPASS_PROPERTY);
-        //}
-        m_alarm.zonesRT[zn].changed = 0;
-    }
-    //if (cnt)
-    //    timeoutOps(FORCE, MQTT_PUBLISH_TIMER);              // force partition status publish
-}
-
-inline const char* zoneStatToText(byte zoneStat) {
-    if (zoneStat & ZONE_TAMPER) return "TAMPER";
-    if (zoneStat & ZONE_AMASK)  return "AMASK";
-    if (zoneStat & ZONE_OPEN)   return "OPEN";
-    return "CLOSE";
-}
-
-inline bool MqttProcessor::buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const {
-    if (!outJson || outJsonSize == 0) {
-        return false;
-    }
-    if (zone < 0 || zone >= MAX_ALARM_ZONES) {
-        outJson[0] = '\0';
-        return false;
-    }
-
-    const ALARM_ZONE_RT& z = m_alarm.zonesRT[zone];
-
-    // Keys are based on ALARM_ZONE_RT field names.
-    // zoneStat: OPEN/CLOSE/AMASK/TAMPER
-    // changed: hex string
-    // bypassed: bitmask as hex string
-    // others: true/false
-    int n = snprintf(
-        outJson,
-        outJsonSize,
-        "{"
-        "\"zoneStat\":\"%s\","
-        "\"bypassed\":\"0x%02X\","
-        "\"changed\":\"0x%02X\","
-        "\"in_alarm\":%s,"
-        "\"in_trouble\":%s,"
-        "\"ignorredTamper\":%s,"
-        "\"ignorredAmask\":%s,"
-        "\"openEDSD1zone\":%s,"
-        "\"openEDSD2zone\":%s"
-        "}",
-        zoneStatToText(z.zoneStat),
-        (unsigned int)z.bypassed,
-        (unsigned int)z.changed,
-        z.in_alarm ? "true" : "false",
-        z.in_trouble ? "true" : "false",
-        z.ignorredTamper ? "true" : "false",
-        z.ignorredAmask ? "true" : "false",
-        z.openEDSD1zone ? "true" : "false",
-        z.openEDSD2zone ? "true" : "false"
-    );
-
-    return (n > 0) && ((size_t)n < outJsonSize);
-}
-
-inline void MqttProcessor::publishPGMStatusChanges() {}
-//
-inline void MqttProcessor::publishAll(int prt) {
-    publishZonesStatusChanges(prt);
-    publishPartitionStatus(prt);
-    publishAlarmAndTroubleZones();
-}
-
 
 /*
 
