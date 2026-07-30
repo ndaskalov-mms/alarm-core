@@ -32,13 +32,10 @@ void debugPrinter(const char* message, size_t length) {
 
 // instance of the Alarm class
 Alarm my_alarm;
-
 alarmPrinter m_printer(my_alarm);
 
-// alarmJSON class instance. It receives reference to Alarm instance (my_alarm) during constructor.
-// provides JSON based public interface to configure and control the Alarm class instance
-// Internally communicates via non-public interface to access internal members of Alarm instance
-alarmJSON parser(my_alarm);
+// inject global printer into parser
+alarmJSON parser(my_alarm, m_printer);
 
 // MqttProcessor class instance. Provides interface to MQTT PubSub client. Receives reference to
 // alarmJSON class instance, which in turn has reference to Alarm instance. This way,  "injecting" the dependencies
@@ -118,9 +115,45 @@ int main() {
     m_printer.printAlarmZones(0, MAX_ALARM_ZONES);
     m_printer.printAlarmPgms();
 
+    // Example call from `alarm-core.cpp`
+    char zoneStatusJson[256];
+    if (parser.buildZoneStatusJson(0, zoneStatusJson, sizeof(zoneStatusJson))) {
+        printf("Zone status JSON: %s\n", zoneStatusJson);
+    }
+
     runJsonMQTTTests(my_alarm, jsonMqttTestVectorsFname);
     return 0;
 }
+
+//void publishAlarmAndTroubleZones() {
+//    for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
+//        if (!m_alarm.zonesDB[zn].zoneType) continue;
+//        //if (m_alarm.zonesRT[zn].in_alarm)   publishAlarmZone(zn);
+//        //if (m_alarm.zonesRT[zn].in_trouble) publishTroubleZone(zn);
+//    }
+//}
+//
+//void publishPartitionStatus(int prt) { (void)prt; }
+//
+//void publishZonesStatusChanges(int prt) {
+//    for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
+//        if (m_alarm.zonesDB[zn].zonePartition != prt) continue;
+//        if (!m_alarm.zonesDB[zn].zoneType) continue;
+//        if (!m_alarm.zonesRT[zn].changed) continue;
+//
+//
+//
+//        m_alarm.zonesRT[zn].changed = 0;
+//    }
+//}
+//
+//void publishPGMStatusChanges() {}
+//
+//void publishAll(int prt) {
+//    publishZonesStatusChanges(prt);
+//    publishPartitionStatus(prt);
+//    publishAlarmAndTroubleZones();
+//}
 //
 // ------------------------  JSON MQTT TEST vectors ------------------------
 //

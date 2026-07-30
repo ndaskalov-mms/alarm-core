@@ -370,15 +370,23 @@ typedef enum {
  * @brief   Describes how to access specific parameter for zone, partition, pgm, etc
 */
 struct jsonKeyValProcessor {
-    const   char jsonKeyStr[NAME_LEN];                                  // param name e.g. zone name, partition name zone type, etc
-    int     pos;                                                        // param present in JSON or position in header line (column) in CSV file
-    byte    patchOffset;                                                // offset in corresponding DB (zoneDB, partionDB, etc) where we have to put the data read from CSV
-    byte    patchLen;                                                   // offset is relativ to beginning of the struct which forms correspondin entr
-    int     (*patchCallBack)  (byte* basePtr, int  offset, int len, const parsedValue* src);// callback function to patch the value read from condig file
-    byte*   (*unpatchCallBack)(byte* basePtr, int  offset, int len);                        // callback function to get string representation of the value read from config struct
-    size_t  keyStrLen;                                                  // used for pretty printing only
-    byte    printClass;                                                 // used to select what to print 
-    field_type_t fieldType;                                             // type of field (int, string, bool, etc.)
+    const char* jsonKeyStr;
+    int     pos;
+    byte    patchOffset;
+    byte    patchLen;
+    int     (*patchCallBack)(byte* basePtr, int offset, int len, const parsedValue* src);
+    field_type_t fieldType;
+
+    // parse-only ctor
+    constexpr jsonKeyValProcessor(const char* key, int p, byte off, byte len,
+        int (*patch)(byte*, int, int, const parsedValue*), field_type_t ft)
+        : jsonKeyStr(key), pos(p), patchOffset(off), patchLen(len), patchCallBack(patch), fieldType(ft) {}
+
+    // compatibility ctor: accepts old printer args and ignores them
+    constexpr jsonKeyValProcessor(const char* key, int p, byte off, byte len,
+        int (*patch)(byte*, int, int, const parsedValue*),
+        byte* (*)(byte*, int, int), size_t, byte, field_type_t ft)
+        : jsonKeyStr(key), pos(p), patchOffset(off), patchLen(len), patchCallBack(patch), fieldType(ft) {}
 };
 /**
  * @brief Zone tags.  Contains tag as a string and corresponding offset from beginnig of struct ALARM_ZONE. Used to modify tag values direct in memory.

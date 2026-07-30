@@ -46,16 +46,6 @@
 #define ZONE_ANTI_MSK_VAL_STR			"anti-mask"   
 
 //
-// Zone status (ZN_STATUS_KEY_STR) supported JSON values 
-#define ZN_BYPASSED_TTL					"BYPASSED"
-#define ZN_TAMPER_TTL					"TAMPER"
-#define ZN_OPEN_TTL						"OPEN"
-#define ZN_ERROR_TTL					"ERROR"
-#define ZN_FORCED_TTL					"FORCED"
-#define ZN_CLOSE_TTL					"CLOSED"
-#define ZN_AMASK_TTL					"AMASK"
-
-//
 // value strings allowed for zone type (ZN_TYPE_TTL) in zone config JSON
 #define	ZONE_DISABLED_VAL_STR			"DISABLED"             
 #define	INSTANT_VAL_STR					"INSTANT"              		
@@ -88,7 +78,53 @@
 #define LINE_ERR_OPT_ALARM_WHEN_ARMED_VAL_STR	"ALARM_WHEN_ARMED"
 #define LINE_ERR_OPT_ALARM_ONLY_VAL_STR			"ALARM"
 
+// ------------   ZONE RUNTIME STATUS JSON KEYS and VALS ------------------
+
+// Zone bypass status key and vals
+#define ZN_BYPASSED_KEY_STR				"bypassed"
+#define ZN_NO_BYPASS_VAL				"NO_BYPASS"
+#define ZN_STAY_BYPASSED_VAL			"STAY_BYP"
+#define ZN_EDx_BYPASSED_VAL				"ENT_DLY_BYP"
+#define ZN_EX_D_BYPASSED_VAL			"EXIT_DLY_BYP"
+#define ZN_FORCED_VAL					"FORCED"
+
+// Zone state key and vals
+#define ZN_ZONE_STAT_KEY_STR			"zoneStat"
+#define ZN_OPEN_VAL						"OPEN"
+#define ZN_ERROR_VAL					"ERROR"
+#define ZN_CLOSE_VAL					"CLOSED"
+
+// Zone error key and vals
+#define ZN_ERROR_KEY_STR				"ERROR"
+#define ZN_TAMPER_VAL					"TAMPER"
+#define ZN_AMASK_VAL					"AMASK"
+#define ZN_NO_ERROR_VAL					"NO"
+
+#define ZN_IN_ALARM_KEY_STR				"inAlarm"		// val - YES if zone is in Alarm, NO if not in Alarm
+#define ZN_IN_TROUBLE_KEY_STR			"inTrouble"		// val - YES if zone is in Trouble, NO if not in Trouble
+#define ZN_IGNORED_TAMPER_KEY_STR		"ignTamper"		// val - YES if zone has Ignored Tamper, NO if not has Ignored Tamper
+#define ZN_IGNORED_AMASK_KEY_STR		"ignAmask"		// val - YES if zone has Ignored Anti-Mask, NO if not has Ignored Anti-Mask
+#define ZN_OPEN_EDSD1_ZONE_KEY_STR		"openEDSD1zn"	// val - YES if zone is in Open ED1/SD1 Zone, NO if not in Open ED1/SD1 Zone
+#define ZN_OPEN_EDSD2_ZONE_KEY_STR		"openEDSD2zn"	// val - YES if zone is in Open ED2/SD2 Zone, NO if not in Open ED2/SD2 Zone
+
+// zone status example JSON object
+//{
+//	ZN_ZONE_STAT_KEY_STR:		ZN_OPEN_VAL,		// ZN_CLOSE_VAL,  ZN_ERROR_VAL
+//	ZN_BYPASSED_KEY_STR:		ZN_NO_BYPASS_VAL,	// ZN_STAY_BYPASSED_VAL, ZN_EDx_BYPASSED_VAL, ZN_EX_D_BYPASSED_VAL, ZN_NO_BYPASS_VAL, ZN_FORCED_VAL	
+//	ZN_ERROR_KEY_STR:			ZN_NO_ERROR_VAL,	// ZN_TAMPER_VAL, ZN_AMASK_VAL
+//	ZN_IN_ALARM_KEY_STR: 		YES,				// NO
+//  ZN_IN_TROUBLE_KEY_STR:		YES,				// NO
+//  ZN_IGNORED_TAMPER_KEY_STR:	YES,				// NO
+//  ZN_IGNORED_AMASK_KEY_STR:	YES,				// NO
+//	ZN_OPEN_EDSD1_ZONE_KEY_STR:	YES,				// NO
+//	ZN_OPEN_EDSD2_ZONE_KEY_STR:	YES,				// NO
+//}
+
+
+
+//
 // ------------   PARTITIONS_CFG ------------------
+// 
 // keys allowed in partition JSON config 
 #define	PT_NAME_KEY_STR					"pName"
 #define	PT_IDX_KEY_STR					"pIdx"
@@ -163,24 +199,24 @@
 
 //
 enum ALARM_DOMAINS_t {
-	RESERVED = 0,						// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
-	ZONES_CFG = 0x10,
-	ZONES_CMD = 0x11,
-	PARTITIONS_CFG = 0x20,
-	PARTITIONS_CMD = 0x21,
-	PGMS_CFG = 0x40,
-	PGMS_CMD = 0x41,
-	KEYSW_CFG = 0x80,
-	KEYSW_CMD = 0x81,
-	GLOBAL_OPT_CFG = 0x100,
-	GLOBAL_OPT_CMD = 0x101,
+	RESERVED		= 0,				// offsets the IDs for the folloing items in order to match sbProps[] indexes TODO ???
+	ZONES_CFG		= 0x10,
+	ZONES_CMD		= 0x11,
+	PARTITIONS_CFG	= 0x20,
+	PARTITIONS_CMD	= 0x21,
+	PGMS_CFG		= 0x40,
+	PGMS_CMD		= 0x41,
+	KEYSW_CFG		= 0x80,
+	KEYSW_CMD		= 0x81,
+	GLOBAL_OPT_CFG	= 0x100,
+	GLOBAL_OPT_CMD	= 0x101,
 };
 //
 //
 enum PGM_CMDS_t {
-	PGM_OFF = 1,
-	PGM_ON = 2,
-	PGM_PULSE = 3,
+	PGM_OFF			= 1,
+	PGM_ON			= 2,
+	PGM_PULSE		= 3,
 };
 //
 // zone commands definitions
@@ -202,12 +238,12 @@ enum ZONE_CMDS_t {
 //
 //
 enum  ARM_METHODS_t {
-	INVALID_CMD = -1,
-	DISARM = 0,
-	REGULAR_ARM = 0x1,
-	FORCE_ARM = 0x2,
-	INSTANT_ARM = 0x4,
-	STAY_ARM = 0x8,
+	INVALID_CMD		= -1,
+	DISARM			= 0,
+	REGULAR_ARM		= 0x1,
+	FORCE_ARM		= 0x2,
+	INSTANT_ARM		= 0x4,
+	STAY_ARM		= 0x8,
 };
 
 ////

@@ -8,25 +8,26 @@
 #include <stdio.h>
 #include <string.h>
 #include "..\alarm-core.h"
-#include "alarm-core-internal-defs.h" // Include the internal definitions
+#include "alarm-core-internal-defs.h"
 #include "..\..\esp-json-parser\include\json_parser-code.h"
 #include "alarm-core-json-val-parsers.h"
-#include "alarm-core-printer.h" // new
+#include "alarm-core-printer.h"
 
 class alarmJSON {
     Alarm& m_alarm;
-    alarmPrinter m_printer; // new
+    alarmPrinter& m_printer; // injected reference
 
 public:
-    /**
-     * @brief Constructor that takes a reference to the Alarm instance to be populated.
-     * @param my_alarm The Alarm object to configure.
-     */
-    alarmJSON(Alarm& alarm) : m_alarm(alarm), m_printer(alarm) {}
+    alarmJSON(Alarm& alarm, alarmPrinter& printer)
+        : m_alarm(alarm), m_printer(printer) {}
+
+    //void printPartitions(int startPt, int endPt) { m_printer.printAlarmPartitions(startPt, endPt); }
+    //void printZones(int startZn, int endZn) { m_printer.printAlarmZones(startZn, endZn); }
+    //void printPgms() { m_printer.printAlarmPgms(); }
 
     // Define the JSON processor functions (payload handlers)
-// processControlJsonPld is the main entry point for processing incoming JSON payloads 
-// for different domains (zones, partitions, global options, etc.)
+    // processControlJsonPld is the main entry point for processing incoming JSON payloads 
+    // for different domains (zones, partitions, global options, etc.)
     bool processControlJsonPld(const char* jsonBuffer, size_t length, ALARM_DOMAINS_t domain) {
         jparse_ctx_t jctx;    // JSON parsing context
 
@@ -478,141 +479,143 @@ private:
         //}
     }
 
-	// ---------------------- printing methods ----------------------
+	// ---------------------- JSON compose methods ----------------------
 public:
-    // void printAlarmPartitions(int startPt, int endPt) {
-    //    lprintf("Partition(s)\n");
-    //    printConfigHeader(partitionKeyValProcessors, PARTITION_KEYS_CNT);
-    //    for (int j = startPt; j < endPt; j++) {
-    //        if (!m_alarm.partitionDB[j].valid) continue;
-    //        printConfigData(partitionKeyValProcessors, PARTITION_KEYS_CNT, (byte*)&m_alarm.partitionDB[j], PRTCLASS_ALL);
-    //    }
-    //    lprintf("\n");
-    //}
-
-    //void printAlarmZones(int startZn, int endZn) {
-    //    lprintf("\nZone(s)\n");
-    //    printConfigHeader(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
-    //    for (int i = startZn; i < endZn; i++) {
-    //        if (m_alarm.zonesDB[i].valid)
-    //            printConfigData(zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT, (byte*)&m_alarm.zonesDB[i], PRTCLASS_ALL);
-    //    }
-    //    lprintf("\n");
-    //}
-
-    //void printAlarmOptions(byte* optsPtr) {
-    //    lprintf("\nGlobal options\n");
-    //    printConfigHeader(gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-    //    printConfigData(gOptsKeyValProcessors, GOPTS_KEYS_CNT, optsPtr, PRTCLASS_ALL);
-    //    lprintf("\n");
-    //}
-
-    //void printAlarmPgms() {
-    //    lprintf("\nPGM(s)\n");
-    //    printConfigHeader(pgmKeyValProcessors, PGM_KEYS_CNT);
-    //    for (int i = 0; i < MAX_ALARM_PGM; i++) {
-    //        if (!m_alarm.pgmsDB[i].valid) continue;
-    //        printConfigData(pgmKeyValProcessors, PGM_KEYS_CNT, (byte*)&m_alarm.pgmsDB[i], PRTCLASS_ALL);
-    //    }
-    //    lprintf("\n");
-    //}
-
-
-    void publishArmStatus(int prt) { (void)prt; }
-    void publishAlarm(byte prtIdx) { (void)prtIdx; }
-    void publishTroubleZone(int zone) { (void)zone; }
-    void publishAlarmZone(int zone) { (void)zone; }
-
-    void publishAlarmAndTroubleZones() {
-        for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
-            if (!m_alarm.zonesDB[zn].zoneType) continue;
-            if (m_alarm.zonesRT[zn].in_alarm)   publishAlarmZone(zn);
-            if (m_alarm.zonesRT[zn].in_trouble) publishTroubleZone(zn);
+    bool buildZoneStatusJson(int zoneIdx, char* outJson, size_t outJsonSize) const {
+        if (!outJson || outJsonSize == 0) {
+            return false;
         }
-    }
 
-    void publishPartitionStatus(int prt) { (void)prt; }
+        // default empty
+        outJson[0] = '\0';
 
-    void publishZonesStatusChanges(int prt) {
-        for (int zn = 0; zn < MAX_ALARM_ZONES; ++zn) {
-            if (m_alarm.zonesDB[zn].zonePartition != prt) continue;
-            if (!m_alarm.zonesDB[zn].zoneType) continue;
-            if (!m_alarm.zonesRT[zn].changed) continue;
-
-
-
-            m_alarm.zonesRT[zn].changed = 0;
+        if (zoneIdx < 0 || zoneIdx >= MAX_ALARM_ZONES) {
+            return false;
         }
+        if (!m_alarm.zonesDB[zoneIdx].valid) {
+            return false;
+        }
+
+        const ALARM_ZONE_RT& rt = m_alarm.zonesRT[zoneIdx];
+
+        const char* zoneStatVal = ZN_CLOSE_VAL;
+        if (rt.zoneStat & ZONE_ERROR) {
+            zoneStatVal = ZN_ERROR_VAL;
+        }
+        else if (rt.zoneStat & ZONE_OPEN) {
+            zoneStatVal = ZN_OPEN_VAL;
+        }
+
+        // snprintf-only bypass builder (replace the previous strncat block)
+        char bypassBuf[96];
+        size_t used = 0;
+        bypassBuf[0] = '\0';
+
+        auto appendBypass = [&](const char* val) -> void {
+            if (!val) return;
+
+            const char* sep = (used > 0) ? " | " : "";
+            int written = snprintf(
+                bypassBuf + used,
+                sizeof(bypassBuf) - used,
+                "%s%s",
+                sep,
+                val
+            );
+
+            if (written < 0) return;
+            size_t w = static_cast<size_t>(written);
+            if (w >= (sizeof(bypassBuf) - used)) {
+                used = sizeof(bypassBuf) - 1; // truncated
+            } else {
+                used += w;
+            }
+        };
+
+        if (rt.bypassed & ZONE_STAY_BYPASSED) appendBypass(ZN_STAY_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_EDx_BYPASSED)  appendBypass(ZN_EDx_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_EX_D_BYPASSED) appendBypass(ZN_EX_D_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_FORCED)        appendBypass(ZN_FORCED_VAL);
+
+        if (used == 0) {
+            (void)snprintf(bypassBuf, sizeof(bypassBuf), "%s", ZN_NO_BYPASS_VAL);
+        }
+
+        const char* errorVal = ZN_NO_ERROR_VAL; // replace with `ZN_NO_ERROR_VAL` if you add that define
+        if (rt.zoneStat & ZONE_TAMPER) {
+            errorVal = ZN_TAMPER_VAL;
+        }
+        else if (rt.zoneStat & ZONE_AMASK) {
+            errorVal = ZN_AMASK_VAL;
+        }
+
+        auto yesNo = [](byte v) -> const char* { return v ? "YES" : "NO"; };
+
+        int written = snprintf(
+            outJson,
+            outJsonSize,
+            "{"
+            "\"" ZN_ZONE_STAT_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_BYPASSED_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_ERROR_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_IN_ALARM_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_IN_TROUBLE_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_IGNORED_TAMPER_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_IGNORED_AMASK_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_OPEN_EDSD1_ZONE_KEY_STR "\":\"" "%s" "\","
+            "\"" ZN_OPEN_EDSD2_ZONE_KEY_STR "\":\"" "%s" "\""
+            "}",
+            zoneStatVal,
+            bypassBuf,
+            errorVal,
+            yesNo(rt.in_alarm),
+            yesNo(rt.in_trouble),
+            yesNo(rt.ignorredTamper),
+            yesNo(rt.ignorredAmask),
+            yesNo(rt.openEDSD1zone),
+            yesNo(rt.openEDSD2zone)
+        );
+
+        return (written > 0) && (static_cast<size_t>(written) < outJsonSize);
     }
-
-    void publishPGMStatusChanges() {}
-
-    void publishAll(int prt) {
-        publishZonesStatusChanges(prt);
-        publishPartitionStatus(prt);
-        publishAlarmAndTroubleZones();
-    }
-
-    //bool buildZoneRtJson(int zone, char* outJson, size_t outJsonSize) const {
-    //    if (!outJson || outJsonSize == 0) return false;
-    //    if (zone < 0 || zone >= MAX_ALARM_ZONES) {
-    //        outJson[0] = '\0';
-    //        return false;
-    //    }
-
-    //    const ALARM_ZONE_RT& z = m_alarm.zonesRT[zone];
-    //    int n = snprintf(
-    //        outJson, outJsonSize,
-    //        "{"
-    //        "\"zoneStat\":\"%s\","
-    //        "\"bypassed\":\"0x%02X\","
-    //        "\"changed\":\"0x%02X\","
-    //        "\"in_alarm\":%s,"
-    //        "\"in_trouble\":%s,"
-    //        "\"ignorredTamper\":%s,"
-    //        "\"ignorredAmask\":%s,"
-    //        "\"openEDSD1zone\":%s,"
-    //        "\"openEDSD2zone\":%s"
-    //        "}",
-    //        //zoneStatToText(z.zoneStat),
-    //        (unsigned int)z.bypassed,
-    //        (unsigned int)z.changed,
-    //        z.in_alarm ? "true" : "false",
-    //        z.in_trouble ? "true" : "false",
-    //        z.ignorredTamper ? "true" : "false",
-    //        z.ignorredAmask ? "true" : "false",
-    //        z.openEDSD1zone ? "true" : "false",
-    //        z.openEDSD2zone ? "true" : "false"
-    //    );
-    //    return (n > 0) && ((size_t)n < outJsonSize);
-    //}
-
-private:
-    //void printConfigData(jsonKeyValProcessor targetKeys[], int numEntries, byte* targetPtr, int printClass) {
-    //    const char* titlePtr = NULL;
-    //    for (int i = 0; i < numEntries; i++) {
-    //        if (printClass && (printClass != targetKeys[i].printClass)) continue;
-    //        titlePtr = (const char*)targetKeys[i].unpatchCallBack(targetPtr, targetKeys[i].patchOffset, targetKeys[i].patchLen);
-    //        if (!titlePtr) titlePtr = "";
-    //        if (strlen(titlePtr) > targetKeys[i].keyStrLen) {
-    //            for (int j = 0; j < (int)targetKeys[i].keyStrLen; j++) lprintf("%c", titlePtr[j]);
-    //            lprintf(" ");
-    //        } else {
-    //            lprintf("%s ", titlePtr);
-    //            for (size_t j = strlen(titlePtr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
-    //        }
-    //    }
-    //    lprintf("\n");
-    //}
-
-    //void printConfigHeader(jsonKeyValProcessor targetKeys[], int numEntries) {
-    //    for (int i = 0; i < numEntries; i++) {
-    //        lprintf("%s ", targetKeys[i].jsonKeyStr);
-    //        for (size_t j = strlen(targetKeys[i].jsonKeyStr); j < (int)targetKeys[i].keyStrLen; j++) lprintf(" ");
-    //    }
-    //    lprintf("\n");
-    //}
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
