@@ -60,7 +60,6 @@ private:
 inline void MqttProcessor::publish2broker(const char* payload, const char* topic, ...) {
     va_list args;
     va_start(args, topic);
-    //vsnprintf(m_topicBuf, sizeof(m_topicBuf), topic, args);
     va_end(args);
 
 	// call the MQTT publish callback if set
