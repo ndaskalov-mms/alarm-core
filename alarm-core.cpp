@@ -10,7 +10,8 @@ typedef unsigned char byte;
 char prnBuf[1024];
 char token[256];
 char jsonBuffer[32768];
-char tempMQTTbuf[8192];         // used for publishing MQTT messages
+char tempJsonBuf[8192];         // used for publishing MQTT messages
+
 
 
 #include "alarm-core-config.h"
@@ -37,59 +38,15 @@ alarmPrinter m_printer(my_alarm);
 // inject global printer into parser
 alarmJSON parser(my_alarm, m_printer);
 
-// MqttProcessor class instance. Provides interface to MQTT PubSub client. Receives reference to
-// alarmJSON class instance, which in turn has reference to Alarm instance. This way,  "injecting" the dependencies
-// (myAlarm and myJsonParser) is implemented. What is received on particular MQTT topic is routed to 
+// MqttProcessor class instance. Provides interface to MQTT client. Receives reference to
+// alarmJSON class instance and Alarm class instance. This way,  "injecting" the dependencies
+// (m_jsonParser, m_alarm) is implemented. What is received on particular MQTT topic is routed to 
 // processIncommingMQTTmsg() method, which then calls appropriate JSON processor (processConfigMessage() or
 // processControlMessage() -> processByDomain() ) based on the topic and payload. They call as part of processing 
 // alarmJSON object processConfigJsonPld(), processControlJsonPld(), etc
+
 MqttProcessor myMqttProcessor(parser, my_alarm);
 
-#ifndef ARDUINO
-
-// Dummy MQTT client object
-struct DummyMqttClient {};
-DummyMqttClient mqttClient;
-
-// Wrapper for MQTT incoming processing (desktop/test path)
-static bool mqttProcessIncomingMsgWrapper(const char* topic, const char* payload, size_t length) {
-    return myMqttProcessor.processIncomingMQTTmsg(topic, payload, length);
-}
-
-// MQTT publish wrapper function
-//static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
-//    // 
-//    // Example implementation: just print the topic and payload
-//    printf("[MQTT] Topic: %s, Payload: %s\n", topic, payload);
-//}
-
-#else
-
-// Arduino MQTT context placeholder (keeps main() call unchanged: &mqttClient)
-struct ArduinoMqttClientContext {};
-ArduinoMqttClientContext mqttClient;
-
-
-// Wrapper for MQTT incoming processing (desktop/test path)
-static bool mqttProcessIncomingMsgWrapper(const char* topic, const char* payload, size_t length) {
-    return myMqttProcessor.processIncomingMQTTmsg(topic, payload, length);
-}
-
-// MQTT publish wrapper function (Arduino path)
-static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
-    //
-    (void)context; // Replace with real MQTT client cast/publish when integrated
-    //
-    if (!MQTTclient.connected()) {                    // TODO: enable connection check
-        lprintf("MQTT client not connected\n");
-        return;
-    }
-    Serial.print(F("[MQTT] Topic: "));
-    Serial.print(topic);
-    Serial.print(F(", Payload: "));
-    Serial.println(payload);
-}
-#endif
 
 int main() {
 	LOG_DEBUG("Starting Alarm Core JSON MQTT Tests...\n");
@@ -290,7 +247,7 @@ static void executeJsonMqttTestBlock(
     printf("Topic: %s\n", test.topic.c_str());
     printf("Payload: %s\n", test.payload.c_str());
 
-    bool result = mqttProcessIncomingMsgWrapper(
+    bool result = myMqttProcessor.processIncomingMQTTmsg(
         test.topic.c_str(),
         test.payload.c_str(),
         strlen(test.payload.c_str())

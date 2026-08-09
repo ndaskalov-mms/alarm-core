@@ -404,7 +404,7 @@ int Alarm::armPartition(byte prt, ARM_METHODS_t action) {
 	}
 	//
 	// fan-out the command to follow partitions first
-	for (i = 0; i < MAX_PARTITION; i++) {
+	for (i = 0; i < MAX_PARTITION; i++) {											// TODO - this needs to be optimized, 
 		followID = partitionDB[prt].follows[i];
 		if (!followID)																// follow partitions are starting from 1, 0 means invalid
 			continue;

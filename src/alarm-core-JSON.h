@@ -507,41 +507,52 @@ public:
         }
 
         // snprintf-only bypass builder (replace the previous strncat block)
-        char bypassBuf[96];
         size_t used = 0;
-        bypassBuf[0] = '\0';
+        bool ok = true;
 
-        auto appendBypass = [&](const char* val) -> void {
-            if (!val) return;
-
-            const char* sep = (used > 0) ? " | " : "";
-            int written = snprintf(
-                bypassBuf + used,
-                sizeof(bypassBuf) - used,
-                "%s%s",
-                sep,
-                val
-            );
-
-            if (written < 0) return;
-            size_t w = static_cast<size_t>(written);
-            if (w >= (sizeof(bypassBuf) - used)) {
-                used = sizeof(bypassBuf) - 1; // truncated
-            } else {
-                used += w;
-            }
+        auto appendText = [&](const char* txt) -> void {
+            if (!ok || !txt || used >= outJsonSize) { ok = false; return; }
+            int n = snprintf(outJson + used, outJsonSize - used, "%s", txt);
+            if (n < 0 || static_cast<size_t>(n) >= (outJsonSize - used)) { ok = false; return; }
+            used += static_cast<size_t>(n);
         };
 
-        if (rt.bypassed & ZONE_STAY_BYPASSED) appendBypass(ZN_STAY_BYPASSED_VAL);
-        if (rt.bypassed & ZONE_EDx_BYPASSED)  appendBypass(ZN_EDx_BYPASSED_VAL);
-        if (rt.bypassed & ZONE_EX_D_BYPASSED) appendBypass(ZN_EX_D_BYPASSED_VAL);
-        if (rt.bypassed & ZONE_FORCED)        appendBypass(ZN_FORCED_VAL);
+        auto appendKV = [&](const char* key, const char* val, bool withComma) -> void {
+            if (!ok || !key || !val || used >= outJsonSize) { ok = false; return; }
+            int n = snprintf(
+                outJson + used,
+                outJsonSize - used,
+                withComma ? "\"%s\":\"%s\"," : "\"%s\":\"%s\"",
+                key, val
+            );
+            if (n < 0 || static_cast<size_t>(n) >= (outJsonSize - used)) { ok = false; return; }
+            used += static_cast<size_t>(n);
+        };
 
-        if (used == 0) {
-            (void)snprintf(bypassBuf, sizeof(bypassBuf), "%s", ZN_NO_BYPASS_VAL);
-        }
+        // Start JSON and write first key
+        appendText("{");
+        appendKV(ZN_ZONE_STAT_KEY_STR, zoneStatVal, true);
 
-        const char* errorVal = ZN_NO_ERROR_VAL; // replace with `ZN_NO_ERROR_VAL` if you add that define
+        // Start bypass field value manually so we can append pieces inline
+        appendText("\"" ZN_BYPASSED_KEY_STR "\":\"");
+
+        bool hasBypass = false;
+        auto appendBypassPart = [&](const char* part) -> void {
+            if (!part) return;
+            if (hasBypass) appendText(" | ");
+            appendText(part);
+            hasBypass = true;
+        };
+
+        if (rt.bypassed & ZONE_STAY_BYPASSED) appendBypassPart(ZN_STAY_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_EDx_BYPASSED)  appendBypassPart(ZN_EDx_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_EX_D_BYPASSED) appendBypassPart(ZN_EX_D_BYPASSED_VAL);
+        if (rt.bypassed & ZONE_FORCED)        appendBypassPart(ZN_FORCED_VAL);
+        if (!hasBypass)                       appendText(ZN_NO_BYPASS_VAL);
+
+        appendText("\",");
+
+        const char* errorVal = ZN_NO_ERROR_VAL;
         if (rt.zoneStat & ZONE_TAMPER) {
             errorVal = ZN_TAMPER_VAL;
         }
@@ -551,34 +562,135 @@ public:
 
         auto yesNo = [](byte v) -> const char* { return v ? "YES" : "NO"; };
 
-        int written = snprintf(
-            outJson,
-            outJsonSize,
-            "{"
-            "\"" ZN_ZONE_STAT_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_BYPASSED_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_ERROR_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_IN_ALARM_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_IN_TROUBLE_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_IGNORED_TAMPER_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_IGNORED_AMASK_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_OPEN_EDSD1_ZONE_KEY_STR "\":\"" "%s" "\","
-            "\"" ZN_OPEN_EDSD2_ZONE_KEY_STR "\":\"" "%s" "\""
-            "}",
-            zoneStatVal,
-            bypassBuf,
-            errorVal,
-            yesNo(rt.in_alarm),
-            yesNo(rt.in_trouble),
-            yesNo(rt.ignorredTamper),
-            yesNo(rt.ignorredAmask),
-            yesNo(rt.openEDSD1zone),
-            yesNo(rt.openEDSD2zone)
-        );
+        // Remaining fields
+        appendKV(ZN_ERROR_KEY_STR, errorVal, true);
+        appendKV(ZN_IN_ALARM_KEY_STR, yesNo(rt.in_alarm), true);
+        appendKV(ZN_IN_TROUBLE_KEY_STR, yesNo(rt.in_trouble), true);
+        appendKV(ZN_IGNORED_TAMPER_KEY_STR, yesNo(rt.ignorredTamper), true);
+        appendKV(ZN_IGNORED_AMASK_KEY_STR, yesNo(rt.ignorredAmask), true);
+        appendKV(ZN_OPEN_EDSD1_ZONE_KEY_STR, yesNo(rt.openEDSD1zone), true);
+        appendKV(ZN_OPEN_EDSD2_ZONE_KEY_STR, yesNo(rt.openEDSD2zone), false);
+        appendText("}");
 
-        return (written > 0) && (static_cast<size_t>(written) < outJsonSize);
+        return ok;
     }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
