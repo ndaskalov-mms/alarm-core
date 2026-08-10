@@ -93,7 +93,7 @@ public:
 
 private:
     // Route handlers
-    static bool handleDomain(MqttProcessor& self, const char* payload, size_t length, ALARM_DOMAINS_t domain) {
+    static bool handleDomainConfig(MqttProcessor& self, const char* payload, size_t length, ALARM_DOMAINS_t domain) {
         return self.m_jsonParser.processControlJsonPld(payload, length, domain);
     }
 
@@ -106,7 +106,6 @@ private:
     }
 
     // Routes
-
 
     static const mqttRoute mqttRoutes[];
     static const size_t MQTT_ROUTE_COUNT;
@@ -122,9 +121,9 @@ private:
 // table of MQTT routes and their corresponding handlers
 const mqttRoute MqttProcessor::mqttRoutes[] = {
     { MQTT_FULL_CONFIG_TOPIC,       sizeof(MQTT_FULL_CONFIG_TOPIC) - 1,     &MqttProcessor::handleFullConfig, RESERVED,        "Full alarm config" },
-    { MQTT_ZONES_CONTROL_TOPIC,     sizeof(MQTT_ZONES_CONTROL_TOPIC) - 1,   &MqttProcessor::handleDomain,     ZONES_CMD,       "Control zones" },
-    { MQTT_PARTITIONS_CONTROL_TOPIC,sizeof(MQTT_PARTITIONS_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomain,   PARTITIONS_CMD,  "Control partitions" },
-    { MQTT_GLOBAL_OPT_CONTROL_TOPIC,sizeof(MQTT_GLOBAL_OPT_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomain,   GLOBAL_OPT_CFG,  "Global options config patch" },
+    { MQTT_ZONES_CONTROL_TOPIC,     sizeof(MQTT_ZONES_CONTROL_TOPIC) - 1,   &MqttProcessor::handleDomainConfig,     ZONES_CMD,       "Control zones" },
+    { MQTT_PARTITIONS_CONTROL_TOPIC,sizeof(MQTT_PARTITIONS_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomainConfig,   PARTITIONS_CMD,  "Control partitions" },
+    { MQTT_GLOBAL_OPT_CONTROL_TOPIC,sizeof(MQTT_GLOBAL_OPT_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomainConfig,   GLOBAL_OPT_CFG,  "Global options config patch" },
 };
 const size_t MqttProcessor::MQTT_ROUTE_COUNT = sizeof(MqttProcessor::mqttRoutes) / sizeof(MqttProcessor::mqttRoutes[0]);
 
