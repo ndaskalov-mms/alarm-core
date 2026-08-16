@@ -47,7 +47,7 @@ public:
     // These methods don't provide direct access to underlying arrays
     void        alarm_loop(void);
     void        setDebugCallback(DebugCallbackFunc callback);
-    void        setPublisher(MqttPublishCallback func, void* context);
+    //void        setPublisher(MqttPublishCallback func, void* context);
 
     // Zone-related methods
     int         getZoneIndex(const char* name) const; 

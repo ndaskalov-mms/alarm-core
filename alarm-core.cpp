@@ -47,30 +47,61 @@ alarmJSON parser(my_alarm, m_printer);
 
 MqttProcessor myMqttProcessor(parser, my_alarm);
 
+// global/static
+PahoMqttContext g_pahoCtx;                  // MQTT client context (desktop/test path)
 
-int main() {
-	LOG_DEBUG("Starting Alarm Core JSON MQTT Tests...\n");
-	// debug callback setup
+int setup() {
+    LOG_DEBUG("Starting Alarm Core setup.\n");
+    // debug callback setup
     my_alarm.setDebugCallback(GlobalDebugLogger);
     my_alarm.debugCallback(LOG_ERR_OK, "test\n");
 
-	// MQTT publisher setup
+    // MQTT client initialization
+    pahoInit(g_pahoCtx, myMqttProcessor, "tcp://192.168.33.201:1883", "alarm-core-client", mqttUser, mqttPassword);
+    //my_alarm.setPublisher(mqttPublishWrapper, &g_pahoCtx);
+
+    // MQTT publisher setup
     // args passed to the Alarm class: static wrapper function (mqttPublishWrapper) and pointer of your client object (&mqttClient)
-    // my_alarm.setPublisher(mqttPublishWrapper, &mqttClient);
     // my_alarm.publish2broker("Hello from Alarm Core JSON MQTT Tests!", "alarm/test");
 
-    if (!loadConfig(jsonConfigFname, (byte *)jsonBuffer, sizeof(jsonBuffer))) {
+    if (!loadConfig(jsonConfigFname, (byte*)jsonBuffer, sizeof(jsonBuffer))) {
         printf("Failed to load config file\n");
         return -1;
     }
-       if(parser.processConfigJsonPld(jsonBuffer, strlen(jsonBuffer))) {
+    if (parser.processConfigJsonPld(jsonBuffer, strlen(jsonBuffer))) {
         printf("Failed to parse config JSON\n");
         return -1;
-	}
+    }
 
     m_printer.printAlarmPartitions(0, MAX_PARTITION);
     m_printer.printAlarmZones(0, MAX_ALARM_ZONES);
     m_printer.printAlarmPgms();
+
+    // Example call from `alarm-core.cpp`
+    char zoneStatusJson[256];
+    if (parser.buildZoneStatusJson(0, zoneStatusJson, sizeof(zoneStatusJson))) {
+        printf("Zone status JSON: %s\n", zoneStatusJson);
+    }
+
+    runJsonMQTTTests(my_alarm, jsonMqttTestVectorsFname);
+    return 0;
+}
+
+void loop() {
+	// Main loop for processing alarms and MQTT messages
+	my_alarm.alarm_loop();
+	// Here you would typically check for incoming MQTT messages and process them
+	// For example, if using Paho MQTT, you might call a function to check for messages
+	// and then pass them to myMqttProcessor.processIncomingMQTTmsg(topic, payload, length);
+    pahoService(g_pahoCtx, MQTT_RECONNECT_mS);
+}
+
+int main() {
+	LOG_DEBUG("Starting Alarm...\n");
+	setup();
+    loop();
+
+    pahoDestroy(g_pahoCtx);
 
     // Example call from `alarm-core.cpp`
     char zoneStatusJson[256];
