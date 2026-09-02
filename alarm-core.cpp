@@ -25,7 +25,7 @@ char tempJsonBuf[8192];         // used for publishing MQTT messages
 
 //TimerManager alarmTimerManager;
 
-void runJsonMQTTTests(Alarm& alarm, const char* fileName);
+void runJsonMQTTTests(Alarm& alarm, const char* fileName, const char* outFileName = nullptr);
 
 void debugPrinter(const char* message, size_t length) {
     printf("[DEBUG] %.*s\n", (int)length, message);
@@ -48,7 +48,7 @@ alarmJSON parser(my_alarm, m_printer);
 MqttProcessor myMqttProcessor(parser, my_alarm);
 
 // global/static
-PahoMqttContext g_pahoCtx;                  // MQTT client context (desktop/test path)
+mqttContext g_mqttCtx;
 
 int setup() {
     LOG_DEBUG("Starting Alarm Core setup.\n");
@@ -57,17 +57,13 @@ int setup() {
     my_alarm.debugCallback(LOG_ERR_OK, "test\n");
 
     // MQTT client initialization
-    pahoInit(g_pahoCtx, myMqttProcessor, "tcp://192.168.33.201:1883", "alarm-core-client", mqttUser, mqttPassword);
-    //my_alarm.setPublisher(mqttPublishWrapper, &g_pahoCtx);
-
-    // MQTT publisher setup
-    // args passed to the Alarm class: static wrapper function (mqttPublishWrapper) and pointer of your client object (&mqttClient)
-    // my_alarm.publish2broker("Hello from Alarm Core JSON MQTT Tests!", "alarm/test");
+    // MQTT_setup(myMqttProcessor,  mqttUser, mqttPassword);
 
     if (!loadConfig(jsonConfigFname, (byte*)jsonBuffer, sizeof(jsonBuffer))) {
         printf("Failed to load config file\n");
         return -1;
     }
+
     if (parser.processConfigJsonPld(jsonBuffer, strlen(jsonBuffer))) {
         printf("Failed to parse config JSON\n");
         return -1;
@@ -83,7 +79,6 @@ int setup() {
         printf("Zone status JSON: %s\n", zoneStatusJson);
     }
 
-    runJsonMQTTTests(my_alarm, jsonMqttTestVectorsFname);
     return 0;
 }
 
@@ -93,15 +88,23 @@ void loop() {
 	// Here you would typically check for incoming MQTT messages and process them
 	// For example, if using Paho MQTT, you might call a function to check for messages
 	// and then pass them to myMqttProcessor.processIncomingMQTTmsg(topic, payload, length);
-    pahoService(g_pahoCtx, MQTT_RECONNECT_mS);
+    pahoService(g_mqttCtx, MQTT_RECONNECT_mS);
 }
 
 int main() {
 	LOG_DEBUG("Starting Alarm...\n");
 	setup();
-    loop();
+    MQTT_INIT(g_mqttCtx, myMqttProcessor, "tcp://192.168.33.201:1883", "alarm-core-client", mqttUser, mqttPassword);
+    // my_alarm.setPublisher(mqttPublishWrapper, &g_mqttCtx);
 
-    pahoDestroy(g_pahoCtx);
+    for (;;) {
+        // replace with your real time source
+        static uint32_t nowMs = 0;
+        nowMs += 10;
+        MQTT_SERVICE(g_mqttCtx, MQTT_RECONNECT_mS);
+    }
+
+    MQTT_DESTROY(g_mqttCtx);
 
     // Example call from `alarm-core.cpp`
     char zoneStatusJson[256];
@@ -257,13 +260,20 @@ static bool alarmFileReadLine(IOptr fileHandle, std::string& outLine) {
     }
 }
 
+int alarmWriteLine(const char* line, IOptr stream) {
+    size_t len = strlen(line);
+    if (!alarmFileWrite((const byte*)line, (int)len, stream)) return false;
+    return alarmFileWrite((const byte*)"\n", 1, stream);
+}
+
 static void executeJsonMqttTestBlock(
     Alarm& alarm,
     const std::string& block,
     int blockIndex,
     int& totalTests,
     int& passCount,
-    int& parseFailCount) {
+    int& parseFailCount,
+    IOptr outStream) {          // <-- added
     (void)alarm;
 
     totalTests++;
@@ -285,69 +295,62 @@ static void executeJsonMqttTestBlock(
     );
 
     printf("Result: %s\n", result ? "SUCCESS" : "FAILED");
-    if (result) {
-        passCount++;
+    if (result) passCount++;
+
+    if (outStream) {
+        char resultLine[512];
+        snprintf(resultLine, sizeof(resultLine), "%s:%s:%s",
+                 test.topic.c_str(), result ? "OK" : "ERROR", test.description.c_str());
+        alarmWriteLine(resultLine, outStream);   // reuse alarmWriteLine from alarm-FS-wrapper.h
     }
 
     printf("------------------------------------------------------------\n");
 }
 
-/**
- * @brief Run the JSON MQTT test vectors
- *
- * This function iterates through all the JSON test vectors and calls
- * the processJsonMessage method of the Alarm class to test the JSON
- * processing functionality.
- *
- * @param my_alarm Reference to the Alarm class instance
- */
- void runJsonMQTTTests(Alarm& alarm, const char* fileName) {
-     printf("\n=================== STARTING JSON MQTT TESTS ===================\n");
+void runJsonMQTTTests(Alarm& alarm, const char* fileName, const char* outFileName) {
+    printf("\n=================== STARTING JSON MQTT TESTS ===================\n");
 
-     IOptr testsFile = alarmFileOpen(fileName, "rb");
-     if (!testsFile) {
-         printf("Unable to open MQTT test vectors file: %s\n", fileName);
-         return;
-     }
+    IOptr testsFile = alarmFileOpen(fileName, "rb");
+    if (!testsFile) {
+        printf("Unable to open MQTT test vectors file: %s\n", fileName);
+        return;
+    }
 
-     int passCount = 0;
-     int totalTests = 0;
-     int parseFailCount = 0;
-     int blockIndex = 0;
-     std::string line;
-     std::string currentBlock;
+    IOptr outStream = nullptr;
+    if (outFileName) {
+        outStream = alarmFileOpen(outFileName, "w");
+        if (!outStream) {
+            printf("Unable to open results output file: %s\n", outFileName);
+        }
+    }
 
-    // Read the test vector file line by line and build one JSON test block at a time.
-    // Blocks are separated by blank/whitespace-only lines.
+    int passCount = 0, totalTests = 0, parseFailCount = 0, blockIndex = 0;
+    std::string line, currentBlock;
+
     while (alarmFileReadLine(testsFile, line)) {
         if (isWhitespaceOnly(line)) {
-            // End of the current block: execute it only if it contains non-whitespace content.
             if (!isWhitespaceOnly(currentBlock)) {
                 blockIndex++;
-                executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
+                executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount, outStream);
                 currentBlock.clear();
             }
             continue;
         }
-
-        // Preserve original multi-line JSON payload formatting while reconstructing the block.
-        if (!currentBlock.empty()) {
-            currentBlock += "\n";
-        }
+        if (!currentBlock.empty()) currentBlock += "\n";
         currentBlock += line;
     }
 
-    // Handle the final block when the file does not end with a blank separator line.
     if (!isWhitespaceOnly(currentBlock)) {
         blockIndex++;
-        executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount);
+        executeJsonMqttTestBlock(alarm, currentBlock, blockIndex, totalTests, passCount, parseFailCount, outStream);
     }
 
-     alarmFileClose(testsFile);
+    alarmFileClose(testsFile);
+    if (outStream) alarmFileClose(outStream);
 
-     printf("\n=================== JSON MQTT TEST SUMMARY ===================\n");
-     printf("Tests passed: %d / %d (%.1f%%)\n",
-         passCount, totalTests, totalTests ? ((float)passCount / totalTests * 100.0f) : 0.0f);
-     printf("Parse failures: %d\n", parseFailCount);
-     printf("============================================================\n\n");
+    printf("\n=================== JSON MQTT TEST SUMMARY ===================\n");
+    printf("Tests passed: %d / %d (%.1f%%)\n",
+        passCount, totalTests, totalTests ? ((float)passCount / totalTests * 100.0f) : 0.0f);
+    printf("Parse failures: %d\n", parseFailCount);
+    printf("============================================================\n\n");
  }

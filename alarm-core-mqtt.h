@@ -10,6 +10,17 @@ class MqttProcessor; // forward
 
 #define MQTT_RECONNECT_mS 3000
 
+#ifndef ARDUINO
+#include <MQTTClient.h>
+using MqttClientHandle = MQTTClient;               // Paho C client handle (void*)
+#define MQTT_CLIENT_HANDLE_INIT nullptr
+#else
+#include <PubSubClient.h>                          // or whichever Arduino MQTT lib you use
+using MqttClientHandle = PubSubClient*;             // pointer to Arduino MQTT client object
+#define MQTT_CLIENT_HANDLE_INIT nullptr
+#endif
+
+
 using RouteHandler = bool (*)(MqttProcessor&, const char* payload, size_t length, ALARM_DOMAINS_t domain);
 struct mqttRoute {
     const char* topic;
@@ -90,15 +101,12 @@ const mqttRoute MqttProcessor::mqttRoutes[] = {
 };
 const size_t MqttProcessor::MQTT_ROUTE_COUNT = sizeof(MqttProcessor::mqttRoutes) / sizeof(MqttProcessor::mqttRoutes[0]);
 
-#ifndef ARDUINO                                         // Windows/desktop path (Paho C)
-#include <MQTTClient.h>
-
-// -------------------- PAHO WRAPPER CONTEXT --------------------
-struct PahoMqttContext {
-    MQTTClient client = nullptr;
+// -------------------- MQTT CLIENT CONTEXT (shared across platforms) --------------------
+struct mqttContext {
+    MqttClientHandle client = MQTT_CLIENT_HANDLE_INIT;
     MqttProcessor* processor = nullptr;
 
-    const char* brokerAddress = nullptr; // e.g. "tcp://192.168.33.201:1883"
+    const char* brokerAddress = nullptr;
     const char* clientId = nullptr;
     const char* user = nullptr;
     const char* pass = nullptr;
@@ -107,9 +115,12 @@ struct PahoMqttContext {
     bool subscribed = false;
 };
 
+#ifndef ARDUINO                                         // Windows/desktop path (Paho C)
+#include <MQTTClient.h>
+
 // -------------------- PAHO WRAPPER FUNCTIONS --------------------
 static bool pahoInit(
-    PahoMqttContext& ctx,
+    mqttContext& ctx,
     MqttProcessor& processor,
     const char* brokerAddress,
     const char* clientId,
@@ -138,7 +149,7 @@ static bool pahoInit(
     return true;
 }
 
-static bool pahoConnectAndSubscribe(PahoMqttContext& ctx) {
+static bool pahoConnectAndSubscribe(mqttContext& ctx) {
     if (!ctx.client) return false;
     if (MQTTClient_isConnected(ctx.client)) return true;
 
@@ -168,7 +179,7 @@ static bool pahoConnectAndSubscribe(PahoMqttContext& ctx) {
 }
 
 // Call periodically (this is your Paho equivalent of loop processing)
-static void pahoService(PahoMqttContext& ctx, uint32_t reconnectIntervalMs)
+static void pahoService(mqttContext& ctx, uint32_t reconnectIntervalMs)
 {
     if (!ctx.client || !ctx.processor) return;
 
@@ -211,7 +222,7 @@ static void pahoService(PahoMqttContext& ctx, uint32_t reconnectIntervalMs)
     MQTTClient_free(topicName);
 }
 
-static void pahoDestroy(PahoMqttContext& ctx) {
+static void pahoDestroy(mqttContext& ctx) {
     if (!ctx.client) return;
     if (MQTTClient_isConnected(ctx.client)) {
         MQTTClient_disconnect(ctx.client, 1000);
@@ -222,7 +233,7 @@ static void pahoDestroy(PahoMqttContext& ctx) {
 
 // Alarm publisher callback-compatible wrapper
 static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
-    PahoMqttContext* ctx = static_cast<PahoMqttContext*>(context);
+    mqttContext* ctx = static_cast<mqttContext*>(context);
     if (!ctx || !ctx->client || !topic || !payload) return;
     if (!MQTTClient_isConnected(ctx->client)) {
         lprintf("MQTT publish skipped, not connected\n");
@@ -245,37 +256,222 @@ static void mqttPublishWrapper(void* context, const char* topic, const char* pay
     }
 }
 
-#else
-// Arduino branch unchanged for now
+#else  // ARDUINO path (ESP32/ESP8266/etc. using PubSubClient)
 
-// Arduino MQTT context placeholder (keeps main() call unchanged: &mqttClient)
-struct ArduinoMqttClientContext {};
-ArduinoMqttClientContext mqttClient;
+#include <WiFiClient.h>   // or <WiFiClientSecure.h> for TLS
+// PubSubClient.h already included above via MqttClientHandle alias section
 
+// Underlying network transport used by PubSubClient
+static WiFiClient g_wifiNetClient;
 
-// Wrapper for MQTT incoming processing (desktop/test path)
-static bool mqttProcessIncomingMsgWrapper(const char* topic, const char* payload, size_t length) {
-    return myMqttProcessor.processIncomingMQTTmsg(topic, payload, length);
+// PubSubClient requires a free function callback (no captures / no member fn),
+// so we route through a single global mqttContext pointer.
+static mqttContext* g_activeMqttCtx = nullptr;
+
+// -------------------- PUBSUBCLIENT MESSAGE CALLBACK --------------------
+static void arduinoMqttCallback(char* topic, byte* payload, unsigned int length) {
+    if (!g_activeMqttCtx || !g_activeMqttCtx->processor) return;
+
+    // PubSubClient payload is NOT null-terminated - treat as raw bytes
+    g_activeMqttCtx->processor->processIncomingMQTTmsg(
+        topic,
+        strlen(topic),
+        reinterpret_cast<const char*>(payload),
+        static_cast<size_t>(length)
+    );
 }
 
-// MQTT publish wrapper function (Arduino path)
-static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
-    //
-    (void)context; // Replace with real MQTT client cast/publish when integrated
-    //
-    if (!MQTTclient.connected()) {                    // TODO: enable connection check
-        lprintf("MQTT client not connected\n");
+// -------------------- ARDUINO MQTT WRAPPER FUNCTIONS --------------------
+static bool arduinoMqttSubscribeAll(mqttContext& ctx) {
+    bool ok = true;
+    ok &= ctx.client->subscribe(MQTT_FULL_CONFIG_TOPIC, 1);
+    ok &= ctx.client->subscribe(MQTT_ZONES_CONTROL_TOPIC, 1);
+    ok &= ctx.client->subscribe(MQTT_PARTITIONS_CONTROL_TOPIC, 1);
+    ok &= ctx.client->subscribe(MQTT_GLOBAL_OPT_CONTROL_TOPIC, 1);
+
+    ctx.subscribed = ok;
+    if (!ok) {
+        lprintf("MQTT subscribe failed\n");
+    }
+    return ok;
+}
+
+static bool arduinoMqttConnectAndSubscribe(mqttContext& ctx) {
+    if (!ctx.client) return false;
+    if (ctx.client->connected()) return true;
+
+    const char* user = ctx.user ? ctx.user : nullptr;
+    const char* pass = ctx.pass ? ctx.pass : nullptr;
+
+    bool connected = (user && user[0])
+        ? ctx.client->connect(ctx.clientId, user, pass)
+        : ctx.client->connect(ctx.clientId);
+
+    if (!connected) {
+        lprintf("MQTT connect failed, state=%d\n", ctx.client->state());
+        return false;
+    }
+
+    return arduinoMqttSubscribeAll(ctx);
+}
+
+// brokerAddress expected as plain host (e.g. "192.168.33.201"), brokerPort separately.
+// If you keep a single "tcp://host:port" string like the Paho path, parse it before calling this.
+static bool arduinoMqttInit(
+    mqttContext& ctx,
+    MqttProcessor& processor,
+    const char* brokerHost,
+    uint16_t brokerPort,
+    const char* clientId,
+    const char* user,
+    const char* pass)
+{
+    static PubSubClient staticClient(g_wifiNetClient);  // one instance is enough for a single broker
+
+    ctx.client = &staticClient;
+    ctx.processor = &processor;
+    ctx.brokerAddress = brokerHost;
+    ctx.clientId = clientId;
+    ctx.user = user;
+    ctx.pass = pass;
+    ctx.subscribed = false;
+    ctx.lastReconnectAttemptMs = 0;
+
+    g_activeMqttCtx = &ctx;  // needed by the free-function callback
+
+    ctx.client->setServer(brokerHost, brokerPort);
+    ctx.client->setCallback(arduinoMqttCallback);
+    ctx.client->setBufferSize(1024);   // increase if your JSON payloads are large; default is 256
+
+    return true;
+}
+
+// Call this frequently from loop()
+static void arduinoMqttService(mqttContext& ctx, uint32_t reconnectIntervalMs) {
+    if (!ctx.client) return;
+
+    if (!ctx.client->connected()) {
+        const uint32_t now = millis();
+        if ((now - ctx.lastReconnectAttemptMs) >= reconnectIntervalMs) {
+            ctx.lastReconnectAttemptMs = now;
+            (void)arduinoMqttConnectAndSubscribe(ctx);
+        }
         return;
+    }
+
+    ctx.client->loop();  // processes incoming messages, triggers arduinoMqttCallback()
+}
+
+static void arduinoMqttDestroy(mqttContext& ctx) {
+    if (!ctx.client) return;
+    ctx.client->disconnect();
+    ctx.client = nullptr;
+    if (g_activeMqttCtx == &ctx) {
+        g_activeMqttCtx = nullptr;
+    }
+}
+
+// Alarm publisher callback-compatible wrapper
+static void mqttPublishWrapper(void* context, const char* topic, const char* payload) {
+    mqttContext* ctx = static_cast<mqttContext*>(context);
+    if (!ctx || !ctx->client || !topic || !payload) return;
+
+    if (!ctx->client->connected()) {
+        lprintf("MQTT publish skipped, not connected\n");
+        return;
+    }
+
+    if (!ctx->client->publish(topic, payload)) {
+        lprintf("MQTT publish failed\n");
     }
     Serial.print(F("[MQTT] Topic: "));
     Serial.print(topic);
     Serial.print(F(", Payload: "));
     Serial.println(payload);
+
 }
+
+#endif
+
+// -------------------- PLATFORM-NEUTRAL ALIASES --------------------
+// Allows alarm-core.cpp (and other callers) to use one set of names
+// regardless of target platform.
+#define MQTT_INIT      mqttInitFromUrl   // normalizes URL parsing internally
+
+#ifndef ARDUINO
+    #define MQTT_SERVICE   pahoService
+    #define MQTT_DESTROY   pahoDestroy
+#else
+    #define MQTT_SERVICE   arduinoMqttService
+    #define MQTT_DESTROY   arduinoMqttDestroy
 #endif
 
 inline void MqttProcessor::publish2broker(const char* payload, const char* topic, ...) {
     va_list args;
     va_start(args, topic);
     va_end(args);
+}
+
+// -------------------- BROKER URL PARSING (platform-neutral) --------------------
+// Accepts URLs like "tcp://192.168.33.201:1883" or "192.168.33.201:1883" or
+// just "192.168.33.201" (falls back to defaultPort).
+struct MqttBrokerUrl {
+    char     host[64];
+    uint16_t port;
+};
+
+static bool parseMqttBrokerUrl(const char* url, MqttBrokerUrl& out, uint16_t defaultPort = 1883) {
+    out.host[0] = '\0';
+    out.port = defaultPort;
+    if (!url || !*url) return false;
+
+    // Skip scheme prefix ("tcp://", "ssl://", "mqtt://", etc.) if present
+    const char* p = url;
+    const char* schemeSep = strstr(p, "://");
+    if (schemeSep) {
+        p = schemeSep + 3;
+    }
+
+    const char* colon = strchr(p, ':');
+    size_t hostLen = colon ? (size_t)(colon - p) : strlen(p);
+
+    if (hostLen == 0 || hostLen >= sizeof(out.host)) {
+        return false;
+    }
+
+    memcpy(out.host, p, hostLen);
+    out.host[hostLen] = '\0';
+
+    if (colon) {
+        int parsedPort = atoi(colon + 1);
+        if (parsedPort > 0 && parsedPort <= 65535) {
+            out.port = static_cast<uint16_t>(parsedPort);
+        }
+    }
+
+    return true;
+}
+
+// -------------------- UNIFORM MQTT_INIT WRAPPER --------------------
+// Normalizes the signature difference between pahoInit (single URL string)
+// and arduinoMqttInit (host + port). Both platforms are called the same way
+// from alarm-core.cpp: MQTT_INIT(ctx, processor, brokerUrl, clientId, user, pass)
+static bool mqttInitFromUrl(
+    mqttContext& ctx,
+    MqttProcessor& processor,
+    const char* brokerUrl,
+    const char* clientId,
+    const char* user,
+    const char* pass)
+{
+#ifndef ARDUINO
+    return pahoInit(ctx, processor, brokerUrl, clientId, user, pass);
+#else
+    MqttBrokerUrl parsed;
+    if (!parseMqttBrokerUrl(brokerUrl, parsed)) {
+        lprintf("Invalid MQTT broker URL: %s\n", brokerUrl ? brokerUrl : "(null)");
+        return false;
+    }
+    return arduinoMqttInit(ctx, processor, parsed.host, parsed.port, clientId, user, pass);
+#endif
 }
