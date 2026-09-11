@@ -79,6 +79,9 @@ int setup() {
         printf("Zone status JSON: %s\n", zoneStatusJson);
     }
 
+    MQTT_INIT(g_mqttCtx, myMqttProcessor, "tcp://192.168.33.201:1883", "alarm-core-client", mqttUser, mqttPassword);
+    // my_alarm.setPublisher(mqttPublishWrapper, &g_mqttCtx);
+
     return 0;
 }
 
@@ -94,14 +97,10 @@ void loop() {
 int main() {
 	LOG_DEBUG("Starting Alarm...\n");
 	setup();
-    MQTT_INIT(g_mqttCtx, myMqttProcessor, "tcp://192.168.33.201:1883", "alarm-core-client", mqttUser, mqttPassword);
-    // my_alarm.setPublisher(mqttPublishWrapper, &g_mqttCtx);
+
 
     for (;;) {
-        // replace with your real time source
-        static uint32_t nowMs = 0;
-        nowMs += 10;
-        MQTT_SERVICE(g_mqttCtx, MQTT_RECONNECT_mS);
+		loop();
     }
 
     MQTT_DESTROY(g_mqttCtx);

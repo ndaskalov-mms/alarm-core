@@ -146,6 +146,8 @@ static bool pahoInit(
         lprintf("MQTTClient_create failed rc=%d\n", rc);
         return false;
     }
+    else  
+        lprintf("MQTTClient_create succeeded \n");
     return true;
 }
 
