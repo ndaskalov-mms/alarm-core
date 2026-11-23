@@ -141,6 +141,7 @@
     <ClInclude Include="alarm-core-mqtt.h" />
     <ClInclude Include="alarm-core-printer-defs.h" />
     <ClInclude Include="alarm-core-public-defs.h" />
+    <ClInclude Include="alarm-core-tests.h" />
     <ClInclude Include="alarm-core.h" />
     <ClInclude Include="alarm-FS-wrapper.h" />
     <ClInclude Include="jsonTestVectors.h" />
