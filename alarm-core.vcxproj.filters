@@ -20,13 +20,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="arduino\alarm_core_arduino\alarm_core_arduino.ino">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="arduino\data\alarm-config.json">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="arduino\data\mqtt-test-vectors.json">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="alarm_core_arduino\alarm_core_arduino.ino">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -74,6 +71,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="alarm-core-tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="alarm-core-app.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,5 @@
 #pragma once
-#include "alarm-core-json-val-parsers.h"
+#include "src/alarm-core-json-val-parsers.h"
 
 // Printer-only metadata
 struct printKeyValProcessor {

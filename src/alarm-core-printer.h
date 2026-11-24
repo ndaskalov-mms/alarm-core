@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "..\alarm-core.h"
+#include "../alarm-core.h"
 #include "alarm-core-internal-defs.h"
-#include "alarm-core-printer-defs.h"
-//#include "alarm-core-json-val-parsers.h" // temporary dependency; later split printer defs out
+#include "../alarm-core-printer-defs.h"
+
 
 class alarmPrinter {
 public:

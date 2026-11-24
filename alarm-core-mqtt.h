@@ -20,7 +20,7 @@ using MqttClientHandle = PubSubClient*;             // pointer to Arduino MQTT c
 #define MQTT_CLIENT_HANDLE_INIT nullptr
 #endif
 
-
+// using RouteHandler = ...; — defines RouteHandler as a new name (alias) for the type that follows
 using RouteHandler = bool (*)(MqttProcessor&, const char* payload, size_t length, ALARM_DOMAINS_t domain);
 struct mqttRoute {
     const char* topic;

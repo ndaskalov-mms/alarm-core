@@ -26,7 +26,30 @@ inline void SetLogLevel(LogLevel_t level) { g_logLevel = level; }
 #ifdef ARDUINO
 #include <Arduino.h>
 inline void GlobalDebugLogger(LogLevel_t level, const char* fmt, ...) {
-    if (level < g_logLevel) return;
+    
+    //Serial.print("Checking Error level ");
+
+    if (level > g_logLevel) {
+        printf("Current level: %d, g_logLevel: %d\n", level, g_logLevel); return;
+    }
+	else if (level == LOG_ERR_DEBUG) {
+		Serial.print("[DEBUG] ");
+	}
+	else if (level == LOG_ERR_INFO) {
+		Serial.print("[INFO] ");
+	}
+	else if (level == LOG_ERR_WARNING) {
+		Serial.print("[WARNING] ");
+	}
+	else if (level == LOG_ERR_ERROR) {
+		Serial.print("[ERROR] ");
+	}
+	else if (level == LOG_ERR_CRITICAL) {
+		Serial.print("[CRITICAL] ");
+	}
+	else {
+		Serial.print("[UNKNOWN] ");
+	}
     char buf[256];
     va_list args;
     va_start(args, fmt);
