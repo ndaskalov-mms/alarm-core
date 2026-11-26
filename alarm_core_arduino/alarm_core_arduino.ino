@@ -3,56 +3,38 @@
 #include "FS.h"
 #include <LittleFS.h>
 #include "WiFi.h"
-WiFiClient espClient;
+//WiFiClient espClient;
 
 #include "PubSubClient.h"
-extern const char* mqttServer;
-extern const int   mqttPort;
-PubSubClient MQTTclient(mqttServer, mqttPort, espClient);
 
 #include "..\alarm-core-app.h"
 
-//#include "..\..\alarm-core-config.h"
-//#include "..\..\src\alarm-core-debug.h"
-//#include "..\..\alarm-FS-wrapper.h"
-//#include "..\..\alarm-core.h"
-//#include "..\..\src\alarm-core-JSON.h" // Include the new header-only parser
-//#include "..\..\alarm-core-mqtt.h"
-
-#define WiFiRetryCnt 10
-// 
-// WIFIsetup - try to connect to WLAN. Expects to be called by ARDUINO loop function
-// rtry is internal static counter how many times WIFIsetup was called. The goal is 
-// to just initiate the connection if not established and to return to master loop function
-// If after WiFiRetryCnt trys is still not connected, initiates new connection request to AP.
-// rtry is 0 only if the link is established and all post connection settings are done
-// otherwise rtry counts from 0 up to WiFiRetryCnt. The only exception is when the function is called for the first time.
-// delay 10 ms is added, seems for proper WIFI operation it is needed
+#define WiFiRtry_mS 10000
 //
-int WIFIsetup() {
-#ifndef ARDUINO
-	return true;
-#endif
-	static unsigned long rtry = 0;
-	// connect to WiFi Access Point
+// WiFiConnect - try to connect to WLAN. Expects to be called by ARDUINO loop function.
+// Simply initiates a connection attempt if not currently connected, throttled externally
+// to no more often than every WiFiRtry_mS milliseconds (tracked via lastAttemptMs).
+// Non-blocking: does not use delay(), relies on millis()-based timing so the main loop
+// keeps running between attempts.
+//
+int WiFiConnect() {
+	static unsigned long lastAttemptMs = 0;
+
 	if (WiFi.status() == WL_CONNECTED) {
-		if (rtry) {									// do it only once after connected,
-			lprintf("Connected after %ld ms\n", rtry / 10);
+		if (lastAttemptMs) {						// do it only once, right after becoming connected
+			LOG_DEBUG("WiFi connected\n");
 			WiFi.setAutoReconnect(true);
 			WiFi.persistent(true);
-			rtry = 0;
+			lastAttemptMs = 0;
 		}
 		return true;
 	}
-	if ((rtry % WiFiRetryCnt) == 0) {					// will execute only if rtry  is 0 or WiFiRetryCnt  try to connect again
-		rtry = 1;									//  try to connect again
-		lprintf("Start new attempt to connect to WiFi AP %s\n", ssid[WiFi_AP]);
+
+	if ((millis() - lastAttemptMs) >= WiFiRtry_mS) {
+		lastAttemptMs = millis();
+		LOG_ERROR("Start new attempt to connect to WiFi AP %s\n", ssid[WiFi_AP]);
 		WiFi.mode(WIFI_STA);
 		WiFi.begin(ssid[WiFi_AP], password[WiFi_AP], 0, NULL, true);
-	}
-	else {
-		delay(10);
-		rtry++;
 	}
 	return false;
 }
@@ -76,11 +58,12 @@ void runJsonMQTTTests(Alarm& alarm);
 void setup() {
     Serial.begin(115200);
     delay(100);
-    log_i("Init start\n");
+    SetLogLevel(LOG_ERR_DEBUG);
+    LOG_INFO("Init start\n");
     storageSetup();
+
     //initAlarmLoop()
 
-    LOG_DEBUG("Starting Alarm Core JSON MQTT Tests...\n");
     alarm_setup();
 
 
@@ -123,8 +106,9 @@ void setup() {
 }
 
 void loop() {
+  WiFiConnect();
   // put your main code here, to run repeatedly:
-    my_alarm.alarm_loop();
+  my_alarm.alarm_loop();
 
 }
 

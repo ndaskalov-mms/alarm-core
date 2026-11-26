@@ -86,19 +86,19 @@ public:
         }
 
         // Parse and display global options
-        if (json_obj_get_object(&jctx, "globalOptions") == OS_SUCCESS) {
+        if (json_obj_get_object(&jctx, JSON_TAG_GLOBAL_OPTIONS) == OS_SUCCESS) {
             parseGlobalOptionsCfg(&jctx);
             json_obj_leave_object(&jctx);
         }
 
         // Parse and display zones
-        if (json_obj_get_array(&jctx, "zones", &num_elem) == OS_SUCCESS) {
+        if (json_obj_get_array(&jctx, JSON_TAG_ZONES, &num_elem) == OS_SUCCESS) {
             LOG_DEBUG("\n===== Zones (%d) =====\n", num_elem);
             tmp_jctx = jctx;                                // needed to properly parse arrays
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    printf("\nZone %d:\n", i + 1);
+                    //printf("\nZone %d:\n", i + 1);
                     parseZoneCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
@@ -110,13 +110,13 @@ public:
         }
 
         // Parse and display partitions
-        if (json_obj_get_array(&jctx, "partitions", &num_elem) == OS_SUCCESS) {
+        if (json_obj_get_array(&jctx, JSON_TAG_PARTITIONS, &num_elem) == OS_SUCCESS) {
             LOG_DEBUG("\n===== Partitions (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    printf("\nPartition %d:\n", i + 1);
+                    //printf("\nPartition %d:\n", i + 1);
                     parsePartitionCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
@@ -125,13 +125,13 @@ public:
         }
 
         // Parse and display pgms
-        if (json_obj_get_array(&jctx, "pgms", &num_elem) == OS_SUCCESS) {
+        if (json_obj_get_array(&jctx, JSON_TAG_PGMS, &num_elem) == OS_SUCCESS) {
             LOG_DEBUG("\n===== PGMs (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    LOG_DEBUG("\nPGM %d:\n", i + 1);
+                    LOG_EXTRA_DEBUG("\nPGM %d:\n", i + 1);
                     //parsePgmCfg(&jctx);
                     json_obj_leave_object(&jctx);
                 }
@@ -140,16 +140,16 @@ public:
         }
 
         // Parse and display keyswitches
-        if (json_obj_get_array(&jctx, "keyswitches", &num_elem) == OS_SUCCESS) {
+        if (json_obj_get_array(&jctx, JSON_TAG_KEYSWITCHES, &num_elem) == OS_SUCCESS) {
             LOG_DEBUG("\n===== Keyswitches (%d) =====\n", num_elem);
             tmp_jctx = jctx;
             for (int i = 0; i < num_elem; i++) {
                 jctx = tmp_jctx;
                 if (json_arr_get_object(&jctx, i) == OS_SUCCESS) {
-                    LOG_DEBUG("\nKeyswitch %d:\n", i + 1);
+                    LOG_EXTRA_DEBUG("\nKeyswitch %d:\n", i + 1);
                     //parse_keyswitch(&jctx);
                     json_obj_leave_object(&jctx);
-                }
+                }   
             }
             json_obj_leave_array(&jctx);
         }
@@ -237,10 +237,10 @@ private:
             processors[j].pos = 0;        // Reset presence flag before parsing
             // try get the JSON val for the key stored in zoneCfgKeyValProcessors[j].jsonKeyStr
             // Pass the address of the 'result' union to parseJSONval
-            LOG_DEBUG("Looking for %s key: ", processors[j].jsonKeyStr);
+            LOG_EXTRA_DEBUG("Looking for %s key: ", processors[j].jsonKeyStr);
             if (parseJSONval(jctx, processors[j], &result)) {
                 // found key, the val is stored in result
-                LOG_DEBUG("Found: %s\n", processors[j].jsonKeyStr);
+                LOG_EXTRA_DEBUG("Found: %s\n", processors[j].jsonKeyStr);
                 if (processors[j].patchCallBack) {
                     // Get the processor for context
                     auto& processor = processors[j];
@@ -282,7 +282,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.alarmGlobalOpts, &temp_gOpts, gOptsKeyValProcessors, GOPTS_KEYS_CNT);
-        m_printer.printAlarmOptions((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
+        //m_printer.printAlarmOptions((byte*)&m_alarm.alarmGlobalOpts); // Print the newly added or updated zone
         return true;
     }
 
@@ -313,7 +313,7 @@ private:
         }
         // Copy only the members that were present in the JSON to the target zone
         patch_db_item(&m_alarm.zonesDB[zoneIdx], &tempZone, zoneCfgKeyValProcessors, ZONE_CFG_KEYS_CNT);
-        m_printer.printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
+        //m_printer.printAlarmZones(zoneIdx, zoneIdx + 1); // Print the newly added or updated zone
         return true;
     }
 
@@ -424,7 +424,7 @@ private:
 
         // Copy only the members that were present in the JSON to the target partition
         patch_db_item(&m_alarm.partitionDB[partitionIdx], &tempPartition, partitionKeyValProcessors, PARTITION_KEYS_CNT);
-        m_printer.printAlarmPartitions(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
+        //m_printer.printAlarmPartitions(partitionIdx, partitionIdx + 1); // Print the newly added or updated partition
         return true;
     }
 
@@ -575,6 +575,160 @@ public:
         return ok;
     }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

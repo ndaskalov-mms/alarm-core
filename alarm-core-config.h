@@ -4,23 +4,25 @@
 #ifndef _credentials_h
 #define _credentials_h
 #endif
+
 // WLAN
 #define     NUMBER_OF_AP					1
-byte        WiFi_AP = 0;										// The WiFi Access Point we are connected to 
-const       char* ssid[NUMBER_OF_AP] = { /*"HlebarkaDE"*/	"hlebarka2" };
-const       char* password[NUMBER_OF_AP] = { /*"Roksi6moksi"*/	 "fenwowmo" };
+byte        WiFi_AP							= 0; // The WiFi Access Point we are connected to 
+const       char* ssid[NUMBER_OF_AP]		= { "HlebarkaES" /*"HlebarkaDE"	"hlebarka2" */};
+const       char* password[NUMBER_OF_AP]	= { "4ekaj4ekajMalko" /*"Roksi6moksi"	 "fenwowmo" */};
 //
 // MQTT
-const char* mqttServer = "192.168.33.201"; //"192.168.0.228";
-const int   mqttPort = 1883;
-const char* mqttUser = ""; // "my_alarm";
-const char* mqttPassword = ""; // "12345";
+const char* mqttServer		= "192.168.2.130";		// 192.168.33.201 "192.168.0.228"; 
+const int   mqttPort		= 1883;
+const char* mqttUser		= "mqtt-user";			// "my_alarm";
+const char* mqttPassword	= "georgia1995";		// "12345";
+const char* mqttClientId	= "Alarm-Core-Client";	
 //
 // config file(s)
-const char masterDataPrefix[] = "alarm_core_arduino/data/"; //    "../master/data/";
-const char jsonConfigFname[] = "/alarm-config.json"; // alarmConfig.json";
-const char csvConfigFname[] = "alarm-config.csv"; 
-const char jsonMqttTestVectorsFname[] = "mqtt-test-vectors.json";
+const char masterDataPrefix[]			= "alarm_core_arduino/data/";	//    "../master/data/";
+const char jsonConfigFname[]			= "/alarm-config.json";			// alarmConfig.json";
+const char csvConfigFname[]				= "alarm-config.csv"; 
+const char jsonMqttTestVectorsFname[]	= "mqtt-test-vectors.json";
 
 //
 // //const char configFileName[]					= "/alarmConfig3.cfg";

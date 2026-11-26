@@ -1,33 +1,59 @@
 #pragma once
 // MQTT topics defs
-#define MQTT_FULL_CONFIG_TOPIC				"/alarm/config"
-#define MQTT_PARTITIONS_CONTROL_TOPIC		"/alarm/partitions/control"
-#define MQTT_PARTITIONS_STATES_TOPIC		"/alarm/partitions/states"
-#define MQTT_ZONES_CONTROL_TOPIC	        "/alarm/zones/control"
-#define MQTT_ZONES_STATES_TOPIC             "/alarm/zones/states"
-#define MQTT_OUTPUTS_CONTROL_TOPIC			"/alarm/outputs/control"
-#define MQTT_OUTPUTS_STATES_TOPIC			"/alarm/outputs/states"
-#define MQTT_GLOBAL_OPT_CONTROL_TOPIC		"/alarm/global_options/control"
+//
+// Topic strings are built at compile time from three parts using C/C++
+// adjacent string-literal concatenation:
+//   MQTT_TOPIC_PREFIX + "/" + <instance> + "/" + <suffix>
+// e.g. MQTT_TOPIC_PREFIX "/" MQTT_INSTANCE_ZONES MQTT_SUFFIX_CONTROL
+//      -> "/alarm/zones/control"
+//
+// This keeps the topic layout fixed at build time (no runtime parsing/
+// allocation) while allowing the prefix and the control/states suffixes to
+// be changed in exactly one place.
 
-// config JSON sections
+#define MQTT_TOPIC_PREFIX					"/alarm"
+
+// control/states suffixes, shared by all instance topics below
+#define MQTT_SUFFIX_CONTROL					"/cmnd"
+#define MQTT_SUFFIX_STATES					"/stat"
+
+// instance names (the segment between the prefix and the control/states suffix)
+#define MQTT_INSTANCE_PARTITIONS			"/partitions"
+#define MQTT_INSTANCE_ZONES					"/zones"
+#define MQTT_INSTANCE_OUTPUTS				"/outputs"
+#define MQTT_INSTANCE_GLOBAL_OPT			"/global_options"
+
+// full config topic has no instance/suffix segmentation, just prefix + "/config"
+#define MQTT_FULL_CONFIG_TOPIC				MQTT_TOPIC_PREFIX "/config"
+
+#define MQTT_PARTITIONS_CONTROL_TOPIC		MQTT_TOPIC_PREFIX MQTT_INSTANCE_PARTITIONS MQTT_SUFFIX_CONTROL
+#define MQTT_PARTITIONS_STATES_TOPIC		MQTT_TOPIC_PREFIX MQTT_INSTANCE_PARTITIONS MQTT_SUFFIX_STATES
+#define MQTT_ZONES_CONTROL_TOPIC			MQTT_TOPIC_PREFIX MQTT_INSTANCE_ZONES MQTT_SUFFIX_CONTROL
+#define MQTT_ZONES_STATES_TOPIC				MQTT_TOPIC_PREFIX MQTT_INSTANCE_ZONES MQTT_SUFFIX_STATES
+#define MQTT_OUTPUTS_CONTROL_TOPIC			MQTT_TOPIC_PREFIX MQTT_INSTANCE_OUTPUTS MQTT_SUFFIX_CONTROL
+#define MQTT_OUTPUTS_STATES_TOPIC			MQTT_TOPIC_PREFIX MQTT_INSTANCE_OUTPUTS MQTT_SUFFIX_STATES
+#define MQTT_GLOBAL_OPT_CONTROL_TOPIC		MQTT_TOPIC_PREFIX MQTT_INSTANCE_GLOBAL_OPT MQTT_SUFFIX_CONTROL
+
+// config JSON top-level section tags
 //example - {
-//		"partitions": [ { prt 1 config JSON }, { prt 2 config JSON }] ,
-//		"zones" : [ { zone 1 config JSON }, { zone 2 config JSON }] ,
-//		"globalOptions" : { global options config JSON  },
-// 		"pgms" : [{ pgm 1 config JSON }, { pgm 2 config JSON }] ,
-//		"keyswitches" : [{ ksw 1 config JSON },	{ ksw 2 config JSON }]
+//		JSON_TAG_PARTITIONS:		[ { prt 1 config JSON }, { prt 2 config JSON }] ,
+//		JSON_TAG_ZONES :			[ { zone 1 config JSON }, { zone 2 config JSON }] ,
+//		JSON_TAG_GLOBAL_OPTIONS :	{ global options config JSON  },
+// 		JSON_TAG_PGMS :				[{ pgm 1 config JSON }, { pgm 2 config JSON }] ,
+//		JSON_TAG_KEYSWITCHES :		[{ ksw 1 config JSON },	{ ksw 2 config JSON }]
 //		}
-#define JSON_SECTION_ZONES				"zones"
-#define JSON_SECTION_PARTITIONS			"partitions"
-#define JSON_SECTION_PGMS				"pgms"
-#define JSON_SECTION_GLOBAL_OPTIONS		"global_options"
+#define JSON_TAG_GLOBAL_OPTIONS			"globalOptions"
+#define JSON_TAG_ZONES					"zones"
+#define JSON_TAG_PARTITIONS				"partitions"
+#define JSON_TAG_PGMS					"pgms"
+#define JSON_TAG_KEYSWITCHES			"keyswitches"
 
 // ------------   zone  config JSON ------------------
-// example - receive topic:	 "/alarm/zones/config",
-//			 payload:  {"zName": "Back Door","zBRD":0,"zID":1,"zType":"ENTRY_DELAY2","zPartn":1,
-//						"zAlarmT":"PULSED_ALARM","zShdnEn":false,"zBypEn":true,"zStayZ":true,"zFrceEn":true,
-//						"zIntelZ":false,"zDlyTRM":false,"zTmprGlb":true,"zTmprOPT":"TROUBLE_ONLY","zAmskGlb":true,
-//						"zAmskOpt":"DISABLE"	}
+// example - receive topic:		MQTT_ZONES_CONFIG_TOPIC,
+//			 payload example:	{zName": "Back Door",		"zBRD":0,"zID":1,	"zType":"ENTRY_DELAY2",	"zPartn":1,
+//								"zAlarmT":"PULSED_ALARM",	"zShdnEn":false,	"zBypEn":true,			"zStayZ":true,				"zFrceEn":true,
+//								"zIntelZ":false,			"zDlyTRM":false,	"zTmprGlb":true,		"zTmprOPT":"TROUBLE_ONLY",	"zAmskGlb":true,
+//								"zAmskOpt":"DISABLE"	}
 // 
 // keys allowed in zone JSON config 
 #define ZN_NAME_KEY_STR					"zName"				// val: str zone name max len NAME_LEN

@@ -3,14 +3,14 @@
 #include "FS.h"
 #include <LittleFS.h>
 #include "WiFi.h"
-WiFiClient espClient;
+//WiFiClient espClient;
 
 #include "PubSubClient.h"
 extern const char* mqttServer;
 extern const int   mqttPort;
 PubSubClient MQTTclient(mqttServer, mqttPort, espClient);
 
-#include "..\..\alarm-core-app.h"
+#include "..\alarm-core-app.h"
 
 //#include "..\..\alarm-core-config.h"
 //#include "..\..\src\alarm-core-debug.h"
@@ -30,9 +30,6 @@ PubSubClient MQTTclient(mqttServer, mqttPort, espClient);
 // delay 10 ms is added, seems for proper WIFI operation it is needed
 //
 int WIFIsetup() {
-#ifndef ARDUINO
-	return true;
-#endif
 	static unsigned long rtry = 0;
 	// connect to WiFi Access Point
 	if (WiFi.status() == WL_CONNECTED) {
@@ -44,7 +41,7 @@ int WIFIsetup() {
 		}
 		return true;
 	}
-	if ((rtry % WiFiRetryCnt) == 0) {					// will execute only if rtry  is 0 or WiFiRetryCnt  try to connect again
+	if ((rtry % WiFiRetryCnt) == 0) {				// will execute only if rtry  is 0 or WiFiRetryCnt  try to connect again
 		rtry = 1;									//  try to connect again
 		lprintf("Start new attempt to connect to WiFi AP %s\n", ssid[WiFi_AP]);
 		WiFi.mode(WIFI_STA);
@@ -76,12 +73,13 @@ void runJsonMQTTTests(Alarm& alarm);
 void setup() {
     Serial.begin(115200);
     delay(100);
-    log_i("Init start\n");
+    LOG_INFO("Init start\n");
     storageSetup();
     //initAlarmLoop()
 
-    LOG_DEBUG("Starting Alarm Core JSON MQTT Tests...\n");
     alarm_setup();
+
+
 	// debug callback setup
     //my_alarm.setDebugCallback(GlobalDebugLogger);
     //my_alarm.debugCallback(LOG_ERR_OK, "test\n");

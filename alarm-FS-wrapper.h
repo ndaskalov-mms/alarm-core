@@ -51,16 +51,15 @@ byte crc8(const byte* addr, int len)
 //
 int storageSetup() {
     //
-    lprintf("Inizializing FS...\n");
+    LOG_INFO("Inizializing FS...\n");
 #ifdef ARDUINO
-    log_i("Begin setup\n");
-    //logger.println("Inizializing FS...");
+    LOG_INFO("Begin storage setup\n");
     if (LittleFS.begin(true)) {   // TODO FORMAT_LittleFS_IF_FAILED
-        log_i("Storage init success\n");
+        LOG_INFO("Storage init success\n");
         return true;
     }
     else {
-        log_e("Storage init fail\n");
+        LOG_ERROR("Storage init fail\n");
         return false;
     }
 #endif

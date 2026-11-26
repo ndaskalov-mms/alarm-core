@@ -32,10 +32,10 @@ public:
         lprintf("\n");
     }
 
-    inline void printAlarmOptions(byte* optsPtr) {
+    inline void printAlarmOptions() {
         lprintf("\nGlobal options\n");
         printConfigHeader(gOptsPrintProcessors, GOPTS_PRINT_KEYS_CNT);
-        printConfigData(gOptsPrintProcessors, GOPTS_PRINT_KEYS_CNT, optsPtr, PRTCLASS_ALL);
+        printConfigData(gOptsPrintProcessors, GOPTS_PRINT_KEYS_CNT, (byte*)&m_alarm.alarmGlobalOpts, PRTCLASS_ALL);
         lprintf("\n");
     }
 

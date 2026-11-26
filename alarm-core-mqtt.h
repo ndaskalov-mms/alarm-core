@@ -12,38 +12,60 @@ class MqttProcessor; // forward
 
 #ifndef ARDUINO
 #include <MQTTClient.h>
-using MqttClientHandle = MQTTClient;               // Paho C client handle (void*)
+using   MqttClientHandle = MQTTClient;          // Paho C client handle (void*)
 #define MQTT_CLIENT_HANDLE_INIT nullptr
 #else
-#include <PubSubClient.h>                          // or whichever Arduino MQTT lib you use
-using MqttClientHandle = PubSubClient*;             // pointer to Arduino MQTT client object
+#include <PubSubClient.h>                       // or whichever Arduino MQTT lib you use
+using   MqttClientHandle = PubSubClient*;       // pointer to Arduino MQTT client object
 #define MQTT_CLIENT_HANDLE_INIT nullptr
 #endif
 
 // using RouteHandler = ...; — defines RouteHandler as a new name (alias) for the type that follows
 using RouteHandler = bool (*)(MqttProcessor&, const char* payload, size_t length, ALARM_DOMAINS_t domain);
+
+// mqttRoute — describes a single entry in the MQTT topic routing table.
+// Each incoming MQTT message's topic is compared against 'topic' (using 'topicLen'
+// for a length-bound comparison, avoiding the need for null-terminated strings).
+// On a match, 'handler' is invoked to process the payload for the given 'domain'.
 struct mqttRoute {
-    const char* topic;
-    size_t topicLen;
-    RouteHandler handler;
-    ALARM_DOMAINS_t domain;
-    const char* description;
+    const char* topic;          // MQTT topic string (or suffix) this route matches against
+    size_t          topicLen;   // precomputed length of 'topic', used for fast/length-bound comparisons
+    RouteHandler    handler;    // function pointer invoked to process a payload matching this topic
+    ALARM_DOMAINS_t domain;     // alarm domain (zones, partitions, global options, etc.) this route targets
+    const char* description;    // human-readable description of the route's purpose, for logging/diagnostics
 };
 
 //
 // MqttProcessor class definition. Provides interface to MQTT client. Receives reference to
-// alarmJSON class instance and Alarm class instance. This way,  "injecting" the dependencies
+// alarmJSON class instance and Alarm class instance (dependany injection). This way,  "injecting" the dependencies
 // (m_jsonParser, m_alarm) is implemented. What is received on particular MQTT topic is routed to 
 // processIncommingMQTTmsg() method, which then calls appropriate JSON processor (processConfigMessage() or
-// processControlMessage() -> processByDomain() or other) based on the topic and payload. They call as part of processing 
-// alarmJSON object processConfigJsonPld(), processControlJsonPld(), etc
+// processControlMessage() -> processByDomain() or other) based on the topic and payload. Than they
+// call to process alarmJSON object functions like processConfigJsonPld(), processControlJsonPld(), etc
 //
 class MqttProcessor {
 public:
     MqttProcessor(alarmJSON& jsonParser, Alarm& alarm) : m_jsonParser(jsonParser), m_alarm(alarm) {
-        printf("MqttProcessor initialized with parser + alarm.\n");
+        // dependancy injection of alarmJSON& jsonParser and  Alarm& alarm
+        // LOG_CRITICAL("MqttProcessor initialized with parser and alarm instances.\n"); // Arduino cannot prints in constructor
     }
 
+    /**
+     * @brief Routes an incoming MQTT message to the matching registered handler.
+     *
+     * Iterates over the static `mqttRoutes` table and compares the given topic
+     * against each registered route's topic using `topicEquals`. When a match
+     * is found, the corresponding handler is invoked with this instance, the
+     * payload, its length, and the route's associated domain.
+     *
+     * @param topic     Pointer to the MQTT topic string (not null-terminated guaranteed).
+     * @param topicLen  Length of the topic string in bytes.
+     * @param payload   Pointer to the raw MQTT payload buffer.
+     * @param length    Length of the payload buffer in bytes.
+     * @return true if a matching route was found and its handler returned true;
+     *         false if no matching route was found, the handler failed, or
+     *         `topic`/`payload` is null.
+     */
     bool processIncomingMQTTmsg(const char* topic, size_t topicLen, const char* payload, size_t length) {
         if (!topic || !payload) return false;
 
@@ -66,26 +88,80 @@ public:
     void publish2broker(const char* payload, const char* topic, ...);
 
 private:
-    // Route handlers
+    /**
+     * @brief Dispatches a domain-specific control/config JSON payload to the JSON parser.
+     *
+     * Used as a handler for topics that target a specific alarm domain (e.g., zones,
+     * partitions, outputs) rather than the full system configuration.
+     *
+     * @param self    Reference to the MqttProcessor instance invoking this handler.
+     * @param payload Pointer to the raw JSON payload bytes received on the MQTT topic.
+     * @param length  Length of the payload buffer, in bytes.
+     * @param domain  The alarm domain the payload applies to.
+     * @return true if the payload was parsed and applied successfully; false otherwise.
+     */
     static bool handleDomainConfig(MqttProcessor& self, const char* payload, size_t length, ALARM_DOMAINS_t domain) {
         return self.m_jsonParser.processControlJsonPld(payload, length, domain);
     }
 
+    /**
+     * @brief Dispatches a full system configuration JSON payload to the JSON parser.
+     *
+     * Used as a handler for topics that provide the entire alarm configuration at once,
+     * as opposed to a single domain's control data. The domain parameter is unused because
+     * the full configuration payload is not scoped to a single domain.
+     *
+     * @param self    Reference to the MqttProcessor instance invoking this handler.
+     * @param payload Pointer to the raw JSON payload bytes received on the MQTT topic.
+     * @param length  Length of the payload buffer, in bytes.
+     * @param unused  Unused domain parameter, present to match the common handler signature.
+     * @return true if the full configuration was parsed and applied successfully (parser
+     *         returned 0); false otherwise.
+     */
     static bool handleFullConfig(MqttProcessor& self, const char* payload, size_t length, ALARM_DOMAINS_t unused) {
         return (self.m_jsonParser.processConfigJsonPld(payload, length) == 0);
     }
 
+    /**
+     * @brief Compares two topic name buffers for exact equality.
+     *
+     * Performs a length check followed by a byte-wise comparison, avoiding reliance on
+     * null-termination so it is safe for non-null-terminated topic buffers.
+     *
+     * @param a    Pointer to the first topic string's bytes (may be nullptr).
+     * @param aLen Length of the first topic string, in bytes.
+     * @param b    Pointer to the second topic string's bytes (may be nullptr).
+     * @param bLen Length of the second topic string, in bytes.
+     * @return true if both pointers are non-null, lengths match, and all bytes are equal;
+     *         false otherwise.
+     */
     static bool topicEquals(const char* a, size_t aLen, const char* b, size_t bLen) {
         return a && b && (aLen == bLen) && (memcmp(a, b, aLen) == 0);
     }
 
     // Routes
-
+    /**
+     * @brief Static table of registered MQTT topic routes.
+     * Declared here (incomplete array) and defined out-of-line with its full
+     * initializer list once all route topics/handlers are known. Each entry
+     * maps a topic string to the handler responsible for processing payloads
+     * received on that topic, along with the alarm domain it targets.
+     *
+     * @see processIncomingMQTTmsg() for how this table is consulted.
+     */
     static const mqttRoute mqttRoutes[];
+
+    /**
+     * @brief Number of entries in `mqttRoutes`.
+     * Computed automatically from `sizeof(mqttRoutes) / sizeof(mqttRoutes[0])`
+     * at the point of definition, so it always stays in sync with the route
+     * table without needing to be updated manually when routes are added or
+     * removed.
+     */
     static const size_t MQTT_ROUTE_COUNT;
 
-    alarmJSON& m_jsonParser;
-    Alarm& m_alarm;
+	alarmJSON& m_jsonParser;    // reference to the JSON parser instance used for processing incoming MQTT payloads
+	Alarm& m_alarm;             // reference to the Alarm instance, allowing this processor to interact with the alarm system as needed
 };
 
 //
@@ -94,28 +170,37 @@ private:
 
 // table of MQTT routes and their corresponding handlers
 const mqttRoute MqttProcessor::mqttRoutes[] = {
-    { MQTT_FULL_CONFIG_TOPIC,       sizeof(MQTT_FULL_CONFIG_TOPIC) - 1,     &MqttProcessor::handleFullConfig, RESERVED,        "Full alarm config" },
-    { MQTT_ZONES_CONTROL_TOPIC,     sizeof(MQTT_ZONES_CONTROL_TOPIC) - 1,   &MqttProcessor::handleDomainConfig,     ZONES_CMD,       "Control zones" },
-    { MQTT_PARTITIONS_CONTROL_TOPIC,sizeof(MQTT_PARTITIONS_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomainConfig,   PARTITIONS_CMD,  "Control partitions" },
-    { MQTT_GLOBAL_OPT_CONTROL_TOPIC,sizeof(MQTT_GLOBAL_OPT_CONTROL_TOPIC) - 1,&MqttProcessor::handleDomainConfig,   GLOBAL_OPT_CFG,  "Global options config patch" },
+    { MQTT_FULL_CONFIG_TOPIC,       sizeof(MQTT_FULL_CONFIG_TOPIC) - 1,         &MqttProcessor::handleFullConfig,   RESERVED,        "Full alarm config" },
+    { MQTT_ZONES_CONTROL_TOPIC,     sizeof(MQTT_ZONES_CONTROL_TOPIC) - 1,       &MqttProcessor::handleDomainConfig, ZONES_CMD,       "Control zones" },
+    { MQTT_PARTITIONS_CONTROL_TOPIC,sizeof(MQTT_PARTITIONS_CONTROL_TOPIC) - 1,  &MqttProcessor::handleDomainConfig, PARTITIONS_CMD,  "Control partitions" },
+    { MQTT_GLOBAL_OPT_CONTROL_TOPIC,sizeof(MQTT_GLOBAL_OPT_CONTROL_TOPIC) - 1,  &MqttProcessor::handleDomainConfig, GLOBAL_OPT_CFG,  "Global options config patch" },
 };
 const size_t MqttProcessor::MQTT_ROUTE_COUNT = sizeof(MqttProcessor::mqttRoutes) / sizeof(MqttProcessor::mqttRoutes[0]);
 
 // -------------------- MQTT CLIENT CONTEXT (shared across platforms) --------------------
+/**
+ * @brief Holds the runtime state and configuration for a single MQTT client connection.
+ *
+ * This structure is shared across all supported platform backends (e.g. Paho on
+ * desktop/Windows, platform-native MQTT clients on Arduino/ESP) so that connection
+ * state, credentials, and reconnect bookkeeping are stored in a single, portable
+ * location regardless of the underlying MQTT implementation.
+ */
 struct mqttContext {
-    MqttClientHandle client = MQTT_CLIENT_HANDLE_INIT;
-    MqttProcessor* processor = nullptr;
+    MqttClientHandle client = MQTT_CLIENT_HANDLE_INIT; // Handle to the platform-specific MQTT client instance.
+    MqttProcessor* processor = nullptr;                // Pointer to the processor responsible for routing incoming MQTT messages.
 
-    const char* brokerAddress = nullptr;
-    const char* clientId = nullptr;
-    const char* user = nullptr;
-    const char* pass = nullptr;
+    const char* brokerAddress = nullptr; // Address (host/IP, and optionally port/scheme) of the MQTT broker to connect to.
+    const char* clientId = nullptr;      // Client identifier used when connecting to the broker.
+    const char* user = nullptr;          // Username used for broker authentication, if required.
+    const char* pass = nullptr;          // Password used for broker authentication, if required.
 
-    uint32_t lastReconnectAttemptMs = 0;
-    bool subscribed = false;
+    uint32_t lastReconnectAttemptMs = 0; // Timestamp (ms) of the last reconnect attempt, used to throttle retries.
+    bool subscribed = false;             // Tracks whether topic subscriptions have been (re-)established on the current connection.
 };
 
-#ifndef ARDUINO                                         // Windows/desktop path (Paho C)
+
+#ifndef ARDUINO                          // Windows/desktop path (Paho C)
 #include <MQTTClient.h>
 
 // -------------------- PAHO WRAPPER FUNCTIONS --------------------
@@ -151,9 +236,10 @@ static bool pahoInit(
     return true;
 }
 
-static bool pahoConnectAndSubscribe(mqttContext& ctx) {
+static bool pahoConnectAndSubscribe(mqttContext& ctx) {  // used only in pahoService() to reconnect and subscribe if connection is lost
     if (!ctx.client) return false;
-    if (MQTTClient_isConnected(ctx.client)) return true;
+    if (MQTTClient_isConnected(ctx.client)) 
+        return true;
 
     MQTTClient_connectOptions connOpts = MQTTClient_connectOptions_initializer;
     connOpts.keepAliveInterval = 20;
@@ -177,10 +263,50 @@ static bool pahoConnectAndSubscribe(mqttContext& ctx) {
     if (!ok) {
         lprintf("MQTT subscribe failed\n");
     }
+    else {
+		LOG_CRITICAL("MQTT subscribe succeeded for topics: %s, %s, %s, %s\n",
+			MQTT_FULL_CONFIG_TOPIC,
+			MQTT_ZONES_CONTROL_TOPIC,
+			MQTT_PARTITIONS_CONTROL_TOPIC,
+			MQTT_GLOBAL_OPT_CONTROL_TOPIC
+		);  
+    }
     return ok;
 }
 
 // Call periodically (this is your Paho equivalent of loop processing)
+//
+// Polls the MQTT connection and dispatches any received message to the
+// configured processor. Intended to be invoked repeatedly from the main
+// loop; performs no blocking work beyond a short (10ms) receive timeout.
+//
+// Behavior:
+//  - If the client or processor is not set up, does nothing.
+//  - If the client is not currently connected, attempts a reconnect no more
+//    often than every `reconnectIntervalMs` milliseconds (tracked via
+//    ctx.lastReconnectAttemptMs), then returns without attempting to receive.
+//  - Otherwise, polls for an incoming message with a short timeout.
+//    - On a truncated topic name, logs a warning and frees any allocated
+//      message/topic buffers.
+//    - On any other non-success result (or a null message), silently frees
+//      any allocated buffers and returns.
+//    - On success, forwards the topic name/length and payload/length to
+//      ctx.processor->processIncomingMQTTmsg(), then frees the message and
+//      topic buffers.
+//
+// Parameters:
+//  ctx                 - MQTT context holding the client handle, processor,
+//                         and reconnect bookkeeping state.
+//  reconnectIntervalMs - Minimum interval, in milliseconds, between
+//                         reconnect attempts while disconnected.
+//
+// Notes:
+//  - Ownership of `topicName` and `message` (allocated by the Paho MQTT C
+//    client) is always released by this function before returning, on every
+//    code path that receives them.
+//  - `payloadLen`/`safeTopicLen` guard against negative lengths reported by
+//    the library, falling back to strlen(topicName) when topicLen is not
+//    positive.
 static void pahoService(mqttContext& ctx, uint32_t reconnectIntervalMs)
 {
     if (!ctx.client || !ctx.processor) return;
@@ -188,19 +314,19 @@ static void pahoService(mqttContext& ctx, uint32_t reconnectIntervalMs)
     if (!MQTTClient_isConnected(ctx.client)) {
         if ((millis() - ctx.lastReconnectAttemptMs) >= reconnectIntervalMs) {
             ctx.lastReconnectAttemptMs = millis();
-            (void)pahoConnectAndSubscribe(ctx);
+			(void)pahoConnectAndSubscribe(ctx);    // reconnect and subscribe if not connected at least reconnectIntervalMs milliseconds since last attempt
         }
         return;
     }
 
-    char* topicName = nullptr;
     int topicLen = 0;
-    MQTTClient_message* message = nullptr;
+	char* topicName             = nullptr;    // PAHO MQTTClient_receive() allocates this buffer for the topic name, which must be freed with MQTTClient_free() after use
+    MQTTClient_message* message = nullptr;    // defined from PAHO MQTTClient.h as struct MQTTClient_message { ... }
 
     const int rc = MQTTClient_receive(ctx.client, &topicName, &topicLen, &message, 10);
 
     if (rc == MQTTCLIENT_TOPICNAME_TRUNCATED) {
-        lprintf("MQTT receive: topic name truncated, dropping message\n");
+        LOG_ERROR("MQTT receive: topic name truncated, dropping message\n");
         if (message) MQTTClient_freeMessage(&message);
         if (topicName) MQTTClient_free(topicName);
         return;
@@ -260,7 +386,7 @@ static void mqttPublishWrapper(void* context, const char* topic, const char* pay
 
 #else  // ARDUINO path (ESP32/ESP8266/etc. using PubSubClient)
 
-#include <WiFiClient.h>   // or <WiFiClientSecure.h> for TLS
+//#include <WiFiClient.h>   // or <WiFiClientSecure.h> for TLS
 // PubSubClient.h already included above via MqttClientHandle alias section
 
 // Underlying network transport used by PubSubClient
@@ -467,6 +593,14 @@ static bool mqttInitFromUrl(
     const char* pass)
 {
 #ifndef ARDUINO
+    MqttBrokerUrl parsed;
+    if (!parseMqttBrokerUrl(brokerUrl, parsed)) {
+        lprintf("Invalid MQTT broker URL: %s\n", brokerUrl ? brokerUrl : "(null)");
+        return false;
+    }
+    // Paho's MQTTClient_create expects the full "scheme://host:port" form,
+    // so we pass the original brokerUrl through unchanged; parseMqttBrokerUrl
+    // above is used only to validate the URL and surface a clear error early.
     return pahoInit(ctx, processor, brokerUrl, clientId, user, pass);
 #else
     MqttBrokerUrl parsed;
